@@ -9,4 +9,4 @@ CampaignForge is a lightweight D&D 5e Game Master companion app with:
 
 ## Run locally
 
-Open `/home/runner/work/CampaignForge/CampaignForge/index.html` in a browser.
+Open `index.html` in a browser.
