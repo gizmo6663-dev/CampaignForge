@@ -65,7 +65,7 @@ try:
                 log(f"makedirs {d}: {e}")
         log(f"Dirs OK: {os.path.exists(IMG_DIR)}, {os.path.exists(MUSIC_DIR)}")
 
-    # === FARGER – GOLDEN REALM ===
+    # === FARGER ===
     BG   = [0.08, 0.10, 0.14, 1]
     BG2  = [0.12, 0.15, 0.20, 1]
     BTN  = [0.15, 0.18, 0.24, 1]
@@ -90,9 +90,6 @@ try:
         shadow_color = ListProperty(SHAD)
         radius = NumericProperty(dp(8))
 
-    # ============================================================
-    # KV REGLER – FIXED: alt i canvas.before
-    # ============================================================
     Builder.load_string('''
 #:kivy 2.0
 
@@ -189,9 +186,6 @@ try:
         except Exception as e:
             log(f"save_characters error: {e}")
 
-    # ============================================================
-    # VERKTØY
-    # ============================================================
     class D20Roller:
         @staticmethod
         def roll_d20(bonus=0):
@@ -288,56 +282,30 @@ try:
             self.current_track = None
             self.mp = None
 
-            header = Label(
-                text='🎵 Musikk',
-                size_hint_y=None,
-                height=dp(40),
-                color=GOLD,
-                font_size=sp(18),
-                bold=True
-            )
+            header = Label(text='🎵 Musikk', size_hint_y=None, height=dp(40),
+                           color=GOLD, font_size=sp(18), bold=True)
             self.add_widget(header)
 
             track_layout = BoxLayout(size_hint_y=None, height=dp(50), spacing=dp(10))
-            self.track_spinner = Spinner(
-                text='Velg musikk...',
-                values=self.get_music_files(),
-                size_hint_x=0.7
-            )
+            self.track_spinner = Spinner(text='Velg musikk...',
+                                         values=self.get_music_files(), size_hint_x=0.7)
             self.track_spinner.bind(text=self.on_track_selected)
             track_layout.add_widget(self.track_spinner)
 
-            play_btn = RBtn(
-                text='▶',
-                size_hint_x=0.15,
-                bg_color=SMRG,
-                hover_color=SMRG_DIM,
-                shadow_color=SHAD,
-                radius=dp(8)
-            )
+            play_btn = RBtn(text='▶', size_hint_x=0.15, bg_color=SMRG,
+                            hover_color=SMRG_DIM, shadow_color=SHAD, radius=dp(8))
             play_btn.bind(on_press=self.play_track)
             track_layout.add_widget(play_btn)
 
-            stop_btn = RBtn(
-                text='⏹',
-                size_hint_x=0.15,
-                bg_color=RED,
-                hover_color=[1, 0.4, 0.4, 1],
-                shadow_color=SHAD,
-                radius=dp(8)
-            )
+            stop_btn = RBtn(text='⏹', size_hint_x=0.15, bg_color=RED,
+                            hover_color=[1, 0.4, 0.4, 1], shadow_color=SHAD, radius=dp(8))
             stop_btn.bind(on_press=self.stop_track)
             track_layout.add_widget(stop_btn)
 
             self.add_widget(track_layout)
 
-            self.info_label = Label(
-                text='Ingen musikk spiller',
-                size_hint_y=None,
-                height=dp(30),
-                color=DIM,
-                font_size=sp(12)
-            )
+            self.info_label = Label(text='Ingen musikk spiller', size_hint_y=None,
+                                    height=dp(30), color=DIM, font_size=sp(12))
             self.add_widget(self.info_label)
 
         def get_music_files(self):
@@ -391,14 +359,8 @@ try:
             self.padding = dp(10)
             self.mp = None
 
-            header = Label(
-                text='🌫️ Ambient',
-                size_hint_y=None,
-                height=dp(40),
-                color=GOLD,
-                font_size=sp(18),
-                bold=True
-            )
+            header = Label(text='🌫️ Ambient', size_hint_y=None, height=dp(40),
+                           color=GOLD, font_size=sp(18), bold=True)
             self.add_widget(header)
 
             ambients = [
@@ -409,37 +371,20 @@ try:
             ]
 
             for name, url in ambients:
-                btn = RBtn(
-                    text=name,
-                    size_hint_y=None,
-                    height=dp(50),
-                    bg_color=SMRG_DIM,
-                    hover_color=SMRG,
-                    shadow_color=SHAD,
-                    radius=dp(8)
-                )
+                btn = RBtn(text=name, size_hint_y=None, height=dp(50),
+                           bg_color=SMRG_DIM, hover_color=SMRG,
+                           shadow_color=SHAD, radius=dp(8))
                 btn.bind(on_press=partial(self.play_ambient, url, name))
                 self.add_widget(btn)
 
-            stop_btn = RBtn(
-                text='⏹ Stopp',
-                size_hint_y=None,
-                height=dp(50),
-                bg_color=RED,
-                hover_color=[1, 0.4, 0.4, 1],
-                shadow_color=SHAD,
-                radius=dp(8)
-            )
+            stop_btn = RBtn(text='⏹ Stopp', size_hint_y=None, height=dp(50),
+                            bg_color=RED, hover_color=[1, 0.4, 0.4, 1],
+                            shadow_color=SHAD, radius=dp(8))
             stop_btn.bind(on_press=self.stop_ambient)
             self.add_widget(stop_btn)
 
-            self.info_label = Label(
-                text='',
-                size_hint_y=None,
-                height=dp(30),
-                color=DIM,
-                font_size=sp(12)
-            )
+            self.info_label = Label(text='', size_hint_y=None, height=dp(30),
+                                    color=DIM, font_size=sp(12))
             self.add_widget(self.info_label)
 
         def play_ambient(self, url, name, *args):
@@ -451,11 +396,16 @@ try:
                     self.mp = MediaPlayer()
                     self.mp.setDataSource(url)
                     self.mp.setLooping(True)
-                    self.mp.prepareAsync()
-                    self.mp.setOnPreparedListener(
-                        _PreparedListener(self.mp)
-                    )
                     self.info_label.text = f'Laster {name}...'
+                    def _prepare_and_play():
+                        try:
+                            self.mp.prepare()
+                            self.mp.start()
+                            Clock.schedule_once(
+                                lambda dt: setattr(self.info_label, 'text', f'▶ {name}'))
+                        except Exception as e:
+                            log(f"Ambient prepare error: {e}")
+                    threading.Thread(target=_prepare_and_play, daemon=True).start()
                 except Exception as e:
                     log(f"Ambient error: {e}")
                     self.info_label.text = 'Feil ved avspilling'
@@ -472,22 +422,6 @@ try:
                 except Exception as e:
                     log(f"stop_ambient error: {e}")
 
-    # Helper for async prepare callback
-    if USE_JNIUS:
-        from jnius import PythonJavaClass, java_method
-        class _PreparedListener(PythonJavaClass):
-            __javainterfaces__ = ['android/media/MediaPlayer$OnPreparedListener']
-            def __init__(self, mp):
-                super().__init__()
-                self._mp = mp
-            @java_method('(Landroid/media/MediaPlayer;)V')
-            def onPrepared(self, mp):
-                self._mp.start()
-    else:
-        class _PreparedListener:
-            def __init__(self, mp):
-                pass
-
     # ============================================================
     # VERKTØY-FANEN
     # ============================================================
@@ -495,115 +429,72 @@ try:
         def __init__(self, characters, **kwargs):
             super().__init__(**kwargs)
             self.characters = characters
-
-            self.main_layout = BoxLayout(orientation='vertical', spacing=dp(10), size_hint_y=None,
-                                         padding=dp(10))
+            self.main_layout = BoxLayout(orientation='vertical', spacing=dp(10),
+                                         size_hint_y=None, padding=dp(10))
             self.main_layout.bind(minimum_height=self.main_layout.setter('height'))
             self.add_widget(self.main_layout)
             self.build_tools()
 
         def build_tools(self):
-            header = Label(
-                text='🎲 Verktøy',
-                size_hint_y=None,
-                height=dp(40),
-                color=GOLD,
-                font_size=sp(18),
-                bold=True
-            )
+            header = Label(text='🎲 Verktøy', size_hint_y=None, height=dp(40),
+                           color=GOLD, font_size=sp(18), bold=True)
             self.main_layout.add_widget(header)
 
-            # --- D20 Roller ---
-            d20_label = Label(text='D20 Roller', size_hint_y=None, height=dp(30), color=GOLD, bold=True)
+            d20_label = Label(text='D20 Roller', size_hint_y=None, height=dp(30),
+                              color=GOLD, bold=True)
             self.main_layout.add_widget(d20_label)
 
             d20_layout = BoxLayout(size_hint_y=None, height=dp(50), spacing=dp(10))
             self.d20_bonus = TextInput(text='0', multiline=False, size_hint_x=0.2,
                                        input_filter='int')
-            d20_btn = RBtn(
-                text='Roll D20',
-                size_hint_x=0.8,
-                bg_color=SMRG,
-                hover_color=SMRG_DIM,
-                shadow_color=SHAD,
-                radius=dp(8)
-            )
+            d20_btn = RBtn(text='Roll D20', size_hint_x=0.8, bg_color=SMRG,
+                           hover_color=SMRG_DIM, shadow_color=SHAD, radius=dp(8))
             d20_btn.bind(on_press=self.roll_d20)
             d20_layout.add_widget(self.d20_bonus)
             d20_layout.add_widget(d20_btn)
             self.main_layout.add_widget(d20_layout)
 
-            self.d20_result = Label(
-                text='',
-                size_hint_y=None,
-                height=dp(40),
-                color=GOLD,
-                font_size=sp(14),
-                bold=True,
-                markup=True
-            )
+            self.d20_result = Label(text='', size_hint_y=None, height=dp(40),
+                                    color=GOLD, font_size=sp(14), bold=True, markup=True)
             self.main_layout.add_widget(self.d20_result)
 
-            # --- Flerterning ---
-            dice_label = Label(text='Terning (f.eks 2d6+3)', size_hint_y=None, height=dp(30),
-                               color=GOLD, bold=True)
+            dice_label = Label(text='Terning (f.eks 2d6+3)', size_hint_y=None,
+                               height=dp(30), color=GOLD, bold=True)
             self.main_layout.add_widget(dice_label)
 
             dice_layout = BoxLayout(size_hint_y=None, height=dp(50), spacing=dp(10))
             self.dice_input = TextInput(text='1d20', multiline=False, size_hint_x=0.5)
-            dice_btn = RBtn(
-                text='Roll',
-                size_hint_x=0.5,
-                bg_color=BLUE,
-                hover_color=[0.45, 0.65, 0.95, 1],
-                shadow_color=SHAD,
-                radius=dp(8)
-            )
+            dice_btn = RBtn(text='Roll', size_hint_x=0.5, bg_color=BLUE,
+                            hover_color=[0.45, 0.65, 0.95, 1],
+                            shadow_color=SHAD, radius=dp(8))
             dice_btn.bind(on_press=self.roll_dice)
             dice_layout.add_widget(self.dice_input)
             dice_layout.add_widget(dice_btn)
             self.main_layout.add_widget(dice_layout)
 
-            self.dice_result = Label(
-                text='',
-                size_hint_y=None,
-                height=dp(60),
-                color=DIM,
-                font_size=sp(12),
-                markup=True
-            )
+            self.dice_result = Label(text='', size_hint_y=None, height=dp(60),
+                                     color=DIM, font_size=sp(12), markup=True)
             self.main_layout.add_widget(self.dice_result)
 
-            # --- Initiative Tracker ---
-            init_label = Label(text='Initiative Tracker', size_hint_y=None, height=dp(30),
-                               color=GOLD, bold=True)
+            init_label = Label(text='Initiative Tracker', size_hint_y=None,
+                               height=dp(30), color=GOLD, bold=True)
             self.main_layout.add_widget(init_label)
 
-            self.initiative_container = BoxLayout(orientation='vertical', size_hint_y=None,
-                                                   spacing=dp(5))
+            self.initiative_container = BoxLayout(orientation='vertical',
+                                                   size_hint_y=None, spacing=dp(5))
             self.initiative_container.bind(
                 minimum_height=self.initiative_container.setter('height'))
             self.main_layout.add_widget(self.initiative_container)
 
             init_btn_row = BoxLayout(size_hint_y=None, height=dp(50), spacing=dp(10))
-            add_init_btn = RBtn(
-                text='+ Legg til',
-                size_hint_x=0.5,
-                bg_color=GRN,
-                hover_color=[0.4, 0.75, 0.45, 1],
-                shadow_color=SHAD,
-                radius=dp(8)
-            )
+            add_init_btn = RBtn(text='+ Legg til', size_hint_x=0.5, bg_color=GRN,
+                                hover_color=[0.4, 0.75, 0.45, 1],
+                                shadow_color=SHAD, radius=dp(8))
             add_init_btn.bind(on_press=self.add_initiative_row)
 
-            sort_init_btn = RBtn(
-                text='Sorter',
-                size_hint_x=0.5,
-                bg_color=BLUE,
-                hover_color=[0.45, 0.65, 0.95, 1],
-                shadow_color=SHAD,
-                radius=dp(8)
-            )
+            sort_init_btn = RBtn(text='Sorter', size_hint_x=0.5, bg_color=BLUE,
+                                 hover_color=[0.45, 0.65, 0.95, 1],
+                                 shadow_color=SHAD, radius=dp(8))
             sort_init_btn.bind(on_press=self.sort_initiative)
 
             init_btn_row.add_widget(add_init_btn)
@@ -639,16 +530,11 @@ try:
         def add_initiative_row(self, *args):
             row = BoxLayout(size_hint_y=None, height=dp(40), spacing=dp(5))
             name = TextInput(text='', multiline=False, hint_text='Navn', size_hint_x=0.4)
-            init_val = TextInput(text='', multiline=False, hint_text='Init', size_hint_x=0.3,
-                                 input_filter='int')
-            roll_btn = RBtn(
-                text='Roll',
-                size_hint_x=0.3,
-                bg_color=BLUE,
-                hover_color=[0.45, 0.65, 0.95, 1],
-                shadow_color=SHAD,
-                radius=dp(5)
-            )
+            init_val = TextInput(text='', multiline=False, hint_text='Init',
+                                 size_hint_x=0.3, input_filter='int')
+            roll_btn = RBtn(text='Roll', size_hint_x=0.3, bg_color=BLUE,
+                            hover_color=[0.45, 0.65, 0.95, 1],
+                            shadow_color=SHAD, radius=dp(5))
             roll_btn.bind(on_press=partial(self.roll_initiative, name, init_val))
             row.add_widget(name)
             row.add_widget(init_val)
@@ -683,47 +569,29 @@ try:
             super().__init__(**kwargs)
             self.characters = characters
             self.app_instance = app_instance
-
-            self.main_layout = BoxLayout(orientation='vertical', spacing=dp(10), size_hint_y=None,
-                                         padding=dp(10))
+            self.main_layout = BoxLayout(orientation='vertical', spacing=dp(10),
+                                         size_hint_y=None, padding=dp(10))
             self.main_layout.bind(minimum_height=self.main_layout.setter('height'))
             self.add_widget(self.main_layout)
             self.build_cast()
 
         def build_cast(self):
-            header = Label(
-                text='👥 Karakterer',
-                size_hint_y=None,
-                height=dp(40),
-                color=GOLD,
-                font_size=sp(18),
-                bold=True
-            )
+            header = Label(text='👥 Karakterer', size_hint_y=None, height=dp(40),
+                           color=GOLD, font_size=sp(18), bold=True)
             self.main_layout.add_widget(header)
 
             if self.characters:
                 for name, char in self.characters.items():
                     char_btn = RBtn(
                         text=f'{char.name} ({char.class_name} lv{char.level})',
-                        size_hint_y=None,
-                        height=dp(50),
-                        bg_color=BTN,
-                        hover_color=SMRG_DIM,
-                        shadow_color=SHAD,
-                        radius=dp(8)
-                    )
+                        size_hint_y=None, height=dp(50), bg_color=BTN,
+                        hover_color=SMRG_DIM, shadow_color=SHAD, radius=dp(8))
                     char_btn.bind(on_press=partial(self.show_character, name))
                     self.main_layout.add_widget(char_btn)
 
-            new_btn = RBtn(
-                text='+ Ny karakter',
-                size_hint_y=None,
-                height=dp(50),
-                bg_color=SMRG,
-                hover_color=SMRG_DIM,
-                shadow_color=SHAD,
-                radius=dp(8)
-            )
+            new_btn = RBtn(text='+ Ny karakter', size_hint_y=None, height=dp(50),
+                           bg_color=SMRG, hover_color=SMRG_DIM,
+                           shadow_color=SHAD, radius=dp(8))
             new_btn.bind(on_press=self.create_new_character)
             self.main_layout.add_widget(new_btn)
 
@@ -737,28 +605,17 @@ try:
                                           padding=dp(10), size_hint_y=None)
                 detail_layout.bind(minimum_height=detail_layout.setter('height'))
 
-                title = Label(
-                    text=f'{char.name}',
-                    size_hint_y=None,
-                    height=dp(40),
-                    color=GOLD,
-                    font_size=sp(18),
-                    bold=True
-                )
+                title = Label(text=f'{char.name}', size_hint_y=None, height=dp(40),
+                              color=GOLD, font_size=sp(18), bold=True)
                 detail_layout.add_widget(title)
 
-                subtitle = Label(
-                    text=f'{char.race} {char.class_name} (Level {char.level})',
-                    size_hint_y=None,
-                    height=dp(30),
-                    color=DIM,
-                    font_size=sp(13)
-                )
+                subtitle = Label(text=f'{char.race} {char.class_name} (Level {char.level})',
+                                 size_hint_y=None, height=dp(30),
+                                 color=DIM, font_size=sp(13))
                 detail_layout.add_widget(subtitle)
 
-                # Ability scores
-                abilities_label = Label(text='Ability Scores', size_hint_y=None, height=dp(30),
-                                        color=GOLD, bold=True)
+                abilities_label = Label(text='Ability Scores', size_hint_y=None,
+                                        height=dp(30), color=GOLD, bold=True)
                 detail_layout.add_widget(abilities_label)
 
                 for ab in ['str','dex','con','int','wis','cha']:
@@ -766,29 +623,32 @@ try:
                     mod = char.get_modifier(ab)
                     row = BoxLayout(size_hint_y=None, height=dp(35), spacing=dp(5))
                     lbl = Label(text=f'{ab.upper()}: {score} ({mod:+d})', color=TXT,
-                                font_size=sp(13), halign='left', text_size=(dp(200), None))
+                                font_size=sp(13), halign='left',
+                                text_size=(dp(200), None))
                     row.add_widget(lbl)
                     detail_layout.add_widget(row)
 
-                # Combat stats
                 combat_label = Label(text='Combat', size_hint_y=None, height=dp(30),
                                       color=GOLD, bold=True)
                 detail_layout.add_widget(combat_label)
 
                 hp_row = BoxLayout(size_hint_y=None, height=dp(40), spacing=dp(10))
-                hp_lbl = Label(text=f'HP: {char.hp_current}/{char.hp_max}', color=TXT,
-                               size_hint_x=0.4, font_size=sp(13))
+                hp_lbl = Label(text=f'HP: {char.hp_current}/{char.hp_max}',
+                               color=TXT, size_hint_x=0.4, font_size=sp(13))
                 hp_minus = RBtn(text='-', size_hint_x=0.15, bg_color=RED,
-                                hover_color=[1, 0.4, 0.4, 1], shadow_color=SHAD, radius=dp(5))
+                                hover_color=[1, 0.4, 0.4, 1],
+                                shadow_color=SHAD, radius=dp(5))
                 hp_plus = RBtn(text='+', size_hint_x=0.15, bg_color=GRN,
-                               hover_color=[0.4, 0.75, 0.45, 1], shadow_color=SHAD, radius=dp(5))
+                               hover_color=[0.4, 0.75, 0.45, 1],
+                               shadow_color=SHAD, radius=dp(5))
                 hp_amt = TextInput(text='1', multiline=False, size_hint_x=0.3,
                                    input_filter='int')
 
                 def change_hp(delta, *a):
                     try:
                         amt = int(hp_amt.text) if hp_amt.text else 1
-                        char.hp_current = max(0, min(char.hp_max, char.hp_current + delta * amt))
+                        char.hp_current = max(0, min(char.hp_max,
+                                                      char.hp_current + delta * amt))
                         hp_lbl.text = f'HP: {char.hp_current}/{char.hp_max}'
                         save_characters(self.characters)
                     except:
@@ -803,19 +663,13 @@ try:
                 detail_layout.add_widget(hp_row)
 
                 ac_lbl = Label(text=f'AC: {char.ac}  |  Speed: {char.speed} ft',
-                               size_hint_y=None, height=dp(30), color=TXT, font_size=sp(13))
+                               size_hint_y=None, height=dp(30),
+                               color=TXT, font_size=sp(13))
                 detail_layout.add_widget(ac_lbl)
 
-                # Close button
-                close_btn = RBtn(
-                    text='← Tilbake',
-                    size_hint_y=None,
-                    height=dp(50),
-                    bg_color=BTN,
-                    hover_color=BTNH,
-                    shadow_color=SHAD,
-                    radius=dp(8)
-                )
+                close_btn = RBtn(text='← Tilbake', size_hint_y=None, height=dp(50),
+                                 bg_color=BTN, hover_color=BTNH,
+                                 shadow_color=SHAD, radius=dp(8))
                 close_btn.bind(on_press=lambda x: self.close_detail())
                 detail_layout.add_widget(close_btn)
 
@@ -849,41 +703,23 @@ try:
             self.spacing = dp(10)
             self.padding = dp(10)
 
-            header = Label(
-                text='📺 Chromecast',
-                size_hint_y=None,
-                height=dp(40),
-                color=GOLD,
-                font_size=sp(18),
-                bold=True
-            )
+            header = Label(text='📺 Chromecast', size_hint_y=None, height=dp(40),
+                           color=GOLD, font_size=sp(18), bold=True)
             self.add_widget(header)
 
             if CAST_AVAILABLE:
-                discover_btn = RBtn(
-                    text='Søk etter enheter',
-                    size_hint_y=None,
-                    height=dp(50),
-                    bg_color=SMRG,
-                    hover_color=SMRG_DIM,
-                    shadow_color=SHAD,
-                    radius=dp(8)
-                )
+                discover_btn = RBtn(text='Søk etter enheter', size_hint_y=None,
+                                    height=dp(50), bg_color=SMRG,
+                                    hover_color=SMRG_DIM,
+                                    shadow_color=SHAD, radius=dp(8))
                 discover_btn.bind(on_press=self.discover_devices)
                 self.add_widget(discover_btn)
 
-                self.status_label = Label(
-                    text='Ingen enheter oppdaget',
-                    size_hint_y=None,
-                    height=dp(40),
-                    color=DIM
-                )
+                self.status_label = Label(text='Ingen enheter oppdaget',
+                                          size_hint_y=None, height=dp(40), color=DIM)
                 self.add_widget(self.status_label)
             else:
-                no_cast = Label(
-                    text='pychromecast ikke installert',
-                    color=RED
-                )
+                no_cast = Label(text='pychromecast ikke installert', color=RED)
                 self.add_widget(no_cast)
 
         def discover_devices(self, *args):
@@ -911,11 +747,9 @@ try:
 
             main_box = BoxLayout(orientation='vertical')
 
-            # Content area FØRST (tar opp plassen)
             self.content_area = BoxLayout()
             main_box.add_widget(self.content_area)
 
-            # Tab-bar SIST (havner nederst)
             tab_box = BoxLayout(size_hint_y=None, height=dp(52), spacing=dp(2),
                                 padding=[dp(4), dp(4), dp(4), dp(4)])
 
@@ -941,7 +775,6 @@ try:
 
             main_box.add_widget(tab_box)
 
-            # Sett første tab
             if self.first_tab_btn:
                 self.first_tab_btn.state = 'down'
 
@@ -949,7 +782,6 @@ try:
 
         def switch_tab(self, tab_name, btn, instance, state):
             if state == 'down':
-                # Oppdater tab-farger
                 for child in btn.parent.children:
                     child.color = DIM
                 btn.color = GOLD
