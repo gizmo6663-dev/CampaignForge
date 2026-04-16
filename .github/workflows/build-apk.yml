@@ -49,7 +49,8 @@ jobs:
         run: |
           pip3 install "buildozer==1.5.0"
           pip3 install "cython==0.29.36"
-          pip3 install "setuptools"
+          pip3 install "setuptools>=65.0"
+          pip3 install "wheel"
 
       - name: Cache .buildozer
         uses: actions/cache@v4
