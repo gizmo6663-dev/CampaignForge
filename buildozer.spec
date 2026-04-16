@@ -1,22 +1,18 @@
----
-
-## **2. buildozer.spec**
-
-```ini
 [app]
 title = Campaign Forge
 package.name = campaignforge
 package.domain = org.campaignforge
 
 source.dir = .
-source.include_exts = py,png,jpg,kv,atlas
+source.include_exts = py,png,jpg,kv,atlas,json,ttf
 
-version = 0.1.1
+version = 0.1.2
 
-requirements = python3,kivy,pillow,android,pychromecast,zeroconf,ifaddr,protobuf
+requirements = python3,kivy==2.3.0,pillow,android,pyjnius,pychromecast,zeroconf,ifaddr,protobuf,cython==0.29.36
 
-android.api = 35
+android.api = 34
 android.minapi = 21
+android.ndk = 25b
 android.archs = arm64-v8a
 
 android.permissions = INTERNET,ACCESS_NETWORK_STATE,ACCESS_WIFI_STATE,CHANGE_WIFI_MULTICAST_STATE,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,READ_MEDIA_IMAGES,READ_MEDIA_AUDIO,READ_MEDIA_VIDEO
@@ -25,7 +21,10 @@ orientation = portrait
 fullscreen = 1
 
 android.accept_sdk_license = True
-android.private_storage = True
+android.private_storage = False
+
+p4a.branch = master
+android.enable_androidx = True
 
 p4a.bootstrap = sdl2
 
