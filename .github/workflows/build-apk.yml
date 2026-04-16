@@ -45,9 +45,9 @@ jobs:
           sudo make install
           cd /
 
-      - name: Installer buildozer og cython
+      - - name: Installer buildozer og cython
         run: |
-          pip3 install --upgrade buildozer
+          pip3 install "buildozer==1.5.0"
           pip3 install "cython==3.0.11"
 
       - name: Cache .buildozer
