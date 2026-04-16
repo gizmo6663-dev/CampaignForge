@@ -8,8 +8,7 @@ source.include_exts = py,png,jpg,kv,atlas,json,ttf
 
 version = 0.1.3
 
-requirements = python3,kivy==2.3.0,android,pyjnius,pychromecast,zeroconf,ifaddr,protobuf,cython==3.0.11
-
+requirements = python3,kivy==2.3.0,pillow,android,pyjnius,pychromecast,zeroconf,ifaddr,protobuf,cython==0.29.36
 android.api = 34
 android.minapi = 21
 android.ndk = 25b
@@ -23,7 +22,7 @@ fullscreen = 1
 android.accept_sdk_license = True
 android.private_storage = False
 
-p4a.branch = develop
+p4a.branch = 2024.1.21
 android.enable_androidx = True
 
 p4a.bootstrap = sdl2
