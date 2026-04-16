@@ -8,7 +8,7 @@ os.makedirs(os.path.dirname(LOG), exist_ok=True)
 def log(msg):
     with open(LOG, "a") as f:
         f.write(msg + "\n")
-log("=== APP START (Campaign Forge v0.1.2 – Golden Realm) ===")
+log("=== APP START (Campaign Forge v0.1.3 – Golden Realm) ===")
 
 try:
     from kivy.app import App
