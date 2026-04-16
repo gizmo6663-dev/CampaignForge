@@ -8,7 +8,7 @@ source.include_exts = py,png,jpg,kv,atlas,json,ttf
 
 version = 0.1.3
 
-requirements = python3,kivy==2.3.0,pillow==10.1.0,android,pyjnius,pychromecast,zeroconf,ifaddr,protobuf,cython==0.29.36
+requirements = python3,kivy==2.3.0,pillow>=9.0,<11.0,android,pyjnius,pychromecast,zeroconf,ifaddr,protobuf,cython==0.29.36
 android.api = 34
 android.minapi = 21
 android.ndk = 25b
