@@ -22,7 +22,7 @@ fullscreen = 1
 android.accept_sdk_license = True
 android.private_storage = False
 
-p4a.branch = v2024.01.21
+p4a.branch = develop
 android.enable_androidx = True
 
 p4a.bootstrap = sdl2
