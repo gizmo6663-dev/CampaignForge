@@ -1,0 +1,101 @@
+:root {
+  color-scheme: light dark;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #171923;
+  color: #f4f4f5;
+}
+
+header {
+  padding: 1.25rem;
+  background: #272a3c;
+  border-bottom: 1px solid #3f435e;
+}
+
+main {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.panel {
+  background: #212334;
+  border: 1px solid #393f60;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+form,
+.dice-controls {
+  display: grid;
+  gap: 0.5rem;
+}
+
+label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+}
+
+input,
+textarea,
+select,
+button {
+  border-radius: 8px;
+  border: 1px solid #4f5782;
+  padding: 0.5rem;
+  background: #111320;
+  color: #f4f4f5;
+}
+
+button {
+  cursor: pointer;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.card-grid,
+.gallery-grid {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.character-card {
+  border: 1px solid #4f5782;
+  border-radius: 10px;
+  padding: 0.6rem;
+  background: #181b2b;
+}
+
+.character-card h3 {
+  margin: 0 0 0.4rem;
+}
+
+.gallery-item {
+  border: 1px solid #4f5782;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #181b2b;
+}
+
+.gallery-item img {
+  width: 100%;
+  display: block;
+  height: 160px;
+  object-fit: cover;
+}
+
+.gallery-item p {
+  margin: 0;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.85rem;
+}

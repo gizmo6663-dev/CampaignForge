@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CampaignForge</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>CampaignForge</h1>
+      <p>D&amp;D 5e Game Master companion app</p>
+    </header>
+
+    <main>
+      <section class="panel">
+        <h2>Character Sheets</h2>
+        <form id="character-form">
+          <label>
+            Name
+            <input type="text" id="character-name" required />
+          </label>
+          <label>
+            Class
+            <input type="text" id="character-class" required />
+          </label>
+          <label>
+            Level
+            <input type="number" id="character-level" min="1" value="1" required />
+          </label>
+          <label>
+            Ancestry
+            <input type="text" id="character-ancestry" />
+          </label>
+          <label>
+            HP
+            <input type="number" id="character-hp" min="0" value="0" />
+          </label>
+          <label>
+            AC
+            <input type="number" id="character-ac" min="0" value="10" />
+          </label>
+          <label>
+            Notes
+            <textarea id="character-notes" rows="3"></textarea>
+          </label>
+          <button type="submit">Save Character</button>
+        </form>
+        <div id="character-list" class="card-grid" aria-live="polite"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Dice Roller</h2>
+        <div class="dice-controls">
+          <label>
+            Dice
+            <select id="dice-type">
+              <option value="4">d4</option>
+              <option value="6">d6</option>
+              <option value="8">d8</option>
+              <option value="10">d10</option>
+              <option value="12">d12</option>
+              <option value="20" selected>d20</option>
+              <option value="100">d100</option>
+            </select>
+          </label>
+          <label>
+            Count
+            <input type="number" id="dice-count" min="1" value="1" />
+          </label>
+          <label>
+            Modifier
+            <input type="number" id="dice-modifier" value="0" />
+          </label>
+          <button type="button" id="roll-dice">Roll</button>
+        </div>
+        <p id="dice-result" aria-live="polite">Roll to begin.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Ambient Sounds</h2>
+        <div class="button-row">
+          <button type="button" data-sound="tavern" class="sound-button">Tavern</button>
+          <button type="button" data-sound="forest" class="sound-button">Forest</button>
+          <button type="button" data-sound="storm" class="sound-button">Storm</button>
+          <button type="button" id="stop-sound">Stop</button>
+        </div>
+        <p id="sound-status">No ambient sound playing.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Image Gallery</h2>
+        <div id="gallery" class="gallery-grid"></div>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
