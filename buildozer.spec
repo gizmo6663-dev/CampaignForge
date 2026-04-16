@@ -6,9 +6,9 @@ package.domain = org.campaignforge
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,json,ttf
 
-version = 0.1.2
+version = 0.1.3
 
-requirements = python3,kivy==2.3.0,pillow,android,pyjnius,pychromecast,zeroconf,ifaddr,protobuf,cython==0.29.36
+requirements = python3,kivy==2.3.0,pillow,android,pyjnius,pychromecast,zeroconf,ifaddr,protobuf,cython==3.0.11
 
 android.api = 34
 android.minapi = 21
