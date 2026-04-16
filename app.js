@@ -127,7 +127,7 @@ function playAmbient(soundName) {
   oscillator.start();
 
   activeNodes = [oscillator, filter, gain];
-  soundStatus.textContent = `${soundName[0].toUpperCase() + soundName.slice(1)} ambiance playing.`;
+  soundStatus.textContent = `${soundName[0].toUpperCase() + soundName.slice(1)} ambience playing.`;
 }
 
 soundButtons.forEach((button) => {
