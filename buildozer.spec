@@ -11,7 +11,7 @@ version = 0.1.3
 requirements = python3,kivy==2.3.0,pillow>=9.0,<11.0,android,pyjnius==1.5.2,pychromecast,zeroconf,ifaddr,protobuf,cython==0.29.36
 android.api = 34
 android.minapi = 21
-android.ndk = 25b
+android.ndk = 26c
 android.archs = arm64-v8a
 
 android.permissions = INTERNET,ACCESS_NETWORK_STATE,ACCESS_WIFI_STATE,CHANGE_WIFI_MULTICAST_STATE,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,READ_MEDIA_IMAGES,READ_MEDIA_AUDIO,READ_MEDIA_VIDEO
