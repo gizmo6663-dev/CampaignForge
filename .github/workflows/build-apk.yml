@@ -47,7 +47,7 @@ jobs:
 
       - name: Installer buildozer og cython
         run: |
-          pip3 install "git+https://github.com/kivy/buildozer.git@master"
+          pip3 install "buildozer>=1.5.0"
           pip3 install "cython==0.29.36"
           pip3 install "setuptools>=65.0"
           pip3 install "wheel"
