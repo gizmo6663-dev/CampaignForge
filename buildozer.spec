@@ -1,17 +1,17 @@
 [app]
-title = Campaign Forge
+title = CampaignForge
 package.name = campaignforge
-package.domain = org.campaignforge
+package.domain = org.rpg
 
 source.dir = .
-source.include_exts = py,png,jpg,kv,atlas,json,ttf
+source.include_exts = py,png,jpg,kv,atlas
 
-version = 0.1.3
+version = 0.1.0
 
-requirements = python3,kivy==2.3.0,pillow>=9.0,<11.0,android,pyjnius>=1.6.0,pychromecast,zeroconf,ifaddr,protobuf
-android.api = 34
+requirements = python3,kivy,pillow,android,pychromecast,zeroconf,ifaddr,protobuf
+
+android.api = 35
 android.minapi = 21
-android.ndk = 26c
 android.archs = arm64-v8a
 
 android.permissions = INTERNET,ACCESS_NETWORK_STATE,ACCESS_WIFI_STATE,CHANGE_WIFI_MULTICAST_STATE,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,READ_MEDIA_IMAGES,READ_MEDIA_AUDIO,READ_MEDIA_VIDEO
@@ -20,7 +20,7 @@ orientation = portrait
 fullscreen = 1
 
 android.accept_sdk_license = True
-android.private_storage = False
+android.private_storage = True
 
 p4a.bootstrap = sdl2
 
