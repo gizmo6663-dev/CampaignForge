@@ -47,10 +47,7 @@ jobs:
 
       - name: Installer buildozer og cython
         run: |
-          pip3 install "buildozer>=1.5.0"
-          pip3 install "cython==0.29.36"
-          pip3 install "setuptools>=65.0"
-          pip3 install "wheel"
+          pip3 install --upgrade buildozer "cython<3.0"
 
       - name: Cache .buildozer
         uses: actions/cache@v4
@@ -72,7 +69,7 @@ jobs:
         uses: actions/upload-artifact@v4
         continue-on-error: true
         with:
-          name: campaign-forge-apk
+          name: campaignforge-apk
           path: bin/*.apk
           retention-days: 7
 
@@ -82,7 +79,7 @@ jobs:
           TAG="v${VERSION}-build${{ github.run_number }}"
           APK=$(ls bin/*.apk | head -1)
           gh release create "$TAG" "$APK" \
-            --title "Campaign Forge $TAG" \
+            --title "CampaignForge $TAG" \
             --notes "Automatisk bygg fra commit ${{ github.sha }}" \
             --prerelease
         env:
