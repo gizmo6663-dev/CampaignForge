@@ -1849,7 +1849,7 @@ try:
             g.add_widget(mksep(4))
             g.add_widget(mklbl("ABILITY SCORES", color=GOLD, size=13, bold=True, h=24))
             ab_row = BoxLayout(size_hint_y=None, height=dp(60), spacing=dp(4))
-            for ab in self.DND_ABILITIES:
+            for ab in DND_ABILITIES:
                 a = ab_data.get(ab, {})
                 score = a.get('score', 10)
                 mod = self._mod(score)
@@ -1868,7 +1868,7 @@ try:
 
             # --- Skills (kun proficient/expertise) ---
             sk_data = ch.get('skills', {})
-            prof_skills = [(n, a) for n, a in self.DND_SKILLS
+            prof_skills = [(n, a) for n, a in DND_SKILLS
                            if sk_data.get(n, {}).get('prof')
                            or sk_data.get(n, {}).get('expertise')]
             if prof_skills:
@@ -1990,9 +1990,9 @@ try:
                 'death_successes': 0, 'death_failures': 0,
                 'heroic_inspiration': False,
                 'abilities': {ab: {'score': 10, 'save_prof': False}
-                              for ab in self.DND_ABILITIES},
+                              for ab in DND_ABILITIES},
                 'skills': {n: {'prof': False, 'expertise': False}
-                           for n, _ in self.DND_SKILLS},
+                           for n, _ in DND_SKILLS},
                 'armor_training': {'light': False, 'medium': False,
                                    'heavy': False, 'shields': False},
                 'weapon_prof': '', 'tool_prof': '', 'languages': '',
@@ -2167,7 +2167,7 @@ try:
                                color=GDIM, size=10, h=20))
 
             ab_data = ch.get('abilities', {})
-            for ab in self.DND_ABILITIES:
+            for ab in DND_ABILITIES:
                 ad = ab_data.get(ab, {'score': 10, 'save_prof': False})
                 r = row_h()
                 r.add_widget(ml(ab, sx=0.18, halign='left', size=12, color=GOLD))
@@ -2193,7 +2193,7 @@ try:
             g.add_widget(mklbl("Ferdighet               Prof   Expert",
                                color=GDIM, size=10, h=20))
             sk_data = ch.get('skills', {})
-            for sname, sab in self.DND_SKILLS:
+            for sname, sab in DND_SKILLS:
                 sd = sk_data.get(sname, {'prof': False, 'expertise': False})
                 r = row_h(h=32, spacing=4)
                 r.add_widget(ml(f"{sname} ({sab})", sx=0.6,
@@ -2371,7 +2371,7 @@ try:
                     'score':     get_int(f'ab_{ab}_score', 10),
                     'save_prof': get_bool(f'ab_{ab}_save'),
                 }
-                for ab in self.DND_ABILITIES
+                for ab in DND_ABILITIES
             }
 
             # Skills
@@ -2380,7 +2380,7 @@ try:
                     'prof':      get_bool(f'sk_{sname}_prof'),
                     'expertise': get_bool(f'sk_{sname}_exp'),
                 }
-                for sname, _ in self.DND_SKILLS
+                for sname, _ in DND_SKILLS
             }
 
             # Armor training
