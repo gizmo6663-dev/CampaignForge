@@ -63,19 +63,19 @@ try:
                 log(f"makedirs {d}: {e}")
         log(f"Dirs OK: {os.path.exists(IMG_DIR)}, {os.path.exists(MUSIC_DIR)}")
 
-    # === FARGER – DRAGON'S HOARD (D&D tema) ===
-    BG   = [0.07, 0.04, 0.04, 1]      # dyp mahogni-svart bakgrunn
-    BG2  = [0.13, 0.07, 0.06, 1]      # burgundy panel
-    BTN  = [0.30, 0.14, 0.10, 1]      # knapp (moerk laer)
-    BTNH = [0.55, 0.22, 0.15, 1]      # aktiv fane (varm laer-roed)
-    SHAD = [0.02, 0.01, 0.01, 0.6]    # skygge
-    GOLD = [0.95, 0.78, 0.32, 1]      # varm gull (D&D-aksent)
-    GDIM = [0.60, 0.48, 0.22, 1]      # dempet gull
-    TXT  = [0.94, 0.88, 0.75, 1]      # pergament-tekst
-    DIM  = [0.65, 0.52, 0.42, 1]      # dempet laer-beige
-    RED  = [0.80, 0.20, 0.15, 1]      # blod-roed (fare/stopp)
-    GRN  = [0.35, 0.55, 0.28, 1]      # skogs-groenn (OK/PC)
-    BLUE = [0.30, 0.45, 0.65, 1]      # staal-blaa (info)
+    # === FARGER – TAVERN LIGHT (D&D tema, lysere) ===
+    BG   = [0.13, 0.09, 0.07, 1]      # varm moerk brun (som laer i peisglans)
+    BG2  = [0.20, 0.13, 0.10, 1]      # lysere panel (pergament-skygge)
+    BTN  = [0.38, 0.20, 0.13, 1]      # knapp (varm laer-brun)
+    BTNH = [0.60, 0.28, 0.18, 1]      # aktiv fane (kobber-roed)
+    SHAD = [0.04, 0.02, 0.02, 0.5]    # skygge
+    GOLD = [1.00, 0.82, 0.38, 1]      # lysere gull (D&D-aksent)
+    GDIM = [0.68, 0.55, 0.28, 1]      # dempet gull
+    TXT  = [0.96, 0.92, 0.80, 1]      # lys pergament-tekst
+    DIM  = [0.72, 0.60, 0.48, 1]      # lysere laer-beige
+    RED  = [0.85, 0.25, 0.18, 1]      # blod-roed (fare/stopp)
+    GRN  = [0.40, 0.62, 0.32, 1]      # skogs-groenn (OK/PC)
+    BLUE = [0.38, 0.52, 0.72, 1]      # staal-blaa (info)
     BLK  = [0.0, 0.0, 0.0, 1]         # svart (preview-bg)
     IMG_EXT   = ('.png','.jpg','.jpeg','.webp')
     HTTP_PORT = 8089
@@ -1259,7 +1259,7 @@ try:
                 self.preview.source = self.sel_img
             preview_box.add_widget(self.preview)
             p.add_widget(preview_box)
-            p.add_widget(Label(text="ELDRITCH PORTAL", font_size=sp(18), color=GDIM,
+            p.add_widget(Label(text="CAMPAIGN FORGE", font_size=sp(18), color=GDIM,
                                bold=True, size_hint_y=None, height=dp(28)))
             self.img_lbl = Label(text="", font_size=sp(12), color=DIM,
                                  size_hint_y=None, height=dp(20))
@@ -2466,4 +2466,3 @@ try:
 except Exception as e:
     log(f"CRASH: {e}")
     log(traceback.format_exc())
-
