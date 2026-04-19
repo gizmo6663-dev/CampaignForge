@@ -66,6 +66,7 @@ try:
     # === FARGER – EMERALD GROVE (lys D&D-tema med grønt) ===
     BG   = [0.16, 0.19, 0.15, 1]      # lys mosegrønn-brun bakgrunn
     BG2  = [0.23, 0.27, 0.22, 1]      # pergament-panel (lys olivengrønn)
+    INPUT= [0.11, 0.14, 0.10, 1]      # tekstfelt-bakgrunn (lesbar kontrast)
     BTN  = [0.32, 0.42, 0.30, 1]      # skogsgrønn knapp
     BTNH = [0.48, 0.62, 0.38, 1]      # aktiv fane (lys vårgrønn)
     SHAD = [0.05, 0.07, 0.04, 0.4]    # skygge
@@ -1135,6 +1136,651 @@ try:
           "  Utnytter svakheter.",
         ]),
       ]),
+
+      ("Spell-referanse", "", [
+        ("Cantrips (L0)", [
+          "Vanlige offensive cantrips:",
+          "",
+          "Fire Bolt (V,S, 120ft):",
+          "  Ranged spell atk, 1d10 fire.",
+          "  Skalerer: 2d10 (lv5), 3d10 (lv11),",
+          "  4d10 (lv17).",
+          "",
+          "Eldritch Blast (V,S, 120ft):",
+          "  Ranged spell atk, 1d10 force.",
+          "  Flere stråler ved høyere nivå.",
+          "",
+          "Sacred Flame (V,S, 60ft):",
+          "  DEX save, 1d8 radiant, ingenting",
+          "  ved suksess. Ignorerer cover.",
+          "",
+          "Toll the Dead (V,S, 60ft):",
+          "  WIS save, 1d8 (1d12 hvis skadet).",
+          "  Nekrotisk skade.",
+          "",
+          "Vicious Mockery (V, 60ft):",
+          "  WIS save, 1d4 psychic + dis på",
+          "  neste attack roll. Målet må høre.",
+        ]),
+        ("Cantrips - nyttige", [
+          "Light (V,M, touch):",
+          "  Gjenstand lyser i 20ft radius.",
+          "",
+          "Mage Hand (V,S, 30ft):",
+          "  Usynlig hånd, bær opp til 10 lbs.",
+          "",
+          "Minor Illusion (S,M, 30ft):",
+          "  Lyd ELLER bilde i 5ft kube.",
+          "  Investigation for å avsløre.",
+          "",
+          "Prestidigitation (V,S, 10ft):",
+          "  Små magiske effekter: varme",
+          "  objekter, rengjøre, smake krydder.",
+          "",
+          "Guidance (V,S, touch):",
+          "  +1d4 på valgfritt ability check",
+          "  innen 1 minutt. Concentration.",
+          "",
+          "Thaumaturgy (V, 30ft):",
+          "  Stemme tredobles, flamme flimrer,",
+          "  dører slamrer, etc.",
+        ]),
+        ("Level 1 spells - vanlige", [
+          "Shield (V,S, reaction):",
+          "  +5 AC til neste tur.",
+          "  Utløses når du blir truffet.",
+          "",
+          "Healing Word (V, bonus, 60ft):",
+          "  1d4 + mod healing. Bonus action!",
+          "",
+          "Cure Wounds (V,S, touch):",
+          "  1d8 + mod healing. Action.",
+          "",
+          "Magic Missile (V,S, 120ft):",
+          "  3 darts à 1d4+1 force.",
+          "  Automatisk treff. Skala: +1 dart",
+          "  per høyere slot-nivå.",
+          "",
+          "Burning Hands (V,S, 15ft kjegle):",
+          "  DEX save, 3d6 fire (halv ved save).",
+          "",
+          "Sleep (V,S,M, 90ft):",
+          "  5d8 HP verdt fiender sovner.",
+          "  Laveste HP først. Ingen save.",
+        ]),
+        ("Level 1 - kontroll & buff", [
+          "Bless (V,S,M, 30ft, conc 1 min):",
+          "  3 mål: +1d4 på atk rolls og saves.",
+          "",
+          "Faerie Fire (V, 60ft, conc 1 min):",
+          "  DEX save, målene lyser opp.",
+          "  Advantage på angrep mot dem.",
+          "",
+          "Hex (V,S,M, 90ft, conc 1 time):",
+          "  Bonus action. +1d6 nekrotisk på",
+          "  angrep. Dis på valgt ability.",
+          "",
+          "Hunter's Mark (V, 90ft, conc 1 time):",
+          "  Bonus action. +1d6 på angrep",
+          "  mot målet. Flyttes ved mål-drap.",
+          "",
+          "Thunderwave (V,S, 15ft kube):",
+          "  CON save, 2d8 thunder + 10ft",
+          "  skyv. Halv på save, ingen skyv.",
+          "",
+          "Detect Magic (V,S, ritual):",
+          "  Sans magi innen 30ft i 10 min.",
+        ]),
+        ("Level 2-3 highlights", [
+          "Misty Step (V, bonus, 30ft):",
+          "  Teleporter. Bonus action.",
+          "",
+          "Shatter (V,S,M, 60ft, 10ft sfære):",
+          "  CON save, 3d8 thunder.",
+          "",
+          "Hold Person (V,S,M, 60ft, conc 1 min):",
+          "  WIS save, paralyzed. Save ved",
+          "  slutten av hver tur.",
+          "",
+          "Web (V,S,M, 60ft, conc 1 time):",
+          "  DEX save, restrained i 20ft kube.",
+          "",
+          "Fireball (V,S,M, 150ft, 20ft sfære):",
+          "  DEX save, 8d6 fire (halv ved save).",
+          "  Klassisk party-killer. PASS PÅ.",
+          "",
+          "Counterspell (S, reaction, 60ft):",
+          "  Se egen counterspell-regel.",
+          "",
+          "Fly (V,S,M, touch, conc 10 min):",
+          "  60ft flying speed.",
+          "",
+          "Haste (V,S,M, 30ft, conc 1 min):",
+          "  +2 AC, +1 action, dobbel speed,",
+          "  adv på DEX saves. Ved conc-brudd:",
+          "  målet kan ikke handle i 1 tur.",
+        ]),
+        ("Higher level highlights", [
+          "L4 - Greater Invisibility:",
+          "  Du er usynlig selv når angrep.",
+          "  Conc 1 min.",
+          "",
+          "L4 - Polymorph:",
+          "  WIS save, målet blir en beast.",
+          "  Brukes offensivt OG defensivt.",
+          "",
+          "L5 - Hold Monster: som Hold Person",
+          "  men fungerer på alle.",
+          "",
+          "L5 - Cone of Cold: 8d8 cold i kjegle.",
+          "",
+          "L6 - Chain Lightning:",
+          "  10d8 lightning, opp til 4 mål.",
+          "",
+          "L6 - True Seeing: se det skjulte.",
+          "",
+          "L7 - Teleport: instant reise.",
+          "",
+          "L8 - Dominate Monster:",
+          "  Total kontroll ved failed WIS save.",
+          "",
+          "L9 - Wish: 8000 gp, hva du vil.",
+          "  Spellcaster risikerer å ikke",
+          "  kunne kaste Wish igjen.",
+        ]),
+      ]),
+
+      ("Monsterreferanse", "", [
+        ("CR-guide (Challenge Rating)", [
+          "CR viser hvor tøft et monster er",
+          "mot fire PC-er på tilsvarende nivå.",
+          "",
+          "Grov HP-guide per CR:",
+          "  CR 1/8: 7-35 HP",
+          "  CR 1/4: 36-49 HP",
+          "  CR 1/2: 50-70 HP",
+          "  CR 1:   71-85 HP",
+          "  CR 2:   86-100 HP",
+          "  CR 3:   101-115 HP",
+          "  CR 5:   131-145 HP",
+          "  CR 10:  206-220 HP",
+          "  CR 15:  341-355 HP",
+          "  CR 20:  476-490 HP",
+          "",
+          "AC-guide:",
+          "  CR 1-4: AC 13-15",
+          "  CR 5-10: AC 15-17",
+          "  CR 11-16: AC 17-18",
+          "  CR 17+: AC 18-19",
+        ]),
+        ("Typisk skade per CR", [
+          "Total skade per runde:",
+          "  CR 1:   5-10 skade",
+          "  CR 3:   18-23",
+          "  CR 5:   33-38",
+          "  CR 10:  69-74",
+          "  CR 15:  115-120",
+          "  CR 20:  170-175",
+          "",
+          "Attack bonus per CR:",
+          "  CR 1-3: +3 til +4",
+          "  CR 4-7: +5 til +6",
+          "  CR 8-12: +7 til +8",
+          "  CR 13-16: +9 til +10",
+          "  CR 17+: +11 eller mer",
+          "",
+          "Save DC:",
+          "  CR 1-3: DC 13",
+          "  CR 4-7: DC 14-15",
+          "  CR 8-12: DC 16-17",
+          "  CR 13+: DC 18-20",
+        ]),
+        ("Klassiske low-level fiender", [
+          "Goblin (CR 1/4, AC 15, HP 7):",
+          "  Scimitar 1d6+2, Shortbow 1d6+2.",
+          "  Nimble Escape: bonus Disengage.",
+          "",
+          "Orc (CR 1/2, AC 13, HP 15):",
+          "  Greataxe 1d12+3. Aggressive:",
+          "  bonus move mot fiende.",
+          "",
+          "Hobgoblin (CR 1/2, AC 18, HP 11):",
+          "  Longsword 1d8+1 eller Longbow.",
+          "  Martial Advantage: +2d6 hvis",
+          "  alliert innen 5ft av mål.",
+          "",
+          "Bandit (CR 1/8, AC 12, HP 11):",
+          "  Scimitar 1d6+1, Crossbow 1d8+1.",
+          "",
+          "Skeleton (CR 1/4, AC 13, HP 13):",
+          "  Shortsword 1d6+2, Shortbow 1d6+2.",
+          "  Vulnerability: bludgeoning.",
+          "",
+          "Zombie (CR 1/4, AC 8, HP 22):",
+          "  Slam 1d6+1. Undead Fortitude:",
+          "  CON save DC 5+dmg for å overleve",
+          "  med 1 HP (utenom radiant/crit).",
+        ]),
+        ("Mid-level fiender", [
+          "Ogre (CR 2, AC 11, HP 59):",
+          "  Greatclub 2d8+4, Javelin 2d6+4.",
+          "",
+          "Owlbear (CR 3, AC 13, HP 59):",
+          "  Multiattack: Beak + Claws.",
+          "  Beak 1d10+5, Claws 2d8+5.",
+          "",
+          "Knight (CR 3, AC 18, HP 52):",
+          "  Greatsword 2d6+3, Heavy Crossbow.",
+          "  Brave: adv vs frightened.",
+          "",
+          "Ettin (CR 4, AC 12, HP 85):",
+          "  2 slag: Battleaxe 2d8+5, Morning-",
+          "  star 2d8+5. Kan ikke overraskes.",
+          "",
+          "Troll (CR 5, AC 15, HP 84):",
+          "  3 slag: 1 bite + 2 claws.",
+          "  Regenererer 10 HP per tur hvis",
+          "  ikke skadet av fire/acid.",
+          "",
+          "Hill Giant (CR 5, AC 13, HP 105):",
+          "  2 slag: Greatclub 3d8+5 eller",
+          "  Rock 3d10+5 (60ft).",
+        ]),
+        ("Drager (CR 4-17)", [
+          "Young White (CR 6, AC 17, HP 133):",
+          "  Breath DC 15 CON, 10d8 cold.",
+          "",
+          "Young Green (CR 8, AC 18, HP 136):",
+          "  Breath DC 14 CON, 12d6 poison.",
+          "",
+          "Young Red (CR 10, AC 18, HP 178):",
+          "  Breath DC 17 DEX, 16d6 fire.",
+          "",
+          "Adult Black (CR 14, AC 19, HP 195):",
+          "  Legendary + Lair actions.",
+          "",
+          "Adult Red (CR 17, AC 19, HP 256):",
+          "  Breath 26d6 fire. DC 21.",
+          "",
+          "Ancient (CR 20+): kun for level 17+",
+          "parties. Separate sesjoner.",
+          "",
+          "Generelle dragetaktikker:",
+          "- Drager bruker breath når flere",
+          "  fiender er samlet (~recharge 5-6).",
+          "- De flykter når halvparten HP.",
+          "- Legendary resistance: 3/dag,",
+          "  ignorerer failed save.",
+        ]),
+        ("Boss-monstre", [
+          "Beholder (CR 13, AC 18, HP 180):",
+          "  Eye rays - 3 per tur, tilfeldig.",
+          "  Anti-magic cone fra hovedøyet.",
+          "",
+          "Lich (CR 21, AC 17, HP 135):",
+          "  Full spellcaster opp til L9.",
+          "  Rejuvenation: respawner i phylactery.",
+          "",
+          "Tarrasque (CR 30, AC 25, HP 676):",
+          "  Ender kampanjer. Magisk immunitet",
+          "  under 6. nivå. Kan ikke flykte fra.",
+          "",
+          "Pit Fiend (CR 20, AC 19, HP 300):",
+          "  Legion i Nine Hells. Fireball DC 21.",
+          "",
+          "Demon Lord eksempler:",
+          "  Demogorgon (CR 26)",
+          "  Orcus (CR 26)",
+          "  Graz'zt (CR 24)",
+          "",
+          "Husk: Boss-kamper trenger:",
+          "- Minions (hindre fokusild)",
+          "- Terreng som kan brukes",
+          "- Faser (HP-thresholds)",
+        ]),
+      ]),
+
+      ("Skatt & belønning", "", [
+        ("XP per encounter", [
+          "Enkel guide: del monsterets CR-XP",
+          "på antall PC-er.",
+          "",
+          "XP per CR:",
+          "  CR 1/8: 25 XP",
+          "  CR 1/4: 50 XP",
+          "  CR 1/2: 100 XP",
+          "  CR 1:   200 XP",
+          "  CR 2:   450 XP",
+          "  CR 3:   700 XP",
+          "  CR 4:   1100 XP",
+          "  CR 5:   1800 XP",
+          "  CR 10:  5900 XP",
+          "  CR 15:  13000 XP",
+          "  CR 20:  25000 XP",
+          "",
+          "XP-grenser for opplevelsesnivå:",
+          "  Lv 2: 300 XP",
+          "  Lv 3: 900 XP",
+          "  Lv 5: 6500 XP",
+          "  Lv 10: 64000 XP",
+          "  Lv 15: 195000 XP",
+          "",
+          "Alternativ: milestone leveling",
+          "(bestem du når de går opp).",
+        ]),
+        ("Gullbelønning per nivå", [
+          "Omtrentlig per karakter:",
+          "  Lv 1-4: 25-300 gp per session",
+          "  Lv 5-10: 300-2500 gp",
+          "  Lv 11-16: 2500-20000 gp",
+          "  Lv 17-20: 20000+ gp",
+          "",
+          "Typisk loot-fordeling:",
+          "  Mynter (cp/sp/gp)",
+          "  Edelstener / smykker",
+          "  Kunstgjenstander",
+          "  Magiske gjenstander",
+          "  Pergamenter / formler",
+          "",
+          "Rollespill-regel:",
+          "  Lar karakterene gå på jakt etter",
+          "  spesifikt loot de har et mål for.",
+        ]),
+        ("Magiske gjenstander - rarity", [
+          "Common: 50-100 gp",
+          "  Potion of Healing, +1 ammo",
+          "",
+          "Uncommon: 101-500 gp",
+          "  +1 våpen/rustning, Bag of Holding,",
+          "  Wand of Magic Missiles",
+          "",
+          "Rare: 501-5000 gp",
+          "  +2 våpen/rustning, Flame Tongue,",
+          "  Boots of Speed",
+          "",
+          "Very Rare: 5001-50000 gp",
+          "  +3 våpen, Holy Avenger,",
+          "  Staff of Power",
+          "",
+          "Legendary: 50001+ gp",
+          "  Vorpal Sword, Holy Avenger,",
+          "  Staff of the Magi",
+          "",
+          "Attunement: maks 3 per karakter.",
+          "Short rest å tune in (1 time fokus).",
+        ]),
+        ("Anbefalte gjenstander per nivå", [
+          "Lv 1-4 (low magic):",
+          "  1-2 common/uncommon per PC.",
+          "  Healing potions, +1 våpen",
+          "",
+          "Lv 5-10 (mid magic):",
+          "  1 rare per PC, flere uncommon.",
+          "  +1 våpen/rustning standard.",
+          "",
+          "Lv 11-16 (high magic):",
+          "  1-2 rare + 1 very rare per PC.",
+          "  +2 gear, spesialiserte items.",
+          "",
+          "Lv 17-20 (epic):",
+          "  1 legendary + flere very rare.",
+          "  +3 gear, artefakt-lignende.",
+          "",
+          "Merknad: Attunement-slot er",
+          "begrensningen. 3 slots per PC.",
+        ]),
+        ("Hurtige loot-tabeller", [
+          "Liten lommebok (CR 0-4):",
+          "  2d6 sp, 1d6 gp,",
+          "  50% en common-gjenstand.",
+          "",
+          "Bandit-leder (CR 1-4):",
+          "  3d6 gp, +1 våpen 20% sjanse",
+          "",
+          "Hoard (CR 5-10):",
+          "  2d6×100 sp, 1d6×100 gp,",
+          "  4d6×10 gp i edelstener,",
+          "  1d6 uncommon magic items,",
+          "  20%: 1 rare item",
+          "",
+          "Drage-hoard (CR 11-16):",
+          "  1d3×1000 gp, 1d6×100 pp,",
+          "  2d6 uncommon + 1d6 rare,",
+          "  1-2 very rare items.",
+        ]),
+      ]),
+
+      ("Verden & reise", "", [
+        ("Avstander", [
+          "1 square = 5 feet (1,5 m) i kamp.",
+          "",
+          "Normal speed per runde (6 sek):",
+          "  25ft = sakte (dverg med rustning)",
+          "  30ft = standard (menneske)",
+          "  35ft = rask (elf, halfling)",
+          "  40ft+ = svært rask",
+          "",
+          "Overland reise (se Travel Pace).",
+          "",
+          "Vanlige distanser:",
+          "  Bueskudd: 80-600 ft",
+          "  Siktvidde utendørs: 1-2 miles",
+          "  Dag-marsj: 24 miles normal",
+          "  Fjerde tider så langt til hest.",
+        ]),
+        ("Proviant & forsyninger", [
+          "Normal karakter trenger per dag:",
+          "  Mat: 1 lb (0,5 kg)",
+          "  Vann: 1 gallon (ca 4 L)",
+          "",
+          "I varmt klima: 2 ganger vann.",
+          "Rasjoner holder seg:",
+          "  Trail rations: flere uker",
+          "  Fersk mat: 1-3 dager",
+          "",
+          "Jakt/Foraging:",
+          "  Survival DC 10 (normalt),",
+          "  15 (ørken/frost),",
+          "  20 (magiske områder).",
+          "  Skaffer mat for 1d6+mod personer.",
+          "",
+          "Uten mat: 1 exhaustion etter",
+          "3+CON mod dager.",
+        ]),
+        ("Været", [
+          "Vindkastestyrker:",
+          "  Strong wind (20+ mph):",
+          "    Dis på ranged attacks",
+          "    Slokker åpne flammer",
+          "    Dis på Perception (hørsel)",
+          "  Heavy rain/storm:",
+          "    Heavily obscured ved langdistanse",
+          "    Dis på Perception (syn)",
+          "",
+          "Temperatur:",
+          "  Ekstremt kaldt: CON save DC 10",
+          "    per time uten klær.",
+          "    Fail = 1 exhaustion.",
+          "  Ekstremt varmt: samme DC,",
+          "    men øker hver time.",
+          "",
+          "Tynn luft (høyfjell):",
+          "  Double trening-kostnad,",
+          "  1 exhaustion etter 4 timer.",
+        ]),
+        ("Handel & tjenester", [
+          "Typiske priser:",
+          "  Måltid (taverne):     1-5 sp",
+          "  Dagens overnatting:   5 sp - 2 gp",
+          "  Gjestgiveri (uke):    7-14 gp",
+          "",
+          "  Hest (ridehest):      75 gp",
+          "  Krigshest:            400 gp",
+          "  Vogn:                 100 gp",
+          "  Båt (mindre):         1000+ gp",
+          "",
+          "Daglig hire:",
+          "  Butler/tjener:        2 sp/dag",
+          "  Vaktmann:             2-5 sp/dag",
+          "  Leiesoldat:           2 gp/dag",
+          "  Spion:                10-20 gp",
+          "  Skipskaptein:         10 gp/dag",
+          "",
+          "Gildets kostnad (inflasjon 10x):",
+          "  Svært sjelden gjenstand:",
+          "  10-100× boknotert pris.",
+        ]),
+        ("Downtime-aktiviteter", [
+          "Mellom eventyr (per uke):",
+          "",
+          "Profession:",
+          "  Bruk tool proficiency,",
+          "  tjen 1d10+mod gp per uke.",
+          "",
+          "Training (nytt språk/tool):",
+          "  10 uker, 1 gp/dag (≈70 gp).",
+          "",
+          "Crafting:",
+          "  Halv markedspris i material.",
+          "  5 gp produksjon per dag.",
+          "",
+          "Research:",
+          "  Finn fakta. DC 10+. 1 gp/dag.",
+          "  Bibliotek eller ekspert.",
+          "",
+          "Carousing (sosialt):",
+          "  Knyt bånd, høre rykter.",
+          "  Kostnad varierer med klasse.",
+          "",
+          "Recuperating:",
+          "  3 dager long rests helbreder",
+          "  sykdom/gift (CON save).",
+        ]),
+      ]),
+
+      ("Kampanje-verktøy", "", [
+        ("Session zero", [
+          "Før spillet begynner:",
+          "",
+          "  Safety tools: lines & veils",
+          "  (hva er OK/ikke OK i spillet).",
+          "",
+          "  Tone & sjanger: heroic? horror?",
+          "  political intrigue?",
+          "",
+          "  House rules: homebrew, flanking,",
+          "  crit-regler, rest-variants.",
+          "",
+          "  Spilleragenter: hva forventes",
+          "  av spillerne? scheduling?",
+          "",
+          "  Karakterkonsept-runde: hver spiller",
+          "  forklarer kort hva de ønsker.",
+          "",
+          "  Party hook: hvorfor er dere samlet?",
+        ]),
+        ("Running a session", [
+          "Struktur for en 3-timers session:",
+          "",
+          "  Oppsummering (5 min):",
+          "    Forrige gang, sist scene.",
+          "",
+          "  Scene 1 - sosial (30-45 min):",
+          "    Rollespill, info-innsamling.",
+          "",
+          "  Utforskning (20-30 min):",
+          "    Reise, miljø, oppdagelser.",
+          "",
+          "  Scene 2 - kamp/utfordring (45 min):",
+          "    Hovedhendelse.",
+          "",
+          "  Downtime/loot (15 min):",
+          "    Gjennomgang, level-up.",
+          "",
+          "  Cliffhanger (siste 10 min):",
+          "    Ny trussel eller oppdagelse.",
+          "",
+          "Pauser: hver 60-90 min, 10-15 min.",
+        ]),
+        ("Improv-verktøy", [
+          "Når spillerne går uventet retning:",
+          "",
+          "NPC quick-gen:",
+          "  1 personlighetstrekk (vennlig/mutt)",
+          "  1 særegenhet (hår, aksent, tick)",
+          "  1 motivasjon (penger, hevn, familie)",
+          "  1 hemmelighet",
+          "",
+          "Navn-banker (forhåndsgenerert):",
+          "  Menneske: Aldric, Bryn, Cora...",
+          "  Alvisk: Aelar, Lysanthir, Meriele...",
+          "  Dvergisk: Morgran, Brottor, Dain...",
+          "",
+          "Sted-quick:",
+          "  1 dominerende farge",
+          "  1 lukt",
+          "  1 lyd",
+          "  1 uvanlig detalj",
+          "",
+          "Plot-twist-generator:",
+          "  Allierte er ikke som de virker",
+          "  Fiendens virkelige mål avsløres",
+          "  En NPC fra fortiden dukker opp",
+        ]),
+        ("Problem-situasjoner", [
+          "Spiller overskrider grenser:",
+          "  Pause, snakk utenfor spillet.",
+          "  Referer til session zero.",
+          "",
+          "Spiller overdriver:",
+          "  'Det var min rolle!' - svar",
+          "  diplomatisk men tydelig.",
+          "",
+          "Spiller er stille/tilbaketrukket:",
+          "  Spør direkte: 'Hva gjør X?'",
+          "  Gi dem øyeblikk de kan skinne.",
+          "",
+          "Spillere er uenige:",
+          "  La dem debattere 5 min.",
+          "  Så: karakterene må bestemme,",
+          "  ikke spillerne.",
+          "",
+          "Party splitter seg:",
+          "  Kort scene for hver gruppe.",
+          "  Hold det korte og enkelt.",
+          "",
+          "TPK (total party kill):",
+          "  Forbered backup-plan:",
+          "  fanget, reddet av NPC, o.l.",
+        ]),
+        ("Level-up håndtering", [
+          "Hver gang PC går opp i nivå:",
+          "",
+          "1. HP:",
+          "   Enten ruller ny HD + CON mod,",
+          "   eller tar snittverdien (HDsnitt).",
+          "",
+          "2. Spells:",
+          "   Nye slots tilgjengelige.",
+          "   Kan bytte ut prepared spells.",
+          "   Nye known spells (avh. av klasse).",
+          "",
+          "3. Nye features:",
+          "   Se klasse-tabellen.",
+          "   Eks: Extra Attack (lv 5 fighter).",
+          "",
+          "4. Proficiency Bonus:",
+          "   Oppdateres ved lv 5, 9, 13, 17.",
+          "",
+          "5. Ability Score Improvement (ASI):",
+          "   Vanligvis lv 4, 8, 12, 16, 19.",
+          "   +2 til én eller +1 til to.",
+          "   Eller velg en Feat i stedet.",
+          "",
+          "Anbefaling: level-up hjemme,",
+          "ikke i kampanjen.",
+        ]),
+      ]),
     ]
 
 
@@ -2093,7 +2739,7 @@ try:
 
             # Topp: navigasjonsknapper
             top = BoxLayout(size_hint_y=None, height=dp(40), spacing=dp(6))
-            top.add_widget(mkbtn("← Tilbake", self._show_list,
+            top.add_widget(mkbtn("Tilbake", self._show_list,
                                  small=True, size_hint_x=0.3))
             top.add_widget(mkbtn("Rediger", lambda: self._edit_char(idx),
                                  accent=True, small=True, size_hint_x=0.35))
@@ -2142,7 +2788,7 @@ try:
             if sub:
                 ident_parts.append(sub)
             if ident_parts:
-                id_lbl = Label(text="  •  ".join(ident_parts),
+                id_lbl = Label(text="  -  ".join(ident_parts),
                                font_size=sp(12), color=TXT,
                                halign='left', valign='middle',
                                size_hint_y=None, height=dp(20))
@@ -2158,7 +2804,7 @@ try:
             if align:
                 bg_align.append(align)
             if bg_align:
-                ba_lbl = Label(text="  •  ".join(bg_align),
+                ba_lbl = Label(text="  -  ".join(bg_align),
                                font_size=sp(11), color=DIM,
                                halign='left', valign='middle',
                                size_hint_y=None, height=dp(18))
@@ -2209,9 +2855,9 @@ try:
             ds = ch.get('death_successes', 0)
             df = ch.get('death_failures', 0)
             if ds or df:
-                status_parts.append(f"Death: ✓{ds} ✗{df}")
+                status_parts.append(f"Death: +{ds} -{df}")
             if ch.get('heroic_inspiration'):
-                status_parts.append("★ Inspirasjon")
+                status_parts.append("* Inspirasjon")
             if status_parts:
                 sl = Label(text="    ".join(status_parts),
                            font_size=sp(10), color=DIM,
@@ -2248,7 +2894,7 @@ try:
                                       color=TXT,
                                       size_hint_y=None, height=dp(16)))
                 cell.add_widget(Label(
-                    text=f"sv {save_bonus:+d}{'★' if is_prof else ''}",
+                    text=f"sv {save_bonus:+d}{'*' if is_prof else ''}",
                     font_size=sp(9),
                     color=GRN if is_prof else DIM,
                     size_hint_y=None, height=dp(14)))
@@ -2278,7 +2924,7 @@ try:
                     sd = sk_data[sname]
                     mod = self._mod(ab_data.get(sab, {}).get('score', 10))
                     bonus = mod + pb * (2 if sd.get('expertise') else 1)
-                    star = " ★" if sd.get('expertise') else ""
+                    star = " *" if sd.get('expertise') else ""
 
                     cell = BoxLayout(orientation='horizontal',
                                      size_hint_y=None, height=dp(26),
@@ -2460,7 +3106,7 @@ try:
                 att_box.add_widget(mklbl("ATTUNEMENT", color=GOLD,
                                          size=11, bold=True, h=18))
                 for a in att_used:
-                    al = Label(text=f"• {a}", font_size=sp(11), color=TXT,
+                    al = Label(text=f"- {a}", font_size=sp(11), color=TXT,
                                halign='left', valign='middle',
                                size_hint_y=None, height=dp(22))
                     al.bind(size=lambda w, v: setattr(w, 'text_size', v))
@@ -2542,10 +3188,10 @@ try:
             p = BoxLayout(orientation='vertical', spacing=dp(6), padding=dp(8))
 
             # Topp: Lagre/Avbryt
-            top = BoxLayout(size_hint_y=None, height=dp(42), spacing=dp(8))
-            top.add_widget(mkbtn("✓ Lagre", self._save_edit, accent=True,
+            top = BoxLayout(size_hint_y=None, height=dp(44), spacing=dp(8))
+            top.add_widget(mkbtn("Lagre", self._save_edit, accent=True,
                                  size_hint_x=0.5))
-            top.add_widget(mkbtn("✗ Avbryt", self._show_list,
+            top.add_widget(mkbtn("Avbryt", self._show_list,
                                  size_hint_x=0.5))
             p.add_widget(top)
 
@@ -2555,12 +3201,12 @@ try:
             g.bind(minimum_height=g.setter('height'))
             self._ei = {}
 
-            # --- Felles builders ---
+            # --- Felles byggefunksjoner ---
             def ti(key, value='', int_only=False, multiline=False,
                    height=38, sx=1):
                 txt = '' if value == '' or value is None else str(value)
-                w = TextInput(text=txt, font_size=sp(12), multiline=multiline,
-                              background_color=BG, foreground_color=TXT,
+                w = TextInput(text=txt, font_size=sp(13), multiline=multiline,
+                              background_color=INPUT, foreground_color=TXT,
                               cursor_color=GOLD,
                               size_hint_x=sx, padding=[dp(8), dp(6)])
                 if int_only:
@@ -2570,12 +3216,11 @@ try:
                     w.height = dp(height)
                 else:
                     w.size_hint_y = None
-                    w.height = dp(36)
+                    w.height = dp(34)
                 self._ei[key] = w
                 return w
 
-            def field_lbl(text, sx=None, halign='right', size=10, color=DIM):
-                """Liten etikett til venstre for felt."""
+            def field_lbl(text, sx=None, halign='right', size=11, color=DIM):
                 lb = Label(text=text, font_size=sp(size), color=color,
                            halign=halign, valign='middle')
                 if sx is not None:
@@ -2587,21 +3232,33 @@ try:
                 return BoxLayout(size_hint_y=None, height=dp(h),
                                  spacing=dp(spacing))
 
-            def toggle(key, state):
-                t = RToggle(text='✓', state='down' if state else 'normal',
-                            color=GOLD if state else DIM,
-                            bg_color=BTNH if state else BTN,
-                            font_size=sp(13), bold=True)
-                # Oppdater farge når state endres
-                def _upd_color(inst, val):
-                    inst.color = GOLD if val == 'down' else DIM
-                    inst.bg_color = BTNH if val == 'down' else BTN
-                t.bind(state=_upd_color)
+            def toggle(key, state, width=None):
+                """Liten rund toggle. PÅ = gull 'X', AV = tom."""
+                t = RToggle(
+                    text='X' if state else '',
+                    state='down' if state else 'normal',
+                    color=GOLD if state else DIM,
+                    bg_color=BTNH if state else INPUT,
+                    font_size=sp(12), bold=True)
+                def _upd(inst, val):
+                    on = (val == 'down')
+                    inst.text = 'X' if on else ''
+                    inst.color = GOLD if on else DIM
+                    inst.bg_color = BTNH if on else INPUT
+                t.bind(state=_upd)
+                if width is not None:
+                    t.size_hint_x = None
+                    t.width = dp(width)
                 self._ei[key] = t
                 return t
 
+            def mk_spinner(text, values, sx=1):
+                sp_w = Spinner(text=text, values=values,
+                               background_color=INPUT, color=GOLD,
+                               font_size=sp(12), size_hint_x=sx)
+                return sp_w
+
             def section(title, body_widget_list, height):
-                """Lag en seksjon med tittel + innhold i et RBox."""
                 box = RBox(orientation='vertical', bg_color=BG2,
                            size_hint_y=None, height=dp(height),
                            padding=dp(10), spacing=dp(6), radius=dp(12))
@@ -2611,182 +3268,257 @@ try:
                     box.add_widget(w)
                 return box
 
+            # ============ HJELPETEKST ============
+            help_box = RBox(orientation='vertical', bg_color=BG2,
+                            size_hint_y=None, height=dp(148),
+                            padding=dp(12), spacing=dp(4), radius=dp(12))
+            help_box.add_widget(mklbl(
+                "Slik registrerer du en karakter",
+                color=GOLD, size=12, bold=True, h=20))
+            help_txt = (
+                "1. Fyll inn IDENTITET (navn, species, klasse, nivå).\n"
+                "2. Sett Proficiency Bonus (PB) basert på nivå:\n"
+                "     Lv 1-4: +2    Lv 5-8: +3    Lv 9-12: +4\n"
+                "     Lv 13-16: +5    Lv 17-20: +6\n"
+                "3. Sett EVNEVERDIER (ability scores, vanligvis 1-20).\n"
+                "     Modifier regnes automatisk som (score-10)/2.\n"
+                "4. Huk av 'Sv' for evner der karakteren har save proficiency.\n"
+                "5. Under FERDIGHETER, huk av 'Prof' for trente skills.\n"
+                "     Huk av 'Exp' i tillegg for expertise (dobbel PB).\n"
+                "     Bonus regnes og vises automatisk."
+            )
+            help_lbl = Label(
+                text=help_txt,
+                font_size=sp(10), color=TXT,
+                halign='left', valign='top',
+                size_hint_y=None, height=dp(124))
+            help_lbl.bind(width=lambda w, v: setattr(
+                w, 'text_size', (v - dp(4), None)))
+            help_box.add_widget(help_lbl)
+            g.add_widget(help_box)
+
             # ============ 1. IDENTITET ============
             id_widgets = []
 
             r = row()
-            r.add_widget(field_lbl("Navn", sx=0.22, size=11))
+            r.add_widget(field_lbl("Navn", sx=0.22))
             r.add_widget(ti('name', ch.get('name', ''), sx=0.55))
-            r.add_widget(field_lbl("Type", sx=0.1, size=11))
-            tp_sp = Spinner(text=ch.get('type', 'PC'), values=['PC', 'NPC'],
-                            background_color=BG, color=GOLD,
-                            font_size=sp(11), size_hint_x=0.13)
+            r.add_widget(field_lbl("Type", sx=0.1))
+            tp_sp = mk_spinner(ch.get('type', 'PC'), ['PC', 'NPC'], sx=0.13)
             self._ei['type'] = tp_sp
             r.add_widget(tp_sp)
             id_widgets.append(r)
 
             r = row()
-            r.add_widget(field_lbl("Species", sx=0.22, size=11))
+            r.add_widget(field_lbl("Species", sx=0.22))
             r.add_widget(ti('species', ch.get('species', ''), sx=0.28))
-            r.add_widget(field_lbl("Klasse", sx=0.18, size=11))
+            r.add_widget(field_lbl("Klasse", sx=0.18))
             r.add_widget(ti('class', ch.get('class', ''), sx=0.32))
             id_widgets.append(r)
 
             r = row()
-            r.add_widget(field_lbl("Subklasse", sx=0.22, size=11))
+            r.add_widget(field_lbl("Subklasse", sx=0.22))
             r.add_widget(ti('subclass', ch.get('subclass', ''), sx=0.28))
-            r.add_widget(field_lbl("Bakgrunn", sx=0.18, size=11))
+            r.add_widget(field_lbl("Bakgrunn", sx=0.18))
             r.add_widget(ti('background', ch.get('background', ''), sx=0.32))
             id_widgets.append(r)
 
             r = row()
-            r.add_widget(field_lbl("Nivå", sx=0.15, size=11))
+            r.add_widget(field_lbl("Nivå", sx=0.15))
             r.add_widget(ti('level', ch.get('level', 1),
-                            int_only=True, sx=0.15))
-            r.add_widget(field_lbl("XP", sx=0.1, size=11))
-            r.add_widget(ti('xp', ch.get('xp', 0), int_only=True, sx=0.25))
-            r.add_widget(field_lbl("PB", sx=0.1, size=11))
+                            int_only=True, sx=0.18))
+            r.add_widget(field_lbl("XP", sx=0.12))
+            r.add_widget(ti('xp', ch.get('xp', 0), int_only=True, sx=0.22))
+            r.add_widget(field_lbl("PB", sx=0.12))
             r.add_widget(ti('proficiency_bonus', ch.get('proficiency_bonus', 2),
-                            int_only=True, sx=0.15))
+                            int_only=True, sx=0.21))
             id_widgets.append(r)
 
             r = row()
-            r.add_widget(field_lbl("Alignment", sx=0.3, size=11))
+            r.add_widget(field_lbl("Alignment", sx=0.3))
             r.add_widget(ti('alignment', ch.get('alignment', ''), sx=0.7))
             id_widgets.append(r)
 
-            g.add_widget(section("IDENTITET", id_widgets, 22 + 5 * 44))
+            g.add_widget(section("IDENTITET", id_widgets, 28 + 5 * 44))
 
             # ============ 2. KAMP & BEVEGELSE ============
             cb_widgets = []
 
             r = row()
-            r.add_widget(field_lbl("AC", sx=0.1, size=11))
+            r.add_widget(field_lbl("AC", sx=0.1))
             r.add_widget(ti('armor_class', ch.get('armor_class', 10),
                             int_only=True, sx=0.17))
-            r.add_widget(field_lbl("Init", sx=0.13, size=11))
+            r.add_widget(field_lbl("Init", sx=0.13))
             r.add_widget(ti('initiative', ch.get('initiative', 0),
                             int_only=True, sx=0.17))
-            r.add_widget(field_lbl("Fart", sx=0.13, size=11))
+            r.add_widget(field_lbl("Fart", sx=0.13))
             r.add_widget(ti('speed', ch.get('speed', 30),
                             int_only=True, sx=0.15))
-            r.add_widget(field_lbl("P.Pers", sx=0.13, size=11))
+            r.add_widget(field_lbl("P.Pers", sx=0.13))
             r.add_widget(ti('passive_perception', ch.get('passive_perception', 10),
                             int_only=True, sx=0.15))
             cb_widgets.append(r)
 
             r = row()
-            r.add_widget(field_lbl("Størrelse", sx=0.28, size=11))
-            sz_sp = Spinner(
-                text=ch.get('size', 'Medium'),
-                values=['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan'],
-                background_color=BG, color=GOLD,
-                font_size=sp(11), size_hint_x=0.4)
+            r.add_widget(field_lbl("Størrelse", sx=0.28))
+            sz_sp = mk_spinner(
+                ch.get('size', 'Medium'),
+                ['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan'],
+                sx=0.4)
             self._ei['size'] = sz_sp
             r.add_widget(sz_sp)
-            r.add_widget(field_lbl("Inspirasjon", sx=0.22, size=11))
-            t = toggle('heroic_inspiration', ch.get('heroic_inspiration', False))
-            t.size_hint_x = 0.1
+            r.add_widget(field_lbl("Inspirasjon", sx=0.22))
+            t = toggle('heroic_inspiration',
+                       ch.get('heroic_inspiration', False), width=50)
             r.add_widget(t)
             cb_widgets.append(r)
 
-            g.add_widget(section("KAMP & BEVEGELSE", cb_widgets, 22 + 2 * 44))
+            g.add_widget(section("KAMP & BEVEGELSE", cb_widgets, 28 + 2 * 44))
 
             # ============ 3. HIT POINTS ============
             hp_widgets = []
 
             r = row()
-            r.add_widget(field_lbl("HP", sx=0.1, size=11))
+            r.add_widget(field_lbl("HP", sx=0.1))
             r.add_widget(ti('hp_current', ch.get('hp_current', 0),
                             int_only=True, sx=0.22))
-            r.add_widget(field_lbl("Max", sx=0.1, size=11))
+            r.add_widget(field_lbl("Max", sx=0.1))
             r.add_widget(ti('hp_max', ch.get('hp_max', 0),
                             int_only=True, sx=0.22))
-            r.add_widget(field_lbl("Temp", sx=0.13, size=11))
+            r.add_widget(field_lbl("Temp", sx=0.13))
             r.add_widget(ti('hp_temp', ch.get('hp_temp', 0),
                             int_only=True, sx=0.22))
             hp_widgets.append(r)
 
             r = row()
-            r.add_widget(field_lbl("Hit Dice", sx=0.22, size=11))
-            r.add_widget(ti('hit_dice_max', ch.get('hit_dice_max', '1d8'), sx=0.28))
-            r.add_widget(field_lbl("Brukt", sx=0.2, size=11))
+            r.add_widget(field_lbl("Hit Dice", sx=0.22))
+            r.add_widget(ti('hit_dice_max', ch.get('hit_dice_max', '1d8'),
+                            sx=0.28))
+            r.add_widget(field_lbl("Brukt", sx=0.2))
             r.add_widget(ti('hit_dice_spent', ch.get('hit_dice_spent', 0),
                             int_only=True, sx=0.3))
             hp_widgets.append(r)
 
             r = row()
-            r.add_widget(field_lbl("Death ✓", sx=0.25, size=11))
+            r.add_widget(field_lbl("Dødskast +", sx=0.3))
             r.add_widget(ti('death_successes', ch.get('death_successes', 0),
-                            int_only=True, sx=0.25))
-            r.add_widget(field_lbl("Death ✗", sx=0.25, size=11))
+                            int_only=True, sx=0.2))
+            r.add_widget(field_lbl("Dødskast -", sx=0.3))
             r.add_widget(ti('death_failures', ch.get('death_failures', 0),
-                            int_only=True, sx=0.25))
+                            int_only=True, sx=0.2))
             hp_widgets.append(r)
 
             g.add_widget(section("HIT POINTS & DØDSKAST", hp_widgets,
-                                 22 + 3 * 44))
+                                 28 + 3 * 44))
 
-            # ============ 4. EVNEVERDIER ============
+            # ============ 4. EVNEVERDIER (KOMPAKT RUTENETT) ============
             ab_widgets = []
             ab_widgets.append(mklbl(
-                "Sett score og merk av for Save Prof",
-                color=DIM, size=9, h=16))
+                "Huk av 'Sv' for save proficiency",
+                color=DIM, size=10, h=18))
+
+            # Header-rad
+            hr = row(h=20, spacing=4)
+            hr.add_widget(field_lbl("Evne", sx=0.2, halign='left',
+                                    size=9, color=GDIM))
+            hr.add_widget(field_lbl("Score", sx=0.25, halign='center',
+                                    size=9, color=GDIM))
+            hr.add_widget(field_lbl("Mod", sx=0.2, halign='center',
+                                    size=9, color=GDIM))
+            hr.add_widget(field_lbl("Save", sx=0.18, halign='center',
+                                    size=9, color=GDIM))
+            hr.add_widget(field_lbl("Sv", sx=0.17, halign='center',
+                                    size=9, color=GDIM))
+            ab_widgets.append(hr)
 
             ab_data = ch.get('abilities', {})
             for ab in DND_ABILITIES:
                 ad = ab_data.get(ab, {'score': 10, 'save_prof': False})
-                r = row(h=38)
-                # Evnekode som farget tag
+                r = row(h=40, spacing=4)
+
+                # Evnekode
                 lb = Label(text=ab, font_size=sp(13), color=GOLD, bold=True,
-                           halign='left', valign='middle', size_hint_x=0.18)
+                           halign='left', valign='middle', size_hint_x=0.2)
                 lb.bind(size=lambda w, v: setattr(w, 'text_size', v))
                 r.add_widget(lb)
 
-                r.add_widget(field_lbl("Score", sx=0.15, size=10))
+                # Score-felt
                 sc_in = ti(f'ab_{ab}_score', ad.get('score', 10),
-                           int_only=True, sx=0.17)
+                           int_only=True, sx=0.25)
                 r.add_widget(sc_in)
 
-                r.add_widget(field_lbl("Mod", sx=0.1, size=10))
+                # Modifier (live)
                 mod_lb = Label(text=self._fmt_mod(ad.get('score', 10)),
-                               font_size=sp(13), color=TXT, bold=True,
-                               size_hint_x=0.12)
+                               font_size=sp(14), color=TXT, bold=True,
+                               size_hint_x=0.2,
+                               halign='center', valign='middle')
+                mod_lb.bind(size=lambda w, v: setattr(w, 'text_size', v))
                 sc_in.bind(text=lambda inst, v, m=mod_lb:
                            setattr(m, 'text', self._fmt_mod(v)))
                 r.add_widget(mod_lb)
 
-                r.add_widget(field_lbl("Sv", sx=0.08, size=10))
-                t = toggle(f'ab_{ab}_save', ad.get('save_prof', False))
-                t.size_hint_x = 0.1
-                r.add_widget(t)
+                # Save-bonus (live, beregnes fra score + PB hvis prof)
+                sv_lb = Label(text='', font_size=sp(12), color=DIM,
+                              size_hint_x=0.18,
+                              halign='center', valign='middle')
+                sv_lb.bind(size=lambda w, v: setattr(w, 'text_size', v))
+                r.add_widget(sv_lb)
+
+                # Toggle
+                tog = toggle(f'ab_{ab}_save', ad.get('save_prof', False))
+                tog.size_hint_x = 0.17
+                r.add_widget(tog)
+
+                # Live update save-bonus
+                def _upd_save(*_a, ab=ab, sl=sv_lb, si=sc_in, tg=tog):
+                    try:
+                        score = int(si.text) if si.text else 10
+                    except ValueError:
+                        score = 10
+                    try:
+                        pb_w = self._ei.get('proficiency_bonus')
+                        pb = int(pb_w.text) if (pb_w and pb_w.text) else 2
+                    except (ValueError, AttributeError):
+                        pb = 2
+                    mod = (score - 10) // 2
+                    is_prof = (tg.state == 'down')
+                    bonus = mod + (pb if is_prof else 0)
+                    sl.text = f"{bonus:+d}"
+                    sl.color = GOLD if is_prof else DIM
+
+                _upd_save()
+                sc_in.bind(text=_upd_save)
+                tog.bind(state=_upd_save)
+                pb_w0 = self._ei.get('proficiency_bonus')
+                if pb_w0:
+                    pb_w0.bind(text=_upd_save)
+
                 ab_widgets.append(r)
 
             g.add_widget(section("EVNEVERDIER", ab_widgets,
-                                 22 + 16 + 6 * 46))
+                                 28 + 18 + 24 + 6 * 46))
 
             # ============ 5. FERDIGHETER ============
             sk_widgets = []
             sk_widgets.append(mklbl(
-                "Prof +PB  |  Expert +2×PB  |  Bonus vises live",
-                color=DIM, size=9, h=16))
+                "Prof legger til PB, Exp legger til PB to ganger",
+                color=DIM, size=10, h=18))
 
-            # Header-rad
-            hr = row(h=20)
-            hr.add_widget(field_lbl("Ferdighet", sx=0.5,
-                                    halign='left', size=9, color=GDIM))
-            hr.add_widget(field_lbl("Prof", sx=0.15,
-                                    halign='center', size=9, color=GDIM))
-            hr.add_widget(field_lbl("Exp", sx=0.15,
-                                    halign='center', size=9, color=GDIM))
-            hr.add_widget(field_lbl("Bonus", sx=0.2,
-                                    halign='center', size=9, color=GDIM))
+            hr = row(h=20, spacing=4)
+            hr.add_widget(field_lbl("Ferdighet", sx=0.5, halign='left',
+                                    size=9, color=GDIM))
+            hr.add_widget(field_lbl("Prof", sx=0.15, halign='center',
+                                    size=9, color=GDIM))
+            hr.add_widget(field_lbl("Exp", sx=0.15, halign='center',
+                                    size=9, color=GDIM))
+            hr.add_widget(field_lbl("Bonus", sx=0.2, halign='center',
+                                    size=9, color=GDIM))
             sk_widgets.append(hr)
 
             sk_data = ch.get('skills', {})
             for sname, sab in DND_SKILLS:
                 sd = sk_data.get(sname, {'prof': False, 'expertise': False})
-                r = row(h=34, spacing=4)
+                r = row(h=36, spacing=4)
 
                 name_lb = Label(text=f"{sname} ({sab})",
                                 font_size=sp(11), color=TXT,
@@ -2840,26 +3572,24 @@ try:
                 sk_widgets.append(r)
 
             g.add_widget(section("FERDIGHETER", sk_widgets,
-                                 22 + 16 + 28 + 18 * 42))
+                                 28 + 18 + 24 + 18 * 42))
 
             # ============ 6. TRENING & SPRÅK ============
             tr_widgets = []
 
             at = ch.get('armor_training', {})
             armor_row = row()
-            armor_row.add_widget(field_lbl("Rustning", sx=0.22,
-                                           halign='left', size=11))
-            for a in ['light', 'medium', 'heavy', 'shields']:
+            armor_row.add_widget(field_lbl("Rustning", sx=0.26,
+                                           halign='left'))
+            for a, lbl in [('light', 'Lett'), ('medium', 'Med'),
+                           ('heavy', 'Tung'), ('shields', 'Skjold')]:
                 cell = BoxLayout(orientation='horizontal',
-                                 size_hint_x=0.195, spacing=dp(4))
-                lb = Label(text=a[:3].capitalize(),
-                           font_size=sp(10), color=DIM,
+                                 size_hint_x=0.185, spacing=dp(3))
+                lb = Label(text=lbl, font_size=sp(10), color=DIM,
                            halign='right', valign='middle')
                 lb.bind(size=lambda w, v: setattr(w, 'text_size', v))
                 cell.add_widget(lb)
-                t = toggle(f'armor_{a}', at.get(a, False))
-                t.size_hint_x = None
-                t.width = dp(38)
+                t = toggle(f'armor_{a}', at.get(a, False), width=34)
                 cell.add_widget(t)
                 armor_row.add_widget(cell)
             tr_widgets.append(armor_row)
@@ -2872,16 +3602,16 @@ try:
                                      multiline=True, height=54))
 
             g.add_widget(section("TRENING & SPRÅK", tr_widgets,
-                                 22 + 44 + 3 * (18 + 60)))
+                                 28 + 44 + 3 * (18 + 60)))
 
             # ============ 7. VÅPEN ============
             wp_widgets = [
                 mklbl("Én per linje: Navn | Atk | Skade | Notater",
-                      color=DIM, size=9, h=16),
+                      color=DIM, size=10, h=18),
                 ti('weapons', ch.get('weapons', ''),
                    multiline=True, height=110),
             ]
-            g.add_widget(section("VÅPEN", wp_widgets, 22 + 16 + 118))
+            g.add_widget(section("VÅPEN", wp_widgets, 28 + 18 + 118))
 
             # ============ 8. EGENSKAPER ============
             ef_widgets = []
@@ -2892,23 +3622,21 @@ try:
                 ef_widgets.append(ti(k, ch.get(k, ''),
                                      multiline=True, height=80))
             g.add_widget(section("EGENSKAPER", ef_widgets,
-                                 22 + 3 * (18 + 86)))
+                                 28 + 3 * (18 + 86)))
 
             # ============ 9. MAGI ============
             mg_widgets = []
 
             r = row()
-            r.add_widget(field_lbl("Evne", sx=0.2, size=11))
+            r.add_widget(field_lbl("Evne", sx=0.2))
             sa_val = ch.get('spell_ability', '') or '-'
-            sa_sp = Spinner(text=sa_val, values=['-', 'INT', 'WIS', 'CHA'],
-                            background_color=BG, color=GOLD,
-                            font_size=sp(11), size_hint_x=0.2)
+            sa_sp = mk_spinner(sa_val, ['-', 'INT', 'WIS', 'CHA'], sx=0.2)
             self._ei['spell_ability'] = sa_sp
             r.add_widget(sa_sp)
-            r.add_widget(field_lbl("Save DC", sx=0.18, size=11))
+            r.add_widget(field_lbl("Save DC", sx=0.18))
             r.add_widget(ti('spell_save_dc', ch.get('spell_save_dc', 0),
                             int_only=True, sx=0.14))
-            r.add_widget(field_lbl("Atk", sx=0.14, size=11))
+            r.add_widget(field_lbl("Atk", sx=0.14))
             r.add_widget(ti('spell_attack_bonus', ch.get('spell_attack_bonus', 0),
                             int_only=True, sx=0.14))
             mg_widgets.append(r)
@@ -2917,7 +3645,6 @@ try:
                 "Spell slots — Total / Brukt",
                 color=DIM, size=10, h=18))
 
-            # Spell slots: 3 kolonner
             slots = ch.get('spell_slots', {})
             for row_start in range(1, 10, 3):
                 slot_row = row(h=34, spacing=6)
@@ -2927,7 +3654,7 @@ try:
                                      size_hint_x=1, spacing=dp(3))
                     lb = Label(text=f"L{lvl}", font_size=sp(10),
                                color=GOLD, bold=True,
-                               size_hint_x=None, width=dp(24),
+                               size_hint_x=None, width=dp(26),
                                halign='center', valign='middle')
                     lb.bind(size=lambda w, v: setattr(w, 'text_size', v))
                     cell.add_widget(lb)
@@ -2943,13 +3670,13 @@ try:
                     slot_row.add_widget(cell)
                 mg_widgets.append(slot_row)
 
-            mg_widgets.append(mklbl("Cantrips & Tilberedte Spells",
+            mg_widgets.append(mklbl("Cantrips & tilberedte spells",
                                     color=DIM, size=10, h=18))
             mg_widgets.append(ti('spells', ch.get('spells', ''),
                                  multiline=True, height=130))
 
             g.add_widget(section("MAGI", mg_widgets,
-                                 22 + 44 + 18 + 3 * 40 + 18 + 138))
+                                 28 + 44 + 18 + 3 * 40 + 18 + 138))
 
             # ============ 10. BESKRIVELSE ============
             be_widgets = []
@@ -2960,40 +3687,39 @@ try:
                 be_widgets.append(ti(k, ch.get(k, ''),
                                      multiline=True, height=80))
             g.add_widget(section("BESKRIVELSE", be_widgets,
-                                 22 + 3 * (18 + 86)))
+                                 28 + 3 * (18 + 86)))
 
             # ============ 11. ATTUNEMENT ============
             att_widgets = [mklbl("Maks 3 magiske gjenstander",
-                                 color=DIM, size=9, h=16)]
+                                 color=DIM, size=10, h=18)]
             att = list(ch.get('attunement', ['', '', '']))
             while len(att) < 3:
                 att.append('')
             for i in range(3):
                 r = row()
-                r.add_widget(field_lbl(f"Slot {i+1}", sx=0.22, size=11))
+                r.add_widget(field_lbl(f"Slot {i+1}", sx=0.22))
                 r.add_widget(ti(f'attune_{i}', att[i], sx=0.78))
                 att_widgets.append(r)
             g.add_widget(section("ATTUNEMENT", att_widgets,
-                                 22 + 16 + 3 * 44))
+                                 28 + 18 + 3 * 44))
 
             # ============ 12. MYNTER ============
             co_widgets = []
             coins = ch.get('coins', {})
-            r = row()
+            r = row(h=56)
             for c in ['cp', 'sp', 'ep', 'gp', 'pp']:
                 cell = BoxLayout(orientation='vertical',
                                  size_hint_x=0.2, spacing=dp(2))
                 lb = Label(text=c.upper(), font_size=sp(10),
                            color=GOLD, bold=True,
-                           size_hint_y=None, height=dp(14))
+                           size_hint_y=None, height=dp(16))
                 cell.add_widget(lb)
                 cell.add_widget(ti(f'coin_{c}', coins.get(c, 0),
                                    int_only=True, sx=1))
                 r.add_widget(cell)
             co_widgets.append(r)
-            g.add_widget(section("MYNTER", co_widgets, 22 + 58))
+            g.add_widget(section("MYNTER", co_widgets, 28 + 60))
 
-            # Bunn-luft
             g.add_widget(mksep(12))
 
             scroll.add_widget(g)
