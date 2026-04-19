@@ -63,19 +63,19 @@ try:
                 log(f"makedirs {d}: {e}")
         log(f"Dirs OK: {os.path.exists(IMG_DIR)}, {os.path.exists(MUSIC_DIR)}")
 
-    # === FARGER – ABYSSAL PURPLE ===
-    BG   = [0.05, 0.03, 0.07, 1]      # dyp lilla-svart bakgrunn
-    BG2  = [0.10, 0.05, 0.12, 1]      # panel
-    BTN  = [0.22, 0.10, 0.16, 1]      # knapp (burgunder)
-    BTNH = [0.38, 0.15, 0.22, 1]      # aktiv fane
-    SHAD = [0.02, 0.01, 0.03, 0.6]    # skygge
-    GOLD = [0.95, 0.78, 0.22, 1]      # gylden aksent
-    GDIM = [0.58, 0.45, 0.20, 1]      # dempet gull
-    TXT  = [0.90, 0.85, 0.80, 1]      # lys tekst
-    DIM  = [0.52, 0.38, 0.45, 1]      # dempet tekst (lilla-tone)
-    RED  = [0.75, 0.20, 0.22, 1]      # fare/stopp
-    GRN  = [0.25, 0.58, 0.32, 1]      # OK/PC
-    BLUE = [0.30, 0.40, 0.65, 1]      # info
+    # === FARGER – DRAGON'S HOARD (D&D tema) ===
+    BG   = [0.07, 0.04, 0.04, 1]      # dyp mahogni-svart bakgrunn
+    BG2  = [0.13, 0.07, 0.06, 1]      # burgundy panel
+    BTN  = [0.30, 0.14, 0.10, 1]      # knapp (moerk laer)
+    BTNH = [0.55, 0.22, 0.15, 1]      # aktiv fane (varm laer-roed)
+    SHAD = [0.02, 0.01, 0.01, 0.6]    # skygge
+    GOLD = [0.95, 0.78, 0.32, 1]      # varm gull (D&D-aksent)
+    GDIM = [0.60, 0.48, 0.22, 1]      # dempet gull
+    TXT  = [0.94, 0.88, 0.75, 1]      # pergament-tekst
+    DIM  = [0.65, 0.52, 0.42, 1]      # dempet laer-beige
+    RED  = [0.80, 0.20, 0.15, 1]      # blod-roed (fare/stopp)
+    GRN  = [0.35, 0.55, 0.28, 1]      # skogs-groenn (OK/PC)
+    BLUE = [0.30, 0.45, 0.65, 1]      # staal-blaa (info)
     BLK  = [0.0, 0.0, 0.0, 1]         # svart (preview-bg)
     IMG_EXT   = ('.png','.jpg','.jpeg','.webp')
     HTTP_PORT = 8089
@@ -1187,17 +1187,17 @@ try:
                                pos_hint={'x': 0, 'y': 0})
             # Sentrert innhold
             self.splash.add_widget(Widget())  # fyll topp
-            t1 = Label(text="ELDRITCH", font_size=sp(42), color=GOLD,
+            t1 = Label(text="CAMPAIGN", font_size=sp(42), color=GOLD,
                        bold=True, size_hint_y=None, height=dp(60),
                        halign='center')
             t1.bind(size=t1.setter('text_size'))
             self.splash.add_widget(t1)
-            t2 = Label(text="PORTAL", font_size=sp(42), color=GDIM,
+            t2 = Label(text="FORGE", font_size=sp(42), color=GDIM,
                        bold=True, size_hint_y=None, height=dp(60),
                        halign='center')
             t2.bind(size=t2.setter('text_size'))
             self.splash.add_widget(t2)
-            sub = Label(text="Keeper Companion Tool", font_size=sp(13),
+            sub = Label(text="Dungeon Master's Companion", font_size=sp(13),
                         color=DIM, size_hint_y=None, height=dp(30),
                         halign='center')
             sub.bind(size=sub.setter('text_size'))
@@ -2187,23 +2187,62 @@ try:
                 r.add_widget(t)
                 g.add_widget(r)
 
-            # --- 5. SKILLS (Prof / Expertise toggles) ---
+            # --- 5. SKILLS (Prof / Expertise toggles + live bonus) ---
             g.add_widget(mksep(6))
             g.add_widget(mklbl("SKILLS", color=GOLD, size=12, bold=True, h=24))
-            g.add_widget(mklbl("Ferdighet               Prof   Expert",
+            g.add_widget(mklbl("Bonus = Mod + PB (prof) + PB (expertise)",
+                               color=GDIM, size=9, h=18))
+            g.add_widget(mklbl("Ferdighet           Prof  Exp  Bonus",
                                color=GDIM, size=10, h=20))
             sk_data = ch.get('skills', {})
             for sname, sab in DND_SKILLS:
                 sd = sk_data.get(sname, {'prof': False, 'expertise': False})
                 r = row_h(h=32, spacing=4)
-                r.add_widget(ml(f"{sname} ({sab})", sx=0.6,
+                r.add_widget(ml(f"{sname} ({sab})", sx=0.5,
                                 halign='left', size=11, color=TXT))
                 t1 = toggle(f'sk_{sname}_prof', sd.get('prof', False))
-                t1.size_hint_x = 0.2
+                t1.size_hint_x = 0.15
                 r.add_widget(t1)
                 t2 = toggle(f'sk_{sname}_exp', sd.get('expertise', False))
-                t2.size_hint_x = 0.2
+                t2.size_hint_x = 0.15
                 r.add_widget(t2)
+                bonus_lb = Label(text='', font_size=sp(12), color=GOLD,
+                                 bold=True, size_hint_x=0.2,
+                                 halign='center', valign='middle')
+                bonus_lb.bind(size=lambda w, v: setattr(w, 'text_size', v))
+                r.add_widget(bonus_lb)
+
+                # Closure som beregner bonus live
+                def _upd(*_a, ab=sab, lb=bonus_lb, pt=t1, et=t2):
+                    try:
+                        score_w = self._ei.get(f'ab_{ab}_score')
+                        score = int(score_w.text) if (score_w and score_w.text) else 10
+                    except (ValueError, AttributeError):
+                        score = 10
+                    try:
+                        pb_w = self._ei.get('proficiency_bonus')
+                        pb = int(pb_w.text) if (pb_w and pb_w.text) else 2
+                    except (ValueError, AttributeError):
+                        pb = 2
+                    mod = (score - 10) // 2
+                    bonus = mod
+                    if pt.state == 'down':
+                        bonus += pb
+                        if et.state == 'down':
+                            bonus += pb
+                    lb.text = f'{bonus:+d}'
+
+                _upd()  # initial visning
+                # Re-beregn naar noe relevant endres
+                sc_w = self._ei.get(f'ab_{sab}_score')
+                if sc_w:
+                    sc_w.bind(text=_upd)
+                pb_w = self._ei.get('proficiency_bonus')
+                if pb_w:
+                    pb_w.bind(text=_upd)
+                t1.bind(state=_upd)
+                t2.bind(state=_upd)
+
                 g.add_widget(r)
 
             # --- 6. TRENING & SPRAAK ---
