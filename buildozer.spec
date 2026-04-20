@@ -3,6 +3,8 @@ title = CampaignForge
 package.name = campaignforge
 package.domain = org.rpg
 
+icon.filename = %(source.dir)s/icon.png
+
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas
 
