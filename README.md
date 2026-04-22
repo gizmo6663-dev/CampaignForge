@@ -1,249 +1,193 @@
-# Eldritch Portal
+# Campaign Forge
 
-**A Keeper's Companion — a Kivy-based Android app for Call of Cthulhu and Pulp Cthulhu**
+**Dungeon Master's Companion — en Kivy-basert Android-app for D&D 5e**
 
-Eldritch Portal is a tabletop RPG companion built specifically for Lovecraftian roleplaying. The app bundles everything a Keeper needs during a session: an image library, mood sounds, weapon lookup, scenario tracker, and initiative tracker — all inside a dark, brooding interface that suits the genre. The phone can cast images and maps to a TV via Chromecast so your players see exactly what you want them to see.
+Campaign Forge er en tabletop-RPG-companion bygd for Dungeons & Dragons 5e (2024-reglene). Appen samler alt en DM trenger under spilløkta: bildebibliotek, stemningslyder, karakterark, initiativ-tracker og battlemap — alt i et varmt, pergament-inspirert grensesnitt. Telefonen kan caste bilder og kart til en TV via Chromecast slik at spillerne ser det du vil de skal se.
 
-Theme: **Abyssal Purple** — deep purple-black, burgundy, and muted gold.
-Version: **0.3.3** · Language: Norwegian (UI) · System: Call of Cthulhu / Pulp Cthulhu
-
-> The app's user interface is in Norwegian. This README uses English throughout but preserves the Norwegian tab names in parentheses so you can match them with what you see on screen.
+Tema: **Emerald Grove** — mosegrønt, pergament og varmt gull.
+Versjon: **0.1** · Språk: Norsk · System: D&D 5e (2024)
 
 ---
 
-## Contents
+## Innhold
 
-- [Features](#features)
-- [Screenshots](#screenshots)
-- [Getting started](#getting-started)
-- [Scenario format](#scenario-format)
-- [On-device folder layout](#on-device-folder-layout)
-- [Building](#building)
-- [Technical architecture](#technical-architecture)
-- [Configuration](#configuration)
-- [Troubleshooting](#troubleshooting)
-- [Roadmap](#roadmap)
+- [Funksjoner](#funksjoner)
+- [Skjermbilder](#skjermbilder)
+- [Kom i gang](#kom-i-gang)
+- [Mappestruktur på enheten](#mappestruktur-på-enheten)
+- [Bygging](#bygging)
+- [Teknisk arkitektur](#teknisk-arkitektur)
+- [Konfigurasjon](#konfigurasjon)
+- [Feilsøking](#feilsøking)
+- [Veikart](#veikart)
 
 ---
 
-## Features
+## Funksjoner
 
-The app is split across six main tabs. Several of them carry sub-tabs to keep complex features organised:
+Appen er delt i fem hovedfaner. Karakter-fanen har sub-faner for å holde komplekse funksjoner organisert:
 
-### 🖼️ Images (Bilder)
-- Gallery with folder navigation to organise images per scenario or campaign
-- Large preview frame in gold — fade-in animation between image swaps
-- Tap an image to display it; optional auto-cast to TV at the same time
-- Recognises `.png`, `.jpg`, `.jpeg`, `.webp`
+### 🖼️ Bilder
+- Galleri med mappenavigering for å organisere bilder per kampanje eller sesjon
+- Stor preview-ramme i gull — fade-inn-animasjon mellom bildebytter
+- Tapp et bilde for å vise det; valgfritt auto-cast til TV samtidig
+- Gjenkjenner `.png`, `.jpg`, `.jpeg`, `.webp`
 
-### 🔊 Sound (Lyd)
-Combined tab with two sub-tabs, **Music** and **Ambient**:
+### 🔊 Lyd
+Kombinert fane med sub-fanene **Musikk** og **Ambient**:
 
-**Music (Musikk)** — local playback
-- Reads `.mp3`, `.ogg`, `.wav`, `.flac` from the `music/` folder
-- Persistent mini-player at the bottom (Play/Pause/Next/Previous) that stays visible when you switch tabs
-- Uses Android MediaPlayer via `pyjnius` for stable background playback
+**Musikk** — lokal avspilling
+- Leser `.mp3`, `.ogg`, `.wav`, `.flac` fra `music/`-mappen
+- Persistent mini-player nederst (Play/Pause/Neste/Forrige) som ikke forsvinner når du bytter fane
+- Bruker Android MediaPlayer via `pyjnius` for stabil bakgrunnsavspilling
 
-**Ambient** — mood sounds streamed from Internet Archive
-- Categories include nature, storms, night forests, and importantly horror/dread — ideal for Cthulhu atmosphere
-- Separate volume control from the music channel, so you can mix a rainy night with an eerie drone underneath
-- No uploads required — links point to curated public-domain tracks
+**Ambient** — stemningslyder strømmet fra Internet Archive
+- Syv kategorier tilpasset D&D-sjangeren: Natur · Kro og by · Dungeon og hule · Leir og bål · Skog og villmark · Kamp · Horror
+- Omtrent 35 kuraterte spor dekker alt fra en fredelig taverna til en tordenstorm over slagmarken
+- Separat volumkontroll fra musikken, så du kan mikse kro-snakk under en oppdragsintroduksjon
+- Ingen opplasting nødvendig — lenkene peker rett på public-domain-spor
 
-### ⚔️ Combat (Kamp)
-Sub-tabs for combat support:
+### 🎭 Karakter
+Sub-faner for karakterarbeid og kamp-støtte:
 
-**Initiative (Initiativ)** — CoC/Pulp Cthulhu tracker
-- Add investigators and enemies from the character list, or enter them ad hoc
-- DEX-based initiative ordering (CoC standard)
-- Round counter with active-participant indicator
-- HP updates straight from the tracker
+**Karakterer** — D&D 5e 2024-karakterark
+- Full CRUD: opprett, rediger og slett karakterer
+- Alle seks evner med automatisk modifier-beregning
+- Ferdigheter med proficiency-toggles
+- HP, AC, initiativ-bonus, conditions, spell slots og trollformler
+- PC og NPC skilles visuelt med ulik fargekoding
+- Lagres i `characters.json` på enheten
 
-**Map (Kart)** — battlemap for combat scenes
-- Activates automatically once you have combat participants
-- 16:9 canvas optimised for TV casting
-- Token composition through Pillow (PIL)
+**Initiativ** — kamp-tracker
+- Legg til PCer/NPCer fra karakter-lista, eller ad hoc-fiender
+- Skriv inn initiativ-kast, sorter automatisk
+- Bla gjennom runder og turer med aktiv-deltaker-indikator
+- HP-oppdatering direkte fra trackeren
 
-### 🧰 Tools (Verktøy)
-Sub-tabs for session prep and quick reference:
+**Kart** — battlemap-komposisjon
+- Komponér battlemap fra bakgrunnsbilde + token-overlegg
+- 16:9 canvas (1280×720) optimalisert for TV-casting
+- 5 ft per rute (D&D 5e-standard)
+- Bruker Pillow (PIL) for bildebehandling — deaktiveres gracefully hvis PIL ikke er tilgjengelig
+- Lagrer konfigurasjon i `battlemap.json` og genererer `battlemap_current.png`
 
-**Characters (Karakterer)** — investigator roster
-- CoC/Pulp Cthulhu character sheets with skills, background, and notes
-- PCs and NPCs are visually distinguished by colour
-- Stored in `characters.json` on device
-
-**Weapons (Våpen)** — CoC weapon database
-- A bundled `weapons.json` ships inside the APK (no external file needed)
-- Search, filter by category, flag favourites
-- Covers classic CoC eras: 1920s pulp, modern, and so on
-- Overridable: drop your own `weapons.json` in the Documents folder to extend it
-
-**Scenario** — tracker for pre-written scenarios
-- Loads a `scenario.json` with structured data from the scenario you are running
-- Four views (sub-sub-tabs): **Clues (Ledetråder)** · **Timeline (Tidslinje)** · **Plot (Plot)** · **Notes (Notater)**
-- Tick off clues as the investigators find them; watch the timeline unfold
-- Notes are editable live during the session
-- The scenario file lives in app-private storage (avoiding Android 13+ scoped storage problems), with **Choose file** and **Import** buttons to pull it in from Documents
-
-### 📖 Rules (Regler)
-- Collapsible folder layout with CoC/Pulp Cthulhu references
-- Overlay view for rule content — no network required
-- Quick lookup mid-session
+### 📖 Regler
+- Sammenleggbar mappestruktur med D&D 5e-referanser
+- Overlay-visning for regel-innhold — ingen nettilgang nødvendig
+- Raskt oppslag midt i spilløkta
 
 ### 📺 Cast
-- Discovers Chromecast devices on the local network via mDNS
-- Casts images and battlemaps directly to a TV
-- Local HTTP server (port 8089) serves media to the Chromecast
-- Auto-cast: images cast automatically when shown if a device is connected
+- Oppdager Chromecast-enheter på lokalnett via mDNS
+- Caster bilder og battlemaps direkte til TV
+- Lokal HTTP-server (port 8089) serverer media til Chromecast
+- Auto-cast: bilder caster automatisk når de vises hvis en enhet er tilkoblet
 
 ---
 
-## Screenshots
+## Skjermbilder
 
-*Screenshots to be added.*
+*Skjermbilder legges til her.*
 
 ---
 
-## Getting started
+## Kom i gang
 
-### Installing on a device
+### Installasjon på enhet
 
-1. Download the latest `EldritchPortal.apk` from [Releases](https://github.com/gizmo6663-dev/EldritchPortal/releases) or from GitHub Actions artefacts
-2. Enable installation from unknown sources in Android settings
-3. Install the APK and launch the app
-4. Grant storage and network permissions when prompted
-5. Restart the app so the folders are actually created
+1. Last ned siste `CampaignForge.apk` fra [Releases](https://github.com/gizmo6663-dev/CampaignForge/releases) eller fra GitHub Actions-artefakter
+2. Tillat installering fra ukjente kilder i Android-innstillinger
+3. Installer APK-en og start appen
+4. Gi tillatelser til lagring og nettverk når du blir spurt
+5. Restart appen så mappene faktisk opprettes
 
-### First launch
+### Første oppstart
 
-On first launch the app creates this folder layout automatically:
+Ved første oppstart oppretter appen denne mappestrukturen automatisk:
 
 ```
-Documents/EldritchPortal/
-├── images/          ← image library (subfolders supported)
-├── music/           ← local music tracks
-├── characters.json  ← created when you make your first character
-└── scenario.json    ← optional, imported from the Scenario tab
+Dokumenter/CampaignForge/
+├── images/          ← bildebibliotek (undermapper støttes)
+├── music/           ← lokale musikkspor
+├── maps/            ← bakgrunnsbilder for battlemaps
+├── characters.json  ← opprettes når du lager første karakter
+└── battlemap.json   ← opprettes når du bygger første kart
 ```
-
-The weapon data (`weapons.json`) is bundled with the app, so nothing extra is needed to use the Weapons tab.
 
 ---
 
-## Scenario format
+## Mappestruktur på enheten
 
-The Scenario tab reads a `scenario.json` with the following structure:
+Alle brukerdata ligger i `/sdcard/Documents/CampaignForge/`:
 
-```json
-{
-  "title": "Slow Boat to China",
-  "system": "Pulp Cthulhu",
-  "clues": [
-    {"text": "The captain's diary mentions a mysterious passenger",
-     "where": "Cabin 3", "found": false}
-  ],
-  "timeline": [
-    {"text": "22:00 — the passenger disappears",
-     "where": "Deck 2", "found": false}
-  ],
-  "beats": [
-    {"text": "Investigators discover the artefact",
-     "where": "Act 2", "found": false}
-  ],
-  "notes": [
-    {"text": "NPC X is actually in disguise...",
-     "where": "Keeper", "found": false}
-  ]
-}
-```
-
-Fields:
-- `title` — the scenario name (shown in the action bar)
-- `system` — the game system (e.g. "Call of Cthulhu", "Pulp Cthulhu")
-- `clues`, `timeline`, `beats`, `notes` — lists with one entry per item
-  - `text` — the content to display
-  - `where` — context (location, act, chapter)
-  - `found` — boolean toggled during the session
-
-Place `scenario.json` in `Documents/EldritchPortal/`, open the Scenario tab, and tap **Reload** or **Choose file**.
-
----
-
-## On-device folder layout
-
-All user data lives in `/sdcard/Documents/EldritchPortal/`:
-
-| Path | Contents |
+| Sti | Innhold |
 |---|---|
-| `images/` | Image gallery (subfolders supported) |
-| `music/` | Local music tracks |
-| `characters.json` | Characters and NPCs |
-| `scenario.json` | Scenario data (imported into app-private storage) |
-| `weapons.json` | *Optional* — overrides the bundled weapon data |
-| `crash.log` | Error log for debugging |
-
-In addition the app stores live scenario state in app-private storage (`user_data_dir`) to avoid scoped-storage restrictions on Android 13+.
+| `images/` | Bildegalleri (undermapper støttes) |
+| `music/` | Lokale musikkspor |
+| `maps/` | Bakgrunnsbilder for battlemaps |
+| `characters.json` | Karakterer og NPCer |
+| `battlemap.json` | Aktiv battlemap-konfigurasjon |
+| `battlemap_current.png` | Generert kompositt for casting |
+| `crash.log` | Feillogg for debugging |
 
 ---
 
-## Building
+## Bygging
 
-Eldritch Portal is built as an Android APK via GitHub Actions. The workflow at `.github/workflows/build-apk.yml` runs Buildozer inside a Docker container (`kivy/buildozer`).
+Campaign Forge bygges som Android APK via GitHub Actions. Workflow-en i `.github/workflows/build-apk.yml` bruker Buildozer inne i en Docker-container (`kivy/buildozer`).
 
-### Build via GitHub Actions
+### Bygg via GitHub Actions
 
-1. Push changes to the `main` branch — a build starts automatically
-2. Or dispatch the workflow manually via **Actions → Build APK → Run workflow**
-3. Use the `clean_build: true` input to force a full rebuild (clears cache)
-4. Download the APK from the job artefacts when the workflow finishes
+1. Push endringer til `main`-branchen — bygging starter automatisk
+2. Eller kjør workflow manuelt via **Actions → Build APK → Run workflow**
+3. Bruk `clean_build: true`-input hvis du vil tvinge full rebuild (tømmer cache)
+4. Last ned APK fra job-artefakter når workflow er ferdig
 
-### Local build
+### Lokal bygging
 
 ```bash
 pip install buildozer==1.5.0 cython==0.29.36
 buildozer -v android debug
-# APK lands in bin/
+# APK havner i bin/
 ```
 
 ---
 
-## Technical architecture
+## Teknisk arkitektur
 
-### Core classes
+### Kjerne-klasser
 
-- **`EldritchApp`** — main class, builds the UI, manages tabs and state
-- **`MediaServer`** — local HTTP server that serves media to Chromecast
-- **`CastMgr`** — wrapper around `pychromecast` for device discovery and control
-- **`APlayer`** — Android MediaPlayer wrapper (via `pyjnius`) for music
-- **`SPlayer`** — streaming player for ambient sounds
-- **`FPlayer`** — fallback player for desktop/testing
-- **`FilePicker`** — file picker used by scenario import
-- **`RBox`**, **`RBtn`**, **`RToggle`**, **`FramedBox`** — custom widgets with background and corner radius
+- **`CampaignForgeApp`** — hovedklasse, bygger UI, håndterer faner og state
+- **`MediaServer`** — lokal HTTP-server for å serve media til Chromecast
+- **`CastMgr`** — innpakning rundt `pychromecast` for enhetsoppdagelse og kontroll
+- **`APlayer`** — Android MediaPlayer-wrapper (via `pyjnius`) for musikk
+- **`SPlayer`** — streaming-spiller for ambient-lyder
+- **`FPlayer`** — fallback-spiller for desktop/testing
+- **`RBox`**, **`RBtn`**, **`RToggle`**, **`FramedBox`** — tilpassede widgets med bakgrunn og hjørneradius
 
-### Design rules
+### Designregler
 
-- **All custom background drawing happens in `canvas.before`** — never in `canvas` or `canvas.after`. Earlier versions suffered from a `RenderContext` stack-overflow crash that was fixed by centralising all canvas drawing here.
-- **`markup=True`** is required on every label that uses `[color]` or similar tags.
-- **The mini-player is persistent** — it lives outside the tab content area, so music doesn't "disappear" when you change tab.
-- **Sub-tab state is remembered** via `hasattr` checks — you return to the same sub-tab you left.
-- **Scoped-storage friendly**: weapon data is bundled with the APK, scenario state lives in `user_data_dir`, so the app works on Android 13+ without broad storage permissions.
+- **All tilpasset bakgrunnstegning skjer i `canvas.before`** — aldri i `canvas` eller `canvas.after`. Dette forhindrer at innhold gjemmes bak bakgrunnen og unngår krasj i render-stacken.
+- **`markup=True`** er påkrevd på alle labels som bruker `[color]` eller lignende tags.
+- **Mini-player er persistent** — den lever utenfor fane-content-området slik at musikken ikke forsvinner når du bytter fane.
+- **Sub-fane-state huskes** via `hasattr`-sjekker — du kommer tilbake til samme sub-fane du forlot.
 
-### Dependencies
+### Avhengigheter
 
-| Package | Role |
+| Pakke | Rolle |
 |---|---|
-| `kivy` 2.3.0 | UI framework |
-| `pyjnius` | Android MediaPlayer binding |
-| `pychromecast` | Chromecast discovery and control |
+| `kivy` 2.3.0 | UI-rammeverk |
+| `pyjnius` | Android MediaPlayer-binding |
+| `pychromecast` | Chromecast-oppdagelse og kontroll |
 | `zeroconf`, `ifaddr` | mDNS for Chromecast |
-| `protobuf` | Chromecast protocol |
-| `pillow` | Battlemap composition |
-| `android` | Android platform API |
+| `protobuf` | Chromecast-protokoll |
+| `pillow` | Battlemap-komposisjon (valgfri — battlemap-funksjonen deaktiveres gracefully uten) |
+| `android` | Android plattform-API |
 
 ---
 
-## Configuration
+## Konfigurasjon
 
-Key lines in `buildozer.spec`:
+Viktige linjer i `buildozer.spec`:
 
 ```ini
 requirements = python3,kivy==2.3.0,pillow,android,pyjnius,pychromecast,zeroconf,ifaddr,protobuf,cython<3.0
@@ -253,70 +197,72 @@ android.minapi = 21
 android.ndk = 25b
 android.enable_androidx = True
 
-# Include weapons.json in the APK
-source.include_patterns = weapons.json
-
 p4a.branch = v2024.01.21
 ```
 
-**Pinning notes:**
-- `buildozer==1.5.0` — newer versions pass incompatible arguments to stable p4a
-- `cython==0.29.36` — Cython 3.x breaks older Kivy versions
-- `p4a.branch = v2024.01.21` — the tag format with `v` prefix and leading zeros is mandatory
-- `android.enable_androidx = True` — without this Gradle tries to pull from jcenter.bintray.com and hits 403
+**Pinning-notater:**
+- `buildozer==1.5.0` — nyere versjoner har inkompatible argumenter med stabil p4a
+- `cython==0.29.36` — Cython 3.x bryter med eldre Kivy-versjoner
+- `p4a.branch = v2024.01.21` — tag-format med `v`-prefiks og ledende nuller er obligatorisk
+- `android.enable_androidx = True` — uten denne prøver Gradle å hente fra jcenter.bintray.com (403)
 
 ---
 
-## Troubleshooting
+## Feilsøking
 
-### The app crashes on launch
-Check `/sdcard/Documents/EldritchPortal/crash.log`. The most common causes are missing permissions or a corrupt JSON file.
+### Appen krasjer ved oppstart
+Sjekk `/sdcard/Documents/CampaignForge/crash.log`. De vanligste årsakene er manglende tillatelser eller korrupt `characters.json`.
 
-### Music will not play
-- Confirm the files are in `music/` with a supported format (`.mp3`, `.ogg`, `.wav`, `.flac`)
-- On some devices the app must be restarted after storage permission is granted
+### Musikk spilles ikke
+- Bekreft at filene ligger i `music/` og har støttet format (`.mp3`, `.ogg`, `.wav`, `.flac`)
+- På noen enheter må appen restartes etter at lagringstillatelse er gitt
 
-### Scenario will not load
-- Check that `scenario.json` is in `Documents/EldritchPortal/` with valid JSON syntax
-- Android 13+ may block reading from Documents; use the **Choose file** button to open a file picker
-- The scenario is then copied to app-private storage and loaded from there on subsequent launches
+### Ambient-lyder laster ikke
+- Ambient-lyder strømmes fra Internet Archive — krever nettilgang
+- Hvis en spesifikk URL er død, oppdater `AMBIENT_SOUNDS`-lista i `main.py`
 
-### Weapons tab is empty
-- The tab uses the bundled `weapons.json` inside the APK
-- If it is empty, check that `source.include_patterns = weapons.json` is set in `buildozer.spec`
-- You may also place your own `weapons.json` in `Documents/EldritchPortal/` to override
+### Battlemap-fanen fungerer ikke
+- Battlemap krever Pillow — sjekk at `pillow` står i `requirements` i `buildozer.spec`
+- Bakgrunnsbilder må ligge i `maps/`-mappen
 
-### Chromecast does not find the TV
-- The phone and Chromecast must be on the same Wi-Fi network
-- The HTTP server uses port 8089 — make sure it is not blocked
-- The status line at the bottom shows local IP and cast availability
+### Chromecast finner ikke TV
+- Telefonen og Chromecast må være på samme Wi-Fi
+- HTTP-serveren bruker port 8089 — sjekk at den ikke er blokkert
+- Statuslinjen nederst viser lokal IP og cast-tilgjengelighet
 
-### Build error: "jcenter.bintray.com 403"
-Add `android.enable_androidx = True` to `buildozer.spec` and run a `clean_build`.
+### Build-feil: "jcenter.bintray.com 403"
+Legg til `android.enable_androidx = True` i `buildozer.spec` og kjør `clean_build`.
 
----
-
-## Roadmap
-
-Potential future features:
-
-- [ ] Dice roller (D100, bonus/penalty die)
-- [ ] Sanity/Luck tracker integrated with the Characters tab
-- [ ] Countdown timer for round time limits
-- [ ] One-shot sound effects: door opening, scream, gunshot
-- [ ] Handout gallery with dramatic reveal
-- [ ] Scenario-notes export after a session
+### Build-feil: "unknown argument --dir"
+Pin til `buildozer==1.5.0` i workflow-filen.
 
 ---
 
-## Tested on
+## Veikart
+
+Mulige fremtidige funksjoner:
+
+- [ ] Terningkast-verktøy (D&D-terningsett: d4, d6, d8, d10, d12, d20, d100)
+- [ ] Nedtellingstimer for sesjonspauser eller rundetidsbegrensning
+- [ ] Lydeffekter (one-shot): døråpning, monster-brøl, magi-spell
+- [ ] Sesjonsnotater med timestamps
+- [ ] Eksport/import av karakterer
+- [ ] Custom ambient-URL-liste redigerbar i appen
+- [ ] Flere regel-referanser i Regler-fanen
+- [ ] Scenario-tracker for pre-skrevne eventyr (inspirert av søster-appen Eldritch Portal)
+
+---
+
+## Testet på
 
 - Samsung Galaxy S25 Ultra · Android 15
 
-## Development
+## Utvikling
 
-Eldritch Portal is a hobby project developed alongside an active Pulp Cthulhu campaign. Contributions and suggestions are welcome via GitHub issues.
+Campaign Forge er et hobbyprosjekt utviklet for aktive D&D 5e-kampanjer. Bidrag og forslag tas imot via issues på GitHub.
 
-**Repository:** [gizmo6663-dev/EldritchPortal](https://github.com/gizmo6663-dev/EldritchPortal)
+**Repository:** [gizmo6663-dev/CampaignForge](https://github.com/gizmo6663-dev/CampaignForge)
 
-**Related project:** [Campaign Forge](https://github.com/gizmo6663-dev/CampaignForge) — a D&D 5e variant built on the same architecture, styled with the Emerald Grove theme.
+**Søster-prosjekter:**
+- [EldritchPortal](https://github.com/gizmo6663-dev/EldritchPortal) — Call of Cthulhu / Pulp Cthulhu-variant med Abyssal Purple-tema (norsk)
+- [EldritchPortals](https://github.com/gizmo6663-dev/EldritchPortals) — engelsk versjon av EldritchPortal
