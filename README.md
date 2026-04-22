@@ -87,7 +87,7 @@ Sub-faner for karakterarbeid og kamp-støtte:
 ## Skjermbilder
 
 *Skjermbilder legges til her.*
-
+Screenshots/Screenshot_20260422_184401_CampaignForge.jpg
 ---
 
 ## Kom i gang
