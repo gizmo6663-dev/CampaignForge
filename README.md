@@ -86,7 +86,18 @@ Sub-faner for karakterarbeid og kamp-støtte:
 
 ## Skjermbilder
 
-*Skjermbilder legges til her.*
+![Skjermbilde 1](Screenshots/Screenshot_20260422_184401_CampaignForge.jpg)
+![Skjermbilde 2](Screenshots/Screenshot_20260422_184408_CampaignForge.jpg)
+![Skjermbilde 3](Screenshots/Screenshot_20260422_184414_CampaignForge.jpg)
+![Skjermbilde 4](Screenshots/Screenshot_20260422_184501_CampaignForge.jpg)
+![Skjermbilde 5](Screenshots/Screenshot_20260422_184506_CampaignForge.jpg)
+![Skjermbilde 6](Screenshots/Screenshot_20260422_184510_CampaignForge.jpg)
+![Skjermbilde 7](Screenshots/Screenshot_20260422_184517_CampaignForge.jpg)
+![Skjermbilde 8](Screenshots/Screenshot_20260422_184526_CampaignForge.jpg)
+![Skjermbilde 9](Screenshots/Screenshot_20260422_190423_CampaignForge.jpg)
+![Skjermbilde 10](Screenshots/Screenshot_20260422_190432_CampaignForge.jpg)
+![Skjermbilde 11](Screenshots/Screenshot_20260422_190435_CampaignForge.jpg)
+![Skjermbilde 12](Screenshots/Screenshot_20260422_190440_CampaignForge.jpg)
 
 ---
 
