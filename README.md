@@ -88,6 +88,7 @@ Sub-faner for karakterarbeid og kamp-støtte:
 
 <table>
   <tr>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260423_205629_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260423_205629_CampaignForge.jpg" width="600" /></details></td>
     <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184401_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184401_CampaignForge.jpg" width="600" /></details></td>
     <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184408_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184408_CampaignForge.jpg" width="600" /></details></td>
     <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184414_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184414_CampaignForge.jpg" width="600" /></details></td>
