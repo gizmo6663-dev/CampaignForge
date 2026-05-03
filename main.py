@@ -77,7 +77,7 @@ try:
     BG_IMAGE_BUNDLED = os.path.join(APP_DIR, "background.png")
     BG_IMAGE_OVERRIDE = os.path.join(BASE_DIR, "background.png")
     # Canvas resolution for battlemap (16:9, suits TV casting)
-    CANVAS_W = 1080
+    CANVAS_W = 1280
     CANVAS_H = 720
     FT_PER_SQUARE = 5   # D&D 5e standard
 
@@ -2419,8 +2419,8 @@ try:
                 try:
                     bg_img = Image(
                         source=bg_path,
-                        allow_stretch=True,
-                        keep_ratio=False,   # cover hele skjermen
+                        allow_stretch=False,
+                        keep_ratio=True,   # cover hele skjermen
                         opacity=0.85,       # lys nok til å sees gjennom
                                             # halvgjennomsiktige paneler
                         size_hint=(1, 1),
