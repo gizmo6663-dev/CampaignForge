@@ -81,26 +81,26 @@ try:
                 log(f"makedirs {d}: {e}")
         log(f"Dirs OK: img={os.path.exists(IMG_DIR)}, mus={os.path.exists(MUSIC_DIR)}, one={os.path.exists(ONESHOT_DIR)}")
 
-    # === FARGER – EMERALD GROVE (lys D&D-tema med grønt) ===
-    BG   = [0.16, 0.19, 0.15, 1]      # lys mosegrønn-brun bakgrunn
-    BG2  = [0.23, 0.27, 0.22, 1]      # pergament-panel (lys olivengrønn)
-    INPUT= [0.11, 0.14, 0.10, 1]      # tekstfelt-bakgrunn (lesbar kontrast)
-    BTN  = [0.32, 0.42, 0.30, 1]      # skogsgrønn knapp
-    BTNH = [0.48, 0.62, 0.38, 1]      # aktiv fane (lys vårgrønn)
-    SHAD = [0.05, 0.07, 0.04, 0.4]    # skygge
-    GOLD = [1.00, 0.85, 0.45, 1]      # varmt gull (D&D-aksent)
-    GDIM = [0.75, 0.65, 0.38, 1]      # dempet gull
-    TXT  = [0.97, 0.95, 0.85, 1]      # lys pergament-tekst
-    DIM  = [0.78, 0.78, 0.65, 1]      # lys dempet tekst
-    RED  = [0.85, 0.35, 0.25, 1]      # dragen-rød (fare/stopp)
-    GRN  = [0.55, 0.78, 0.42, 1]      # lys vårgrønn (OK/PC)
-    BLUE = [0.42, 0.58, 0.78, 1]      # stålblå (info)
-    BLK  = [0.0, 0.0, 0.0, 1]         # svart (preview-bg)
+    # === FARGER – MOSSY GROVE (dempet grønn, EP-atmosfære) ===
+    BG   = [0.05, 0.08, 0.06, 1]      # dyp skogsgrunn (parallell til EP BG)
+    BG2  = [0.09, 0.13, 0.10, 1]      # mose-panel
+    INPUT= [0.06, 0.09, 0.07, 1]      # tekstfelt-bakgrunn
+    BTN  = [0.16, 0.24, 0.17, 1]      # dempet skogsgrønn
+    BTNH = [0.28, 0.42, 0.26, 1]      # aktiv tab/lysere mosegrønn
+    SHAD = [0.01, 0.02, 0.01, 0.75]   # mørk skygge
+    GOLD = [0.86, 0.74, 0.42, 1]      # antikk gull (matcher EP)
+    GDIM = [0.55, 0.48, 0.25, 1]      # dempet gull (border)
+    TXT  = [0.86, 0.88, 0.74, 1]      # grønnstokket pergament
+    DIM  = [0.52, 0.58, 0.46, 1]      # salviegrønn (dempet tekst)
+    RED  = [0.78, 0.30, 0.22, 1]      # rødt-aksent (fare)
+    GRN  = [0.45, 0.70, 0.38, 1]      # lys lauvgrønn (PC/OK)
+    BLUE = [0.36, 0.50, 0.68, 1]      # stålblå (info)
+    BLK  = [0.0, 0.0, 0.0, 1]         # svart
     # === SCENARIO-BOKSER ===
-    LOOP_BG    = [0.32, 0.42, 0.30, 1] # som BTN – loop-bokser
-    LOOP_BG_ON = [0.42, 0.58, 0.34, 1] # lysere når lagspilles
-    ONE_BG     = [0.18, 0.13, 0.10, 1] # mørk brun – oneshot-bokser
-    ONE_BORDER = [1.00, 0.85, 0.45, 1] # gull-ramme på oneshot-bokser
+    LOOP_BG    = [0.16, 0.24, 0.17, 1] # som BTN – loop-bokser
+    LOOP_BG_ON = [0.28, 0.42, 0.26, 1] # lysere når laget spiller
+    ONE_BG     = [0.05, 0.10, 0.07, 1] # mørkere skogsbunn
+    ONE_BORDER = [0.86, 0.74, 0.42, 1] # gull-ramme
     IMG_EXT   = ('.png','.jpg','.jpeg','.webp')
     SND_EXT   = ('.mp3','.ogg','.wav','.flac','.m4a','.aac')
     HTTP_PORT = 8089
@@ -129,6 +129,11 @@ try:
             pos: self.pos
             size: self.size
             radius: [self.radius]
+        Color:
+            rgba: self.border_color
+        Line:
+            rounded_rectangle: (self.x + dp(1), self.y + dp(1), self.width - dp(2), self.height - dp(2), self.radius)
+            width: 1.2
 
 <RToggle>:
     background_normal: ''
@@ -148,6 +153,11 @@ try:
             pos: self.pos
             size: self.size
             radius: [self.radius]
+        Color:
+            rgba: self.border_color
+        Line:
+            rounded_rectangle: (self.x + dp(1), self.y + dp(1), self.width - dp(2), self.height - dp(2), self.radius)
+            width: self.border_width
 
 <RBox>:
     canvas.before:
@@ -170,11 +180,14 @@ try:
     class RBtn(Button):
         bg_color = ListProperty(BTN)
         shadow_color = ListProperty(SHAD)
+        border_color = ListProperty(GDIM)
         radius = NumericProperty(dp(14))
 
     class RToggle(ToggleButton):
         bg_color = ListProperty(BTN)
         shadow_color = ListProperty(SHAD)
+        border_color = ListProperty(GDIM)
+        border_width = NumericProperty(1.2)
         radius = NumericProperty(dp(14))
 
     class RBox(BoxLayout):
@@ -2882,8 +2895,8 @@ try:
                                    color=DIM, size=11, wrap=True))
             else:
                 for i, sc in enumerate(self.scenarios):
-                    row = BoxLayout(size_hint_y=None, height=dp(48),
-                                    spacing=dp(4))
+                    row = BoxLayout(size_hint_y=None, height=dp(52),
+                                    spacing=dp(6))
                     name = sc.get('name', f'Scenario {i+1}')
                     n_scenes = len(sc.get('scenes', []))
                     row.add_widget(mkbtn(
@@ -2892,11 +2905,11 @@ try:
                     row.add_widget(mkbtn("Endre", lambda idx=i:
                                          self._scn_rename(idx),
                                          small=True,
-                                         size_hint_x=None, width=dp(64)))
+                                         size_hint_x=None, width=dp(70)))
                     row.add_widget(mkbtn("X", lambda idx=i:
                                          self._scn_delete(idx),
                                          danger=True, small=True,
-                                         size_hint_x=None, width=dp(40)))
+                                         size_hint_x=None, width=dp(46)))
                     g.add_widget(row)
 
             scroll.add_widget(g)
@@ -2993,24 +3006,31 @@ try:
                                    color=DIM, size=11, wrap=True))
             else:
                 for i, sn in enumerate(scenes):
-                    row = BoxLayout(size_hint_y=None, height=dp(48),
-                                    spacing=dp(2))
-                    label = f"{i+1}. {sn.get('name','?')}"
+                    row = BoxLayout(size_hint_y=None, height=dp(52),
+                                    spacing=dp(4))
+                    # Tell konfigurerte bokser for å gi rask oversikt
+                    loops = sn.get('loop_boxes', [])
+                    oneshots = sn.get('oneshot_boxes', [])
+                    n_loop_set = sum(1 for b in loops if b.get('src'))
+                    n_one_set = sum(1 for b in oneshots if b.get('src'))
+                    label = (f"{i+1}. {sn.get('name','?')}\n"
+                             f"   Lag {n_loop_set}/{len(loops)}  "
+                             f"SFX {n_one_set}/{len(oneshots)}")
                     row.add_widget(mkbtn(label,
                         lambda idx=i: self._scn_open_scene(idx)))
                     row.add_widget(mkbtn("^",
                         lambda idx=i: self._scn_move_scene(idx, -1),
-                        small=True, size_hint_x=None, width=dp(34)))
+                        small=True, size_hint_x=None, width=dp(36)))
                     row.add_widget(mkbtn("v",
                         lambda idx=i: self._scn_move_scene(idx, 1),
-                        small=True, size_hint_x=None, width=dp(34)))
+                        small=True, size_hint_x=None, width=dp(36)))
                     row.add_widget(mkbtn("Endre",
                         lambda idx=i: self._scn_rename_scene(idx),
-                        small=True, size_hint_x=None, width=dp(60)))
+                        small=True, size_hint_x=None, width=dp(64)))
                     row.add_widget(mkbtn("X",
                         lambda idx=i: self._scn_delete_scene(idx),
                         danger=True, small=True,
-                        size_hint_x=None, width=dp(36)))
+                        size_hint_x=None, width=dp(40)))
                     g.add_widget(row)
 
             scroll.add_widget(g)
@@ -3082,36 +3102,60 @@ try:
 
         def _mk_scn_editor(self):
             """Scene-editor: loop-bokser i grid + one-shot-rad."""
-            p = BoxLayout(orientation='vertical', spacing=dp(6))
+            p = BoxLayout(orientation='vertical', spacing=dp(8),
+                          padding=dp(4))
             sc = self.scenarios[self._scn_idx]
-            sn = sc['scenes'][self._scn_scene_idx]
+            scenes = sc['scenes']
+            n_scenes = len(scenes)
+            sn = scenes[self._scn_scene_idx]
             self._scn_box_widgets = []
 
-            # Header
-            top = BoxLayout(size_hint_y=None, height=dp(40), spacing=dp(6))
+            # Header med tilbake-knapp og forrige/neste-piler
+            top = BoxLayout(size_hint_y=None, height=dp(44), spacing=dp(6))
             top.add_widget(mkbtn("< Scener", self._scn_back_to_scenes,
-                                 small=True, size_hint_x=None, width=dp(90)))
-            top.add_widget(mklbl(sn.get('name', '?'),
-                                 color=GOLD, size=13, bold=True))
+                                 small=True, size_hint_x=None, width=dp(96)))
+            # Forrige scene
+            prev_disabled = self._scn_scene_idx <= 0
+            prev_btn = mkbtn("<<",
+                lambda: self._scn_goto_scene(self._scn_scene_idx - 1),
+                small=True, size_hint_x=None, width=dp(48))
+            if prev_disabled:
+                prev_btn.disabled = True
+                prev_btn.opacity = 0.35
+            top.add_widget(prev_btn)
+            # Tittel midten
+            title_lbl = mklbl(
+                f"{self._scn_scene_idx + 1}/{n_scenes}  {sn.get('name','?')}",
+                color=GOLD, size=13, bold=True)
+            top.add_widget(title_lbl)
+            # Neste scene
+            next_disabled = self._scn_scene_idx >= n_scenes - 1
+            next_btn = mkbtn(">>",
+                lambda: self._scn_goto_scene(self._scn_scene_idx + 1),
+                small=True, size_hint_x=None, width=dp(48))
+            if next_disabled:
+                next_btn.disabled = True
+                next_btn.opacity = 0.35
+            top.add_widget(next_btn)
             p.add_widget(top)
 
             # Loop-bokser overskrift + +/- knapper
-            loop_hdr = BoxLayout(size_hint_y=None, height=dp(34),
-                                 spacing=dp(4))
+            loop_hdr = BoxLayout(size_hint_y=None, height=dp(38),
+                                 spacing=dp(6))
             loop_hdr.add_widget(mklbl("Lag (loop)", color=GDIM, size=11,
                                       bold=True))
             loop_hdr.add_widget(mkbtn("+ Boks",
                 lambda: self._scn_add_box('loop'),
-                small=True, size_hint_x=None, width=dp(80)))
-            loop_hdr.add_widget(mkbtn("- Boks",
+                small=True, size_hint_x=None, width=dp(86)))
+            loop_hdr.add_widget(mkbtn("− Boks",
                 lambda: self._scn_remove_box('loop'),
                 danger=True, small=True,
-                size_hint_x=None, width=dp(80)))
+                size_hint_x=None, width=dp(86)))
             p.add_widget(loop_hdr)
 
             # Loop-grid (2 kolonner)
             loop_scroll = ScrollView(size_hint_y=0.55)
-            loop_grid = GridLayout(cols=2, spacing=dp(6), padding=dp(4),
+            loop_grid = GridLayout(cols=2, spacing=dp(8), padding=dp(4),
                                    size_hint_y=None)
             loop_grid.bind(minimum_height=loop_grid.setter('height'))
             for i, box in enumerate(sn.get('loop_boxes', [])):
@@ -3121,24 +3165,24 @@ try:
             p.add_widget(loop_scroll)
 
             # One-shot overskrift + +/-
-            os_hdr = BoxLayout(size_hint_y=None, height=dp(34), spacing=dp(4))
+            os_hdr = BoxLayout(size_hint_y=None, height=dp(38), spacing=dp(6))
             os_hdr.add_widget(mklbl("One-shots", color=GDIM, size=11,
                                     bold=True))
             os_hdr.add_widget(mkbtn("+",
                 lambda: self._scn_add_box('one'),
-                small=True, size_hint_x=None, width=dp(50)))
-            os_hdr.add_widget(mkbtn("-",
+                small=True, size_hint_x=None, width=dp(56)))
+            os_hdr.add_widget(mkbtn("−",
                 lambda: self._scn_remove_box('one'),
                 danger=True, small=True,
-                size_hint_x=None, width=dp(50)))
+                size_hint_x=None, width=dp(56)))
             p.add_widget(os_hdr)
 
-            # One-shot-rad (horisontal scroll)
-            os_scroll = ScrollView(size_hint_y=None, height=dp(76),
+            # One-shot-rad (horisontal scroll) – større bokser
+            os_scroll = ScrollView(size_hint_y=None, height=dp(96),
                                    do_scroll_x=True, do_scroll_y=False)
             os_row = BoxLayout(orientation='horizontal',
                                size_hint_x=None,
-                               spacing=dp(6), padding=dp(4))
+                               spacing=dp(8), padding=dp(4))
             os_row.bind(minimum_width=os_row.setter('width'))
             for i, box in enumerate(sn.get('oneshot_boxes', [])):
                 w = self._mk_oneshot_box_face(i, box)
@@ -3147,7 +3191,7 @@ try:
             p.add_widget(os_scroll)
 
             # Footer-kontroller
-            foot = BoxLayout(size_hint_y=None, height=dp(44), spacing=dp(6))
+            foot = BoxLayout(size_hint_y=None, height=dp(48), spacing=dp(8))
             foot.add_widget(mkbtn("Spill alle lag",
                 self._scn_play_all_loops, accent=True))
             foot.add_widget(mkbtn("Stopp alle",
@@ -3155,6 +3199,17 @@ try:
             p.add_widget(foot)
 
             return p
+
+        def _scn_goto_scene(self, new_idx):
+            """Naviger til en annen scene fra editor-toppen.
+
+            Stopper alle aktive lag i nåværende scene først.
+            """
+            sc = self.scenarios[self._scn_idx]
+            if 0 <= new_idx < len(sc['scenes']):
+                self._scn_stop_all()
+                self._scn_scene_idx = new_idx
+                self._scn_refresh()
 
         def _mk_loop_box_face(self, idx, box):
             """Liten boks for et loop-lag i scene-editoren."""
@@ -3172,37 +3227,36 @@ try:
                 sub_hint = os.path.basename(src)
 
             outer = RBox(orientation='vertical',
-                         size_hint_y=None, height=dp(96),
-                         padding=dp(6), spacing=dp(2),
+                         size_hint_y=None, height=dp(116),
+                         padding=dp(8), spacing=dp(4),
                          bg_color=bg, radius=dp(12))
             # Trykk på label-rad for å åpne editor
-            inner = BoxLayout(orientation='vertical', spacing=dp(2))
+            inner = BoxLayout(orientation='vertical', spacing=dp(3))
 
-            top_lbl = Label(text=label, color=GOLD, font_size=sp(11),
-                            bold=True, size_hint_y=None, height=dp(20),
+            top_lbl = Label(text=label, color=GOLD, font_size=sp(12),
+                            bold=True, size_hint_y=None, height=dp(22),
                             halign='center')
             top_lbl.bind(size=top_lbl.setter('text_size'))
             inner.add_widget(top_lbl)
 
             sub_lbl = Label(text=sub_hint,
                             color=TXT if src else DIM,
-                            font_size=sp(9),
-                            size_hint_y=None, height=dp(18),
+                            font_size=sp(10),
+                            size_hint_y=None, height=dp(20),
                             halign='center', shorten=True)
             sub_lbl.bind(size=sub_lbl.setter('text_size'))
             inner.add_widget(sub_lbl)
 
             # Kontrollrad
-            ctrl = BoxLayout(size_hint_y=None, height=dp(34),
-                             spacing=dp(3))
+            ctrl = BoxLayout(size_hint_y=None, height=dp(40),
+                             spacing=dp(6))
             play_txt = "Stopp" if playing else "Spill"
             play_btn = mkbtn(play_txt,
                 lambda i=idx: self._scn_toggle_layer(i),
-                small=True, accent=playing)
+                accent=playing, danger=playing)
             ctrl.add_widget(play_btn)
             edit_btn = mkbtn("Endre",
-                lambda i=idx: self._scn_edit_loop_box(i),
-                small=True)
+                lambda i=idx: self._scn_edit_loop_box(i))
             ctrl.add_widget(edit_btn)
             inner.add_widget(ctrl)
 
@@ -3216,19 +3270,22 @@ try:
 
             # Wrapper gir gull-ramme via FramedBox
             wrap = FramedBox(orientation='vertical',
-                             size_hint_x=None, width=dp(90),
-                             padding=dp(2), frame_color=ONE_BORDER)
+                             size_hint_x=None, width=dp(112),
+                             padding=dp(3), frame_color=ONE_BORDER)
             inner = RBox(orientation='vertical',
-                         padding=dp(4), spacing=dp(2),
+                         padding=dp(5), spacing=dp(3),
                          bg_color=ONE_BG, radius=dp(8))
             # Stor "fyr-av"-knapp
             fire = mkbtn(label,
                 lambda i=idx: self._scn_fire_oneshot(i),
-                small=True, accent=True, size_hint_y=0.65)
+                accent=True, size_hint_y=0.66)
+            # Subtilt visuelt skille hvis tom
+            if not src:
+                fire.color = DIM
             inner.add_widget(fire)
             edit = mkbtn("Endre",
                 lambda i=idx: self._scn_edit_oneshot_box(i),
-                small=True, size_hint_y=0.35)
+                small=True, size_hint_y=0.34)
             inner.add_widget(edit)
             wrap.add_widget(inner)
             return wrap
@@ -3329,12 +3386,15 @@ try:
             self._scn_refresh()
 
         def _scn_stop_all(self):
-            """Stopp alle aktive lag-spillere."""
+            """Stopp alle aktive lag-spillere OG one-shots."""
             for lp in self._scn_layers:
                 if lp:
                     try: lp.stop()
                     except: pass
             self._scn_layers = []
+            # Stopp også alle one-shots som kan være i etterklang
+            try: self.oneshot.stop_all()
+            except Exception as e: log(f"oneshot stop_all err: {e}")
             if hasattr(self, '_lyd_sub') and self._lyd_sub == 'scn' \
                     and self._scn_view == 'editor':
                 self._scn_refresh()
