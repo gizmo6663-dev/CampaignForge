@@ -2417,14 +2417,24 @@ try:
 
             if bg_path:
                 try:
+                    # Bakgrunnsbildet skaleres for å passe i skjermen,
+                    # men aspektforholdet bevares (ingen strekking).
+                    #   allow_stretch=True  -> skalerer bildet opp/ned
+                    #                          så det fyller én akse
+                    #   keep_ratio=True     -> bevarer aspektforholdet
+                    #                          (kan gi tomme kanter på
+                    #                          siden eller topp/bunn)
+                    #   size_hint=(1, 1)    -> widgeten dekker hele
+                    #                          FloatLayout-foreldren
+                    # Dim-overlayen oppå demper kontrasten slik at UI
+                    # forblir lesbart.
                     bg_img = Image(
                         source=bg_path,
-                        allow_stretch=False,
-                        keep_ratio=True,   # cover hele skjermen
-                        opacity=0.85,       # lys nok til å sees gjennom
-                                            # halvgjennomsiktige paneler
-                        size_hint=(2, 2),
-                        pos_hint={'x': 0, 'y': 0},
+                        allow_stretch=True,
+                        keep_ratio=True,
+                        opacity=0.85,
+                        size_hint=(1, 1),
+                        pos_hint={'center_x': 0.5, 'center_y': 0.5},
                     )
                     wrapper.add_widget(bg_img)
                     # Mørk overlay over bildet for å dempe kontrasten
