@@ -6,7 +6,7 @@ package.domain = org.rpg
 icon.filename = %(source.dir)s/icon.png
 
 source.dir = .
-source.include_exts = py,png,jpg,kv,atlas
+source.include_exts = py,png,jpg,kv,atlas,ttf
 
 version = 0.1.0
 
