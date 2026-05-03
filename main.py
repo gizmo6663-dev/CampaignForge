@@ -2006,7 +2006,7 @@ try:
                         opacity=0.85,       # lys nok til å sees gjennom
                                             # halvgjennomsiktige paneler
                         size_hint=(1, 1),
-                        pos_hint={'x': 47, 'y': 3},
+                        pos_hint={'x': 0.47, 'y': 0.3},
                     )
                     wrapper.add_widget(bg_img)
                     # Mørk overlay over bildet for å dempe kontrasten
