@@ -2458,7 +2458,7 @@ try:
                         keep_ratio=True,
                         opacity=0.85,
                         size_hint=(1, 1),
-                        pos_hint={'center_x': 0.4, 'center_y': 0.32},
+                        pos_hint={'center_x': 0.48, 'center_y': 0.31},
                     )
                     wrapper.add_widget(bg_img)
                     # Mørk overlay over bildet for å dempe kontrasten
