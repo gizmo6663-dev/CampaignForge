@@ -67,6 +67,15 @@ try:
     SCENARIO_FILE = os.path.join(BASE_DIR, "scenarios.json")
     BATTLE_FILE = os.path.join(BASE_DIR, "battlemap.json")
     BATTLE_PNG  = os.path.join(BASE_DIR, "battlemap_current.png")
+    # Bakgrunnsbilde – bundlet med APK-en. Plassert ved siden av
+    # main.py i repoet og pakket inn via source.include_exts=png i
+    # buildozer.spec. Brukeren kan overstyre ved å legge en alternativ
+    # background.png i Documents/CampaignForge/, som lastes i stedet
+    # hvis den finnes.
+    APP_DIR = os.path.dirname(os.path.abspath(__file__)) \
+        if "__file__" in globals() else os.getcwd()
+    BG_IMAGE_BUNDLED = os.path.join(APP_DIR, "background.png")
+    BG_IMAGE_OVERRIDE = os.path.join(BASE_DIR, "background.png")
     # Canvas resolution for battlemap (16:9, suits TV casting)
     CANVAS_W = 1280
     CANVAS_H = 720
@@ -82,8 +91,10 @@ try:
         log(f"Dirs OK: img={os.path.exists(IMG_DIR)}, mus={os.path.exists(MUSIC_DIR)}, one={os.path.exists(ONESHOT_DIR)}")
 
     # === FARGER – MOSSY GROVE (dempet grønn, EP-atmosfære) ===
+    # Alpha < 1.0 på BG2 lar et evt. bakgrunnsbilde skinne svakt
+    # gjennom hovedpanelet uten å forstyrre lesbarheten.
     BG   = [0.05, 0.08, 0.06, 1]      # dyp skogsgrunn (parallell til EP BG)
-    BG2  = [0.09, 0.13, 0.10, 1]      # mose-panel
+    BG2  = [0.09, 0.13, 0.10, 0.82]   # mose-panel (lett translucent)
     INPUT= [0.06, 0.09, 0.07, 1]      # tekstfelt-bakgrunn
     BTN  = [0.16, 0.24, 0.17, 1]      # dempet skogsgrønn
     BTNH = [0.28, 0.42, 0.26, 1]      # aktiv tab/lysere mosegrønn
@@ -2386,6 +2397,52 @@ try:
 
             # FloatLayout som rot – lar oss legge splash oppå
             wrapper = FloatLayout()
+
+            # === BAKGRUNNSBILDE ===
+            # Prioritet:
+            #  1) Override i Documents/CampaignForge/background.png
+            #     (lar brukeren bytte uten å re-bygge APK)
+            #  2) Bundlet background.png ved siden av main.py i APK-en
+            # Legges som første barn så det havner BAKERST i z-rekkefølgen
+            # (Kivy tegner senere widgets oppå tidligere).
+            bg_path = None
+            if os.path.exists(BG_IMAGE_OVERRIDE):
+                bg_path = BG_IMAGE_OVERRIDE
+                log(f"Bakgrunn: bruker override {bg_path}")
+            elif os.path.exists(BG_IMAGE_BUNDLED):
+                bg_path = BG_IMAGE_BUNDLED
+                log(f"Bakgrunn: bruker bundlet {bg_path}")
+            else:
+                log("Bakgrunn: ingen funnet (verken override eller bundlet)")
+
+            if bg_path:
+                try:
+                    bg_img = Image(
+                        source=bg_path,
+                        allow_stretch=True,
+                        keep_ratio=False,   # cover hele skjermen
+                        opacity=0.85,       # lys nok til å sees gjennom
+                                            # halvgjennomsiktige paneler
+                        size_hint=(1, 1),
+                        pos_hint={'x': 0, 'y': 0},
+                    )
+                    wrapper.add_widget(bg_img)
+                    # Mørk overlay over bildet for å dempe kontrasten
+                    # ytterligere før UI-panelene tegnes oppå.
+                    dim = Widget(size_hint=(1, 1),
+                                 pos_hint={'x': 0, 'y': 0})
+                    with dim.canvas:
+                        from kivy.graphics import Color as _C, Rectangle as _R
+                        _C(0, 0, 0, 0.45)
+                        _bg_rect = _R(pos=dim.pos, size=dim.size)
+                    dim.bind(pos=lambda w, v, r=_bg_rect:
+                                  setattr(r, 'pos', w.pos),
+                            size=lambda w, v, r=_bg_rect:
+                                  setattr(r, 'size', w.size))
+                    wrapper.add_widget(dim)
+                    log(f"Bakgrunnsbilde lastet OK")
+                except Exception as e:
+                    log(f"Bakgrunnsbilde-feil: {e}")
 
             main = BoxLayout(orientation='vertical', spacing=0,
                              size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
