@@ -2002,11 +2002,11 @@ try:
                     bg_img = Image(
                         source=bg_path,
                         allow_stretch=True,
-                        keep_ratio=False,   # cover hele skjermen
+                        keep_ratio=True,   # cover hele skjermen
                         opacity=0.85,       # lys nok til å sees gjennom
                                             # halvgjennomsiktige paneler
                         size_hint=(1, 1),
-                        pos_hint={'x': 0, 'y': 0},
+                        pos_hint={'x': 47, 'y': 3},
                     )
                     wrapper.add_widget(bg_img)
                     # Mørk overlay over bildet for å dempe kontrasten
