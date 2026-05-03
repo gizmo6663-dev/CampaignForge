@@ -76,11 +76,11 @@ try:
         if "__file__" in globals() else os.getcwd()
     BG_IMAGE_BUNDLED = os.path.join(APP_DIR, "background.png")
     BG_IMAGE_OVERRIDE = os.path.join(BASE_DIR, "background.png")
-    # Tittelfont – bundlet med APK-en (krever ttf i
+    # Tittelfont – bundlet med APK-en (krever otf i
     # source.include_exts i buildozer.spec). Brukes på splash-skjermen
     # for "CAMPAIGN FORGE". Faller tilbake til Kivys default hvis
     # filen mangler.
-    TITLE_FONT_FILE = os.path.join(APP_DIR, "KingstoneDemoRegular-G3n5G.ttf")
+    TITLE_FONT_FILE = os.path.join(APP_DIR, "DragonHunter-9Ynxj.otf")
     # Canvas resolution for battlemap (16:9, suits TV casting)
     CANVAS_W = 1280
     CANVAS_H = 720
@@ -2381,17 +2381,17 @@ try:
             Window.clearcolor = BG
             self.title = "CampaignForge"
 
-            # Registrer egendefinert tittelfont (Kingstone Demo) for
+            # Registrer egendefinert tittelfont (Dragon Hunter) for
             # bruk på splash-skjermen. Lastes via LabelBase slik at vi
-            # kan referere til den med navnet 'Kingstone' i Label-
-            # widgets via font_name='Kingstone'.
+            # kan referere til den med navnet 'DragonHunter' i Label-
+            # widgets via font_name='DragonHunter'.
             self._title_font = None
             try:
                 if os.path.exists(TITLE_FONT_FILE):
                     from kivy.core.text import LabelBase
-                    LabelBase.register(name='Kingstone',
+                    LabelBase.register(name='DragonHunter',
                                        fn_regular=TITLE_FONT_FILE)
-                    self._title_font = 'Kingstone'
+                    self._title_font = 'DragonHunter'
                     log(f"Tittelfont registrert: {TITLE_FONT_FILE}")
                 else:
                     log(f"Tittelfont mangler: {TITLE_FONT_FILE} "
@@ -2458,7 +2458,7 @@ try:
                         keep_ratio=True,
                         opacity=0.85,
                         size_hint=(1, 1),
-                        pos_hint={'center_x': 0.5, 'center_y': 0.3},
+                        pos_hint={'center_x': 0.5, 'center_y': 0.5},
                     )
                     wrapper.add_widget(bg_img)
                     # Mørk overlay over bildet for å dempe kontrasten
