@@ -76,6 +76,11 @@ try:
         if "__file__" in globals() else os.getcwd()
     BG_IMAGE_BUNDLED = os.path.join(APP_DIR, "background.png")
     BG_IMAGE_OVERRIDE = os.path.join(BASE_DIR, "background.png")
+    # Tittelfont – bundlet med APK-en (krever ttf i
+    # source.include_exts i buildozer.spec). Brukes på splash-skjermen
+    # for "CAMPAIGN FORGE". Faller tilbake til Kivys default hvis
+    # filen mangler.
+    TITLE_FONT_FILE = os.path.join(APP_DIR, "KingstoneDemoRegular-G3n5G.ttf")
     # Canvas resolution for battlemap (16:9, suits TV casting)
     CANVAS_W = 1280
     CANVAS_H = 720
@@ -2375,6 +2380,25 @@ try:
             log("=== BUILD (CampaignForge v0.1.0) ===")
             Window.clearcolor = BG
             self.title = "CampaignForge"
+
+            # Registrer egendefinert tittelfont (Kingstone Demo) for
+            # bruk på splash-skjermen. Lastes via LabelBase slik at vi
+            # kan referere til den med navnet 'Kingstone' i Label-
+            # widgets via font_name='Kingstone'.
+            self._title_font = None
+            try:
+                if os.path.exists(TITLE_FONT_FILE):
+                    from kivy.core.text import LabelBase
+                    LabelBase.register(name='Kingstone',
+                                       fn_regular=TITLE_FONT_FILE)
+                    self._title_font = 'Kingstone'
+                    log(f"Tittelfont registrert: {TITLE_FONT_FILE}")
+                else:
+                    log(f"Tittelfont mangler: {TITLE_FONT_FILE} "
+                        "(bruker default)")
+            except Exception as e:
+                log(f"Tittelfont-feil: {e}")
+
             self.tracks = []
             self.ct = -1
             self.sel_img = None
@@ -2434,7 +2458,7 @@ try:
                         keep_ratio=True,
                         opacity=0.85,
                         size_hint=(1, 1),
-                        pos_hint={'center_x': 0.5, 'center_y': 0.4},
+                        pos_hint={'center_x': 0.5, 'center_y': 0.5},
                     )
                     wrapper.add_widget(bg_img)
                     # Mørk overlay over bildet for å dempe kontrasten
@@ -2505,16 +2529,25 @@ try:
                                orientation='vertical',
                                size_hint=(1, 1),
                                pos_hint={'x': 0, 'y': 0})
+            # Bruk Kingstone-fonten på tittelen hvis registrert.
+            # Den er dekorativ, så vi dropper bold (fonten har sin
+            # egen vekt) og øker størrelsen litt for visuell balanse.
+            if self._title_font:
+                title_kw = {'font_name': self._title_font, 'bold': False}
+                title_size = sp(56)
+            else:
+                title_kw = {'bold': True}
+                title_size = sp(42)
             # Sentrert innhold
             self.splash.add_widget(Widget())  # fyll topp
-            t1 = Label(text="CAMPAIGN", font_size=sp(42), color=GOLD,
-                       bold=True, size_hint_y=None, height=dp(60),
-                       halign='center')
+            t1 = Label(text="CAMPAIGN", font_size=title_size, color=GOLD,
+                       size_hint_y=None, height=dp(80),
+                       halign='center', **title_kw)
             t1.bind(size=t1.setter('text_size'))
             self.splash.add_widget(t1)
-            t2 = Label(text="FORGE", font_size=sp(42), color=GDIM,
-                       bold=True, size_hint_y=None, height=dp(60),
-                       halign='center')
+            t2 = Label(text="FORGE", font_size=title_size, color=GDIM,
+                       size_hint_y=None, height=dp(80),
+                       halign='center', **title_kw)
             t2.bind(size=t2.setter('text_size'))
             self.splash.add_widget(t2)
             sub = Label(text="Dungeon Master's Companion", font_size=sp(13),
