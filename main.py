@@ -1825,6 +1825,8 @@ try:
             clean_url = url.split('?', 1)[0].lower()
             ext = os.path.splitext(clean_url)[1]
             mime_type = {
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
                 '.png': 'image/png',
                 '.webp': 'image/webp',
             }.get(ext, 'image/jpeg')
