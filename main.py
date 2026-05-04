@@ -3305,6 +3305,7 @@ try:
                     state='down' if state else 'normal',
                     color=GOLD if state else DIM,
                     bg_color=BTNH if state else INPUT,
+                    inactive_bg_color=INPUT,
                     font_size=sp(12), bold=True)
                 def _upd(inst, val):
                     on = (val == 'down')

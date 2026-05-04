@@ -227,7 +227,7 @@ Builder.load_string('''
             rgba: self.border_color
         Line:
             rounded_rectangle: (self.x, self.y, self.width, self.height, self.radius)
-            width: 1.5
+            width: self.border_width
 
 <RToggle>:
     background_normal: ''
@@ -313,7 +313,7 @@ Builder.load_string('''
             rgba: self.border_color[0], self.border_color[1], self.border_color[2], self.border_color[3] * (1.0 if self.state == 'down' else 0.55)
         Line:
             rounded_rectangle: (self.x, self.y, self.width, self.height, self.radius)
-            width: 1.5
+            width: self.border_width
         # AKTIV-INDIKATOR: myk gull-glød i bunnen.
         # Bygges som 9 stablede rektangler – bredeste lag svakest i bunn,
         # smaleste lag sterkest øverst i stabelen. Det visuelle resultatet
@@ -395,6 +395,7 @@ class RBtn(Button):
     bg_color     = ListProperty(BTN)
     shadow_color = ListProperty(SHAD)
     border_color = ListProperty(GDIM)
+    border_width = NumericProperty(2.0)
     radius       = NumericProperty(dp(14))
     _pressed     = BooleanProperty(False)
 
@@ -410,17 +411,34 @@ class RBtn(Button):
         return super().on_touch_up(touch)
 
 class RToggle(ToggleButton):
-    bg_color     = ListProperty(BTN)
-    shadow_color = ListProperty(SHAD)
-    border_color = ListProperty(GDIM)
-    border_width = NumericProperty(1.5)
-    radius       = NumericProperty(dp(14))
+    bg_color            = ListProperty(BTN)
+    shadow_color        = ListProperty(SHAD)
+    border_color        = ListProperty(GDIM)
+    border_width        = NumericProperty(2.0)
+    radius              = NumericProperty(dp(14))
+    active_bg_color     = ListProperty(BTNH)
+    inactive_bg_color   = ListProperty(BTN)
+    active_text_color   = ListProperty(GOLD)
+    inactive_text_color = ListProperty(DIM)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._sync_state_style()
+
+    def on_state(self, *args):
+        self._sync_state_style()
+
+    def _sync_state_style(self):
+        active = self.state == 'down'
+        self.bg_color = self.active_bg_color if active else self.inactive_bg_color
+        self.color = self.active_text_color if active else self.inactive_text_color
 
 class RTab(ToggleButton):
     """Toggle-knapp for fane-bar – flat (ingen skygge), aktiv-stripe i bunn."""
     bg_color        = ListProperty(BTN)
     border_color    = ListProperty(GDIM)
     indicator_color = ListProperty(GOLD)
+    border_width    = NumericProperty(2.0)
     radius          = NumericProperty(dp(10))
 
 class RBox(BoxLayout):
