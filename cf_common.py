@@ -69,6 +69,11 @@ APP_DIR = os.path.dirname(os.path.abspath(__file__)) \
     if "__file__" in globals() else os.getcwd()
 BG_IMAGE_BUNDLED  = os.path.join(APP_DIR, "background.png")
 BG_IMAGE_OVERRIDE = os.path.join(BASE_DIR, "background.png")
+# Trebakgrunn – legges UNDER background.png som heldekkende tekstur.
+# Bundlet med APK-en. Brukeren kan også legge en alternativ
+# dark-wood.png i Documents/CampaignForge/.
+WOOD_BUNDLED  = os.path.join(APP_DIR, "dark-wood.png")
+WOOD_OVERRIDE = os.path.join(BASE_DIR, "dark-wood.png")
 
 # === FARGER – MOSSY GROVE ===
 BG   = [0.05, 0.08, 0.06, 1]
@@ -77,8 +82,9 @@ INPUT= [0.06, 0.09, 0.07, 1]
 BTN  = [0.16, 0.24, 0.17, 1]
 BTNH = [0.28, 0.42, 0.26, 1]
 SHAD = [0.0, 0.01, 0.0, 0.35]   # mykere skygge (stables i tre lag)
-GOLD = [0.86, 0.74, 0.42, 1]
-GDIM = [0.55, 0.48, 0.25, 1]
+GOLD = [0.86, 0.74, 0.42, 1]      # antikk gull (overskrifter, aktive)
+GDIM = [0.42, 0.38, 0.22, 0.65]   # mer dempet og brunlig; transparent
+                                   # for å integrere med panel-bakgrunn
 TXT  = [0.86, 0.88, 0.74, 1]
 DIM  = [0.52, 0.58, 0.46, 1]
 RED  = [0.78, 0.30, 0.22, 1]
@@ -94,7 +100,7 @@ INNER_LO = [0.0, 0.0, 0.0, 0.30]   # subtil mørk-rim nederst
 LOOP_BG    = [0.16, 0.24, 0.17, 1]
 LOOP_BG_ON = [0.28, 0.42, 0.26, 1]
 ONE_BG     = [0.05, 0.10, 0.07, 1]
-ONE_BORDER = [0.86, 0.74, 0.42, 1]
+ONE_BORDER = [0.55, 0.45, 0.25, 0.85]   # samme dempede tone som GDIM
 
 # === FILTYPER ===
 IMG_EXT = ('.png', '.jpg', '.jpeg', '.webp')
@@ -216,12 +222,12 @@ Builder.load_string('''
         Line:
             points: self.x + dp(4), self.y + dp(2), self.x + self.width - dp(4), self.y + dp(2)
             width: 1.0
-        # --- Tykkere gull-ramme ---
+        # --- Tynnere, dempet ramme (passer paletten bedre) ---
         Color:
             rgba: self.border_color
         Line:
             rounded_rectangle: (self.x + dp(1), self.y + dp(1), self.width - dp(2), self.height - dp(2), self.radius)
-            width: 1.8
+            width: 1.3
 
 <RToggle>:
     background_normal: ''
@@ -281,7 +287,14 @@ Builder.load_string('''
     background_color: 0, 0, 0, 0
     bold: True
     canvas.before:
-        # Faner får IKKE skygge eller offset – de sitter flate i tab-baren.
+        # Subtil skygge under fanen (kort offset – fanen sitter nesten flatt
+        # men har nok dybde til å skille seg fra tab-bar bakgrunnen)
+        Color:
+            rgba: 0, 0, 0, 0.30 if self.state == 'down' else 0.18
+        RoundedRectangle:
+            pos: self.x + dp(1), self.y - dp(2)
+            size: self.width, self.height
+            radius: [self.radius]
         # Bakgrunnsfyll
         Color:
             rgba: self.bg_color
@@ -291,22 +304,34 @@ Builder.load_string('''
             radius: [self.radius]
         # Indre lys-highlight bare når aktiv
         Color:
-            rgba: 1, 1, 0.85, 0.10 if self.state == 'down' else 0
+            rgba: 1, 1, 0.85, 0.12 if self.state == 'down' else 0
         Line:
             rounded_rectangle: (self.x + dp(2), self.y + dp(2), self.width - dp(4), self.height - dp(4), self.radius - dp(1))
             width: 1.0
-        # Border (svakere når inaktiv)
+        # Border – dempet, tynn (ikke kraftig gull)
         Color:
-            rgba: self.border_color[0], self.border_color[1], self.border_color[2], self.border_color[3] * (1.0 if self.state == 'down' else 0.4)
+            rgba: self.border_color[0], self.border_color[1], self.border_color[2], self.border_color[3] * (1.0 if self.state == 'down' else 0.45)
         Line:
             rounded_rectangle: (self.x + dp(1), self.y + dp(1), self.width - dp(2), self.height - dp(2), self.radius)
-            width: 1.4
-        # AKTIV-INDIKATOR: gull-stripe i bunnen når state == 'down'
+            width: 1.2
+        # AKTIV-INDIKATOR: gull-stripe i bunnen med horisontal gradient
+        # Tre stablede rektangler som fader fra senter til kantene gir
+        # følelsen av en myk lysstripe i stedet for skarp kant.
         Color:
-            rgba: (self.indicator_color if self.state == 'down' else (0, 0, 0, 0))
+            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.20) if self.state == 'down' else (0, 0, 0, 0)
         Rectangle:
             pos: self.x + dp(8), self.y + dp(2)
             size: (self.width - dp(16)) if self.state == 'down' else 0, dp(2)
+        Color:
+            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.50) if self.state == 'down' else (0, 0, 0, 0)
+        Rectangle:
+            pos: self.x + dp(20), self.y + dp(2)
+            size: (self.width - dp(40)) if self.state == 'down' else 0, dp(2)
+        Color:
+            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.85) if self.state == 'down' else (0, 0, 0, 0)
+        Rectangle:
+            pos: self.x + dp(34), self.y + dp(2)
+            size: (self.width - dp(68)) if self.state == 'down' else 0, dp(2)
 
 <RBox>:
     canvas.before:
@@ -320,9 +345,9 @@ Builder.load_string('''
 <FramedBox>:
     canvas.before:
         # Dobbel ramme for premium-utseende:
-        # ytre tykkere, indre tynnere — gir antikt bok-omslag-feel
+        # ytre svak skygge, indre dempet brun-gull
         Color:
-            rgba: self.frame_color[0], self.frame_color[1], self.frame_color[2], self.frame_color[3] * 0.45
+            rgba: 0, 0, 0, 0.30
         Line:
             rectangle: (self.x - dp(1), self.y - dp(1), self.width + dp(2), self.height + dp(2))
             width: 1.0
@@ -330,7 +355,7 @@ Builder.load_string('''
             rgba: self.frame_color
         Line:
             rectangle: (self.x, self.y, self.width, self.height)
-            width: 1.8
+            width: 1.3
 ''')
 
 class RBtn(Button):
@@ -355,7 +380,7 @@ class RToggle(ToggleButton):
     bg_color     = ListProperty(BTN)
     shadow_color = ListProperty(SHAD)
     border_color = ListProperty(GDIM)
-    border_width = NumericProperty(1.8)
+    border_width = NumericProperty(1.3)
     radius       = NumericProperty(dp(14))
 
 class RTab(ToggleButton):

@@ -58,6 +58,7 @@ try:
         CHAR_FILE, SCENARIO_FILE, LIBRARY_FILE,
         BATTLE_FILE, BATTLE_PNG,
         APP_DIR, BG_IMAGE_BUNDLED, BG_IMAGE_OVERRIDE,
+        WOOD_BUNDLED, WOOD_OVERRIDE,
         BG, BG2, INPUT, BTN, BTNH, SHAD, GOLD, GDIM, TXT, DIM,
         RED, GRN, BLUE, BLK,
         LOOP_BG, LOOP_BG_ON, ONE_BG, ONE_BORDER,
@@ -1981,51 +1982,80 @@ try:
             # FloatLayout som rot – lar oss legge splash oppå
             wrapper = FloatLayout()
 
-            # === BAKGRUNNSBILDE ===
-            # Prioritet:
-            #  1) Override i Documents/CampaignForge/background.png
-            #     (lar brukeren bytte uten å re-bygge APK)
-            #  2) Bundlet background.png ved siden av main.py i APK-en
-            # Legges som første barn så det havner BAKERST i z-rekkefølgen
-            # (Kivy tegner senere widgets oppå tidligere).
+            # === BAKGRUNNSLAG (bakerst først, fremst sist) ===
+            # 1) dark-wood.png – heldekkende tekstur som dekker hele skjermen.
+            # 2) background.png – D&D-emblem, bare nedre del av skjermen.
+            # 3) Mørk dim-overlay – demper kontrasten før UI tegnes.
+            # 4) UI-paneler (oppå alt).
+            # I FloatLayout tegnes barn i rekkefølgen de legges til.
+
+            # --- Lag 1: TREBAKGRUNN ---
+            wood_path = None
+            if os.path.exists(WOOD_OVERRIDE):
+                wood_path = WOOD_OVERRIDE
+                log(f"Tre-bakgrunn: override {wood_path}")
+            elif os.path.exists(WOOD_BUNDLED):
+                wood_path = WOOD_BUNDLED
+                log(f"Tre-bakgrunn: bundlet {wood_path}")
+
+            if wood_path:
+                try:
+                    wood_img = Image(
+                        source=wood_path,
+                        allow_stretch=True,
+                        keep_ratio=False,   # dekk hele skjermen
+                        opacity=1.0,
+                        size_hint=(1, 1),
+                        pos_hint={'x': 0, 'y': 0},
+                    )
+                    wrapper.add_widget(wood_img)
+                    log("Tre-bakgrunn lastet OK")
+                except Exception as e:
+                    log(f"Tre-bakgrunn-feil: {e}")
+            else:
+                log("Tre-bakgrunn: ingen funnet")
+
+            # --- Lag 2: D&D-EMBLEM ---
+            # Plasseres i nedre del av skjermen (size_hint y=0.63),
+            # sentrert vannrett, beholder bildeforhold.
             bg_path = None
             if os.path.exists(BG_IMAGE_OVERRIDE):
                 bg_path = BG_IMAGE_OVERRIDE
-                log(f"Bakgrunn: bruker override {bg_path}")
+                log(f"Emblem: override {bg_path}")
             elif os.path.exists(BG_IMAGE_BUNDLED):
                 bg_path = BG_IMAGE_BUNDLED
-                log(f"Bakgrunn: bruker bundlet {bg_path}")
-            else:
-                log("Bakgrunn: ingen funnet (verken override eller bundlet)")
+                log(f"Emblem: bundlet {bg_path}")
 
             if bg_path:
                 try:
                     bg_img = Image(
                         source=bg_path,
                         allow_stretch=True,
-                        keep_ratio=True,   # cover hele skjermen
+                        keep_ratio=True,    # behold bildeforhold
                         opacity=0.85,       # lys nok til å sees gjennom
                                             # halvgjennomsiktige paneler
                         size_hint=(1, 0.63),
                         pos_hint={'x': 0, 'y': 0},
                     )
                     wrapper.add_widget(bg_img)
-                    # Mørk overlay over bildet for å dempe kontrasten
-                    # ytterligere før UI-panelene tegnes oppå.
-                    dim = Widget(size_hint=(1, 1),
-                                 pos_hint={'x': 0, 'y': 0})
-                    with dim.canvas:
-                        from kivy.graphics import Color as _C, Rectangle as _R
-                        _C(0, 0, 0, 0.45)
-                        _bg_rect = _R(pos=dim.pos, size=dim.size)
-                    dim.bind(pos=lambda w, v, r=_bg_rect:
-                                  setattr(r, 'pos', w.pos),
-                            size=lambda w, v, r=_bg_rect:
-                                  setattr(r, 'size', w.size))
-                    wrapper.add_widget(dim)
-                    log(f"Bakgrunnsbilde lastet OK")
+                    log("Emblem lastet OK")
                 except Exception as e:
-                    log(f"Bakgrunnsbilde-feil: {e}")
+                    log(f"Emblem-feil: {e}")
+
+            # --- Lag 3: MØRK DIM-OVERLAY ---
+            # Dempes lett for å sikre lesbarhet av UI-paneler.
+            if wood_path or bg_path:
+                dim = Widget(size_hint=(1, 1),
+                             pos_hint={'x': 0, 'y': 0})
+                with dim.canvas:
+                    from kivy.graphics import Color as _C, Rectangle as _R
+                    _C(0, 0, 0, 0.35)
+                    _bg_rect = _R(pos=dim.pos, size=dim.size)
+                dim.bind(pos=lambda w, v, r=_bg_rect:
+                              setattr(r, 'pos', w.pos),
+                        size=lambda w, v, r=_bg_rect:
+                              setattr(r, 'size', w.size))
+                wrapper.add_widget(dim)
 
             main = BoxLayout(orientation='vertical', spacing=0,
                              size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
