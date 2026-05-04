@@ -83,18 +83,24 @@ try:
         touch_cb kalles med (canvas_x, canvas_y) i CANVAS_W x CANVAS_H omraade.
         Appen selv konverterer til grid-ruter.
         """
-        def __init__(self, touch_cb=None, canvas_size_cb=None, **kw):
+        def __init__(self, touch_cb=None, **kw):
             super().__init__(**kw)
             self._touch_cb = touch_cb
-            self._canvas_size_cb = canvas_size_cb
 
         def on_touch_down(self, touch):
             if not self.collide_point(*touch.pos):
+                log(f"BMImage: touch {touch.pos} utenfor widget "
+                    f"({self.x},{self.y},{self.width}x{self.height})")
                 return False
             if not self._touch_cb:
+                log("BMImage: ingen touch_cb satt!")
                 return False
             nw, nh = self.norm_image_size
+            log(f"BMImage: touch IN. norm_size={nw}x{nh}, "
+                f"widget=({self.x},{self.y},{self.width}x{self.height})")
             if nw <= 0 or nh <= 0:
+                log("BMImage: norm_image_size er 0 – bildet er kanskje "
+                    "ikke lastet ennå")
                 return False
             # Bildet er sentrert i widgeten (keep_ratio=True)
             off_x = self.x + (self.width - nw) / 2.0
@@ -102,17 +108,18 @@ try:
             ix = touch.x - off_x
             iy = touch.y - off_y
             if ix < 0 or iy < 0 or ix > nw or iy > nh:
-                return False
-            if self._canvas_size_cb:
-                cw, ch = self._canvas_size_cb()
-            else:
-                cw, ch = CANVAS_W, CANVAS_H
-            if cw <= 0 or ch <= 0:
+                log(f"BMImage: touch utenfor bilde-omraade "
+                    f"(ix={ix:.0f}, iy={iy:.0f})")
                 return False
             # Skaler til CANVAS-koord, flip y (Kivy origo nede, PIL oppe)
-            cx = ix * cw / nw
-            cy = (nh - iy) * ch / nh
-            self._touch_cb(cx, cy)
+            cx = ix * CANVAS_W / nw
+            cy = (nh - iy) * CANVAS_H / nh
+            log(f"BMImage: TOUCH OK -> canvas=({cx:.0f},{cy:.0f})")
+            try:
+                self._touch_cb(cx, cy)
+            except Exception as e:
+                log(f"BMImage: touch_cb feilet: {e}")
+                log(traceback.format_exc())
             return True
     # === D&D 5E 2024 KARAKTERFELT ===
     DND_ABILITIES = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']
@@ -1807,33 +1814,19 @@ try:
                 if cb:
                     Clock.schedule_once(lambda dt: cb(ok), 0)
             threading.Thread(target=_c, daemon=True).start()
-        def cast_media(self, url, mime_type, cb=None):
+        def cast_img(self, url, cb=None):
             if not self.mc:
                 return
             def _c():
                 try:
-                    self.mc.play_media(url, mime_type)
+                    self.mc.play_media(url, 'image/jpeg')
                     self.mc.block_until_active()
                     ok = True
-                except Exception as e:
-                    log(f"Cast media error ({mime_type}): {e}")
+                except:
                     ok = False
                 if cb:
                     Clock.schedule_once(lambda dt: cb(ok), 0)
             threading.Thread(target=_c, daemon=True).start()
-        def cast_img(self, url, cb=None):
-            url_without_params = url.split('?', 1)[0].lower()
-            file_extension = os.path.splitext(url_without_params)[1]
-            mime_type = {
-                '.jpg': 'image/jpeg',
-                '.jpeg': 'image/jpeg',
-                '.png': 'image/png',
-                '.webp': 'image/webp',
-            }.get(file_extension)
-            if not mime_type:
-                mime_type = 'image/jpeg'
-                log(f"Cast image fallback MIME for {url_without_params}")
-            self.cast_media(url, mime_type, cb=cb)
         def disconnect(self):
             try:
                 if self._br:
@@ -2674,32 +2667,31 @@ try:
             sub_bar = RBox(size_hint_y=None, height=dp(42),
                            spacing=dp(4), padding=[dp(6), dp(4)],
                            bg_color=BTN, radius=dp(10))
-            b_chars = RToggle(
-                text='Karakterer', group='tool_sub',
-                state='down' if self._tool_sub == 'chars' else 'normal',
-                bg_color=BTNH if self._tool_sub == 'chars' else BTN,
-                color=GOLD if self._tool_sub == 'chars' else DIM,
-                font_size=sp(11), bold=True)
-            b_chars.bind(on_release=lambda b: self._tool_switch('chars'))
-            sub_bar.add_widget(b_chars)
 
-            b_init = RToggle(
-                text='Initiativ', group='tool_sub',
-                state='down' if self._tool_sub == 'init' else 'normal',
-                bg_color=BTNH if self._tool_sub == 'init' else BTN,
-                color=GOLD if self._tool_sub == 'init' else DIM,
-                font_size=sp(11), bold=True)
-            b_init.bind(on_release=lambda b: self._tool_switch('init'))
-            sub_bar.add_widget(b_init)
+            def _mk_tool_sub(key, label):
+                act = self._tool_sub == key
+                b = RTab(
+                    text=label, group='tool_sub',
+                    state='down' if act else 'normal',
+                    bg_color=BTNH if act else BTN,
+                    color=GOLD if act else DIM,
+                    font_size=sp(11), bold=True)
+                # State-binding: oppdater bg_color/color når aktiv-status
+                # endres (KV-uttrykk kan ikke skrive tilbake til property)
+                def _on_state(btn, st):
+                    if st == 'down':
+                        btn.bg_color = BTNH
+                        btn.color = GOLD
+                    else:
+                        btn.bg_color = BTN
+                        btn.color = DIM
+                b.bind(state=_on_state)
+                b.bind(on_release=lambda btn, k=key: self._tool_switch(k))
+                return b
 
-            b_map = RToggle(
-                text='Kart', group='tool_sub',
-                state='down' if self._tool_sub == 'map' else 'normal',
-                bg_color=BTNH if self._tool_sub == 'map' else BTN,
-                color=GOLD if self._tool_sub == 'map' else DIM,
-                font_size=sp(11), bold=True)
-            b_map.bind(on_release=lambda b: self._tool_switch('map'))
-            sub_bar.add_widget(b_map)
+            sub_bar.add_widget(_mk_tool_sub('chars', 'Karakterer'))
+            sub_bar.add_widget(_mk_tool_sub('init', 'Initiativ'))
+            sub_bar.add_widget(_mk_tool_sub('map', 'Kart'))
             p.add_widget(sub_bar)
 
             # Handlings-rad (kun for karakter-lista)
@@ -4439,11 +4431,6 @@ try:
             """Antall rader som faar plass."""
             return CANVAS_H // self._battle_cell_size()
 
-        def _battle_render_size(self):
-            """Faktisk render-stoerrelse for aktivt rutenett."""
-            cell = self._battle_cell_size()
-            return self._bm_grid_cols * cell, self._battle_grid_rows() * cell
-
         def _battle_save(self):
             """Lagre battlemap-tilstand til JSON."""
             save_json(BATTLE_FILE, {
@@ -4456,8 +4443,14 @@ try:
 
         def _mk_battle_map(self):
             """Bygg Kart-sub-fanen."""
+            log("=== _mk_battle_map kalt ===")
             self._battle_state_init()
             self.tool_area.clear_widgets()
+            log(f"  _bm_init_done={hasattr(self, '_bm_init_done')}, "
+                f"_bm_bg={self._bm_bg!r}, "
+                f"tokens={len(self._bm_tokens)}, "
+                f"fog={len(self._bm_fog)}, "
+                f"mode={self._bm_mode}")
 
             if not PIL_OK:
                 self.tool_area.add_widget(mklbl(
@@ -4499,7 +4492,6 @@ try:
                 allow_stretch=True,
                 keep_ratio=True,
                 nocache=True,  # force reload ved endring
-                canvas_size_cb=self._battle_render_size,
                 touch_cb=self._battle_on_map_touch)
             map_box.add_widget(self._bm_img)
             p.add_widget(map_box)
@@ -4554,6 +4546,7 @@ try:
 
         def _battle_mode_switch(self, mode):
             """Bytt mellom flytt / taake / maal."""
+            log(f"_battle_mode_switch -> {mode}")
             self._bm_mode = mode
             self._bm_sel_token = None
             self._bm_measure_start = None
@@ -4562,12 +4555,17 @@ try:
 
         def _battle_on_map_touch(self, cx, cy):
             """Trykk paa kartet (canvas-piksler). Konverter til grid."""
+            log(f"_battle_on_map_touch: canvas=({cx:.0f},{cy:.0f}), "
+                f"mode={self._bm_mode}")
             cell = self._battle_cell_size()
             cols = self._bm_grid_cols
             rows = self._battle_grid_rows()
             col = int(cx // cell)
             row = int(cy // cell)
+            log(f"  -> grid=({col},{row}), cell={cell}px, "
+                f"grid={cols}x{rows}")
             if not (0 <= col < cols and 0 <= row < rows):
+                log("  -> utenfor grid, ignorerer")
                 return
 
             if self._bm_mode == 'move':
@@ -4607,7 +4605,6 @@ try:
                 t['col'] = col
                 t['row'] = row
                 self._bm_sel_token = None
-                self._battle_save()
                 self._battle_refresh_img()
                 self._battle_update_info(
                     f"{t.get('name','?')} flyttet {feet} ft "
@@ -4621,7 +4618,6 @@ try:
                 self._bm_fog.remove(cell)
             else:
                 self._bm_fog.append(cell)
-            self._battle_save()
             self._battle_refresh_img()
 
         def _battle_handle_measure_tap(self, col, row):
@@ -4675,7 +4671,8 @@ try:
                 cell = self._battle_cell_size()
                 cols = self._bm_grid_cols
                 rows = self._battle_grid_rows()
-                w, h = self._battle_render_size()
+                w = cols * cell
+                h = rows * cell
 
                 # Base: bakgrunn eller svart
                 if self._bm_bg and os.path.exists(self._bm_bg):
@@ -4880,7 +4877,6 @@ try:
 
         def _battle_toggle_grid(self):
             self._bm_show_grid = not self._bm_show_grid
-            self._battle_save()
             self._battle_show_menu()   # rerender meny-tekst
             # og selve kartet neste gang
 
@@ -4898,7 +4894,6 @@ try:
             self._bm_fog = [
                 c for c in self._bm_fog
                 if 0 <= c[0] < cols and 0 <= c[1] < rows]
-            self._battle_save()
             self._battle_show_menu()
 
         def _battle_fill_fog(self):
@@ -4908,23 +4903,19 @@ try:
             self._bm_fog = [[c, r]
                             for c in range(cols)
                             for r in range(rows)]
-            self._battle_save()
             self._battle_show_menu()
 
         def _battle_clear_fog(self):
             self._bm_fog = []
-            self._battle_save()
             self._battle_show_menu()
 
         def _battle_clear_tokens(self):
             self._bm_tokens = []
             self._bm_sel_token = None
-            self._battle_save()
             self._battle_show_menu()
 
         def _battle_clear_bg(self):
             self._bm_bg = None
-            self._battle_save()
             self._battle_show_menu()
 
         def _battle_sync_from_init(self):
@@ -4966,7 +4957,6 @@ try:
                 })
             self._bm_tokens = new_tokens
             self._bm_sel_token = None
-            self._battle_save()
             self._mk_battle_map()
 
         def _battle_cast(self):
@@ -4981,11 +4971,20 @@ try:
             self._bm_cast_counter += 1
             url = self.server.url(BATTLE_PNG)
             url = f"{url}?t={self._bm_cast_counter}"
-            self.cast.cast_media(
-                url,
-                'image/png',
-                cb=lambda ok: self._battle_update_info(
-                    "Sendt til TV." if ok else "Cast feilet."))
+            # Bruk PNG mime
+            def _c():
+                try:
+                    self.cast.mc.play_media(url, 'image/png')
+                    self.cast.mc.block_until_active()
+                    Clock.schedule_once(
+                        lambda dt: self._battle_update_info(
+                            "Sendt til TV."), 0)
+                except Exception as e:
+                    log(f"Cast battlemap error: {e}")
+                    Clock.schedule_once(
+                        lambda dt: self._battle_update_info(
+                            "Cast feilet."), 0)
+            threading.Thread(target=_c, daemon=True).start()
 
         def _battle_pick_bg(self):
             """Vis bildevalg fra MAPS_DIR."""
@@ -5041,7 +5040,6 @@ try:
 
         def _battle_set_bg(self, path):
             self._bm_bg = path
-            self._battle_save()
             self._battle_show_menu()
 
 

@@ -22,8 +22,9 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.widget import Widget
 from kivy.utils import platform
 from kivy.metrics import dp, sp
-from kivy.properties import ListProperty, NumericProperty, BooleanProperty
+from kivy.properties import ListProperty, NumericProperty, BooleanProperty, ObjectProperty
 from kivy.lang import Builder
+from kivy.graphics.texture import Texture
 
 # === LOGG ===
 LOG = "/sdcard/Documents/CampaignForge/crash.log"
@@ -101,6 +102,128 @@ LOOP_BG    = [0.16, 0.24, 0.17, 1]
 LOOP_BG_ON = [0.28, 0.42, 0.26, 1]
 ONE_BG     = [0.05, 0.10, 0.07, 1]
 ONE_BORDER = [0.55, 0.45, 0.25, 0.85]   # samme dempede tone som GDIM
+
+
+# === GRADIENT-TEKSTUR-HELPERE ===
+# Kivy har ingen innebygd gradient-primitiv, men Texture-objekter kan
+# fylles med vilkårlig pixel-data og rendres som vanlige Rectangle-
+# teksturer. Det gir oss ekte glatte gradienter.
+
+def make_horiz_gradient_tex(rgb, width=128, peak_alpha=0.95):
+    """Lag en 1-rad-tekstur som fader fra alpha=0 (kant) → peak (senter) → 0 (kant).
+
+    rgb: liste/tuple av 3 floats (0-1) for fargen
+    width: antall horisontale piksler – høyere = jevnere
+    peak_alpha: maksimal alpha i senter (0-1)
+
+    Returnerer et Texture-objekt klar til bruk i Rectangle(texture=...).
+    """
+    tex = Texture.create(size=(width, 1), colorfmt='rgba')
+    tex.mag_filter = 'linear'
+    tex.min_filter = 'linear'
+    r = int(rgb[0] * 255)
+    g = int(rgb[1] * 255)
+    b = int(rgb[2] * 255)
+    buf = bytearray(width * 4)
+    half = width / 2.0
+    for x in range(width):
+        # Cosinus-falloff gir mykere bell-kurve enn lineær
+        # Avstand fra senter, normalisert 0..1
+        d = abs(x - half) / half
+        # Cosinus: alpha = peak * cos²(π/2 * d)
+        # Det gir 1.0 i senter, 0.0 i kant, og helt smooth derivasjon
+        import math
+        a = peak_alpha * (math.cos(d * math.pi / 2) ** 2)
+        idx = x * 4
+        buf[idx] = r
+        buf[idx + 1] = g
+        buf[idx + 2] = b
+        buf[idx + 3] = int(a * 255)
+    tex.blit_buffer(bytes(buf), colorfmt='rgba', bufferfmt='ubyte')
+    return tex
+
+
+def make_vert_gradient_tex(rgb_top, rgb_bot, height=128):
+    """Lag en 1-kolonne-tekstur som fader vertikalt mellom to RGB-farger.
+
+    Brukbar for å gi knapper en svak vertikal gradient (lyst i topp,
+    mørkere mot bunn) for et "konvekst metall"-utseende.
+    """
+    tex = Texture.create(size=(1, height), colorfmt='rgba')
+    tex.mag_filter = 'linear'
+    tex.min_filter = 'linear'
+    buf = bytearray(height * 4)
+    for y in range(height):
+        t = y / max(1, height - 1)  # 0 = bunn (kommer først i pixel-data)
+        r = int((rgb_top[0] * t + rgb_bot[0] * (1 - t)) * 255)
+        g = int((rgb_top[1] * t + rgb_bot[1] * (1 - t)) * 255)
+        b = int((rgb_top[2] * t + rgb_bot[2] * (1 - t)) * 255)
+        a = int((rgb_top[3] * t + rgb_bot[3] * (1 - t)) * 255) \
+            if len(rgb_top) > 3 else 255
+        idx = y * 4
+        buf[idx] = r
+        buf[idx + 1] = g
+        buf[idx + 2] = b
+        buf[idx + 3] = a
+    tex.blit_buffer(bytes(buf), colorfmt='rgba', bufferfmt='ubyte')
+    return tex
+
+
+# Lazy-init: lages én gang ved første bruk og caches
+_GRADIENT_CACHE = {}
+
+def get_gold_glow_tex():
+    """Hent (eller lag) cached gull-glød-tekstur for aktiv-fane-stripen."""
+    key = 'gold_glow'
+    if key not in _GRADIENT_CACHE:
+        _GRADIENT_CACHE[key] = make_horiz_gradient_tex(
+            (GOLD[0], GOLD[1], GOLD[2]), width=256, peak_alpha=0.95)
+    return _GRADIENT_CACHE[key]
+
+def get_tab_active_bg_tex():
+    """Vertikal gradient for AKTIV faneknapp-bakgrunn.
+
+    Lysere lauvgrønn øverst, dempet skogsgrønn nederst.
+    Gir 'konvekst metall'-følelse.
+    """
+    key = 'tab_active_bg'
+    if key not in _GRADIENT_CACHE:
+        # Topp = lysere variant av BTNH, bunn = mørkere variant
+        top = (BTNH[0] * 1.18, BTNH[1] * 1.18, BTNH[2] * 1.18, 1.0)
+        bot = (BTNH[0] * 0.78, BTNH[1] * 0.78, BTNH[2] * 0.78, 1.0)
+        # Begrens til [0,1]
+        top = (min(1, top[0]), min(1, top[1]), min(1, top[2]), 1.0)
+        _GRADIENT_CACHE[key] = make_vert_gradient_tex(top, bot, height=128)
+    return _GRADIENT_CACHE[key]
+
+def get_tab_inactive_bg_tex():
+    """Vertikal gradient for INAKTIV faneknapp-bakgrunn."""
+    key = 'tab_inactive_bg'
+    if key not in _GRADIENT_CACHE:
+        top = (BTN[0] * 1.25, BTN[1] * 1.25, BTN[2] * 1.25, 1.0)
+        bot = (BTN[0] * 0.72, BTN[1] * 0.72, BTN[2] * 0.72, 1.0)
+        top = (min(1, top[0]), min(1, top[1]), min(1, top[2]), 1.0)
+        _GRADIENT_CACHE[key] = make_vert_gradient_tex(top, bot, height=128)
+    return _GRADIENT_CACHE[key]
+
+def get_drop_shadow_tex():
+    """Vertikal gradient for drop-shadow under knapper.
+
+    Sterkest mørke alpha øverst (nærmest knappen), fader ut nedover.
+    Brukes som tekstur på en RoundedRectangle plassert UNDER knappen,
+    forskjøvet litt ned-til-høyre.
+    """
+    key = 'drop_shadow'
+    if key not in _GRADIENT_CACHE:
+        # I make_vert_gradient_tex er y=0 nederste pixel, y=height-1 øverste.
+        # rgb_top brukes når t=1 (toppen, nær knappen)
+        # rgb_bot brukes når t=0 (bunnen, lengst fra knappen)
+        # Vi vil HA mørkest alpha nær knappen (toppen).
+        top = (0, 0, 0, 0.55)   # sterk skygge nær knappen
+        bot = (0, 0, 0, 0.05)   # nesten transparent nederst
+        _GRADIENT_CACHE[key] = make_vert_gradient_tex(top, bot, height=128)
+    return _GRADIENT_CACHE[key]
+
 
 # === FILTYPER ===
 IMG_EXT = ('.png', '.jpg', '.jpeg', '.webp')
@@ -183,26 +306,17 @@ Builder.load_string('''
     background_color: 0, 0, 0, 0
     bold: True
     canvas.before:
-        # --- Myk skygge (3 lag stablet) ---
-        # I trykket tilstand: offset reduseres (knappen "synker"), alpha dempes
+        # --- Myk skygge med ekte gradient-tekstur ---
+        # Plasseres BAK knappen, forskjøvet skrått ned-til-høyre.
+        # Teksturen har sterkere alpha øverst (nær knappen) og fader
+        # ut nedover. Når knappen trykkes, "synker" skyggen og dempes.
         Color:
-            rgba: self.shadow_color[0], self.shadow_color[1], self.shadow_color[2], self.shadow_color[3] * (0.10 if self._pressed else 0.35)
+            rgba: 1, 1, 1, 0.30 if self._pressed else 1.0
         RoundedRectangle:
-            pos: self.x + (dp(1) if self._pressed else dp(3)), self.y - (dp(1) if self._pressed else dp(4))
+            texture: self.shadow_tex
+            pos: self.x + (dp(1) if self._pressed else dp(3)), self.y - (dp(2) if self._pressed else dp(5))
             size: self.width, self.height
             radius: [self.radius + dp(2)]
-        Color:
-            rgba: self.shadow_color[0], self.shadow_color[1], self.shadow_color[2], self.shadow_color[3] * (0.20 if self._pressed else 0.55)
-        RoundedRectangle:
-            pos: self.x + (dp(1) if self._pressed else dp(2)), self.y - (dp(1) if self._pressed else dp(3))
-            size: self.width, self.height
-            radius: [self.radius + dp(1)]
-        Color:
-            rgba: self.shadow_color[0], self.shadow_color[1], self.shadow_color[2], self.shadow_color[3] * (0.40 if self._pressed else 1.0)
-        RoundedRectangle:
-            pos: self.x, self.y - (dp(1) if self._pressed else dp(2))
-            size: self.width, self.height
-            radius: [self.radius]
         # --- Bakgrunnsfyll (mørkere når trykket) ---
         Color:
             rgba: self.bg_color[0] * (0.85 if self._pressed else 1.0), self.bg_color[1] * (0.85 if self._pressed else 1.0), self.bg_color[2] * (0.85 if self._pressed else 1.0), self.bg_color[3]
@@ -222,12 +336,12 @@ Builder.load_string('''
         Line:
             points: self.x + dp(4), self.y + dp(2), self.x + self.width - dp(4), self.y + dp(2)
             width: 1.0
-        # --- Ramme helt ute i kanten (ikke insat) ---
+        # --- Ramme helt ute i kanten ---
         Color:
             rgba: self.border_color
         Line:
             rounded_rectangle: (self.x, self.y, self.width, self.height, self.radius)
-            width: 1.5
+            width: 3.0
 
 <RToggle>:
     background_normal: ''
@@ -236,25 +350,15 @@ Builder.load_string('''
     bold: True
     canvas.before:
         # --- Myk skygge (3 lag stablet) ---
-        # Når toggle er 'down' (aktiv) skal den se "trykket" ut konstant
+        # Når toggle er 'down' (aktiv) skal den se "trykket" ut konstant.
+        # Bruker samme gradient-tekstur som RBtn for konsistens.
         Color:
-            rgba: self.shadow_color[0], self.shadow_color[1], self.shadow_color[2], self.shadow_color[3] * (0.10 if self.state == 'down' else 0.35)
+            rgba: 1, 1, 1, 0.30 if self.state == 'down' else 1.0
         RoundedRectangle:
-            pos: self.x + (dp(1) if self.state == 'down' else dp(3)), self.y - (dp(1) if self.state == 'down' else dp(4))
+            texture: self.shadow_tex
+            pos: self.x + (dp(1) if self.state == 'down' else dp(3)), self.y - (dp(2) if self.state == 'down' else dp(5))
             size: self.width, self.height
             radius: [self.radius + dp(2)]
-        Color:
-            rgba: self.shadow_color[0], self.shadow_color[1], self.shadow_color[2], self.shadow_color[3] * (0.20 if self.state == 'down' else 0.55)
-        RoundedRectangle:
-            pos: self.x + (dp(1) if self.state == 'down' else dp(2)), self.y - (dp(1) if self.state == 'down' else dp(3))
-            size: self.width, self.height
-            radius: [self.radius + dp(1)]
-        Color:
-            rgba: self.shadow_color[0], self.shadow_color[1], self.shadow_color[2], self.shadow_color[3] * (0.40 if self.state == 'down' else 1.0)
-        RoundedRectangle:
-            pos: self.x, self.y - (dp(1) if self.state == 'down' else dp(2))
-            size: self.width, self.height
-            radius: [self.radius]
         # --- Bakgrunnsfyll (mørkere når aktiv) ---
         Color:
             rgba: self.bg_color[0] * (0.85 if self.state == 'down' else 1.0), self.bg_color[1] * (0.85 if self.state == 'down' else 1.0), self.bg_color[2] * (0.85 if self.state == 'down' else 1.0), self.bg_color[3]
@@ -287,18 +391,22 @@ Builder.load_string('''
     background_color: 0, 0, 0, 0
     bold: True
     canvas.before:
-        # Subtil skygge under fanen (kort offset – fanen sitter nesten flatt
-        # men har nok dybde til å skille seg fra tab-bar bakgrunnen)
+        # Skygge under fanen med gradient-tekstur (samme tekstur som RBtn).
+        # Mer alpha + større offset når aktiv for å gi følelse av at fanen
+        # løftes opp fra tab-baren.
         Color:
-            rgba: 0, 0, 0, 0.30 if self.state == 'down' else 0.18
+            rgba: 1, 1, 1, 1.0 if self.state == 'down' else 0.55
         RoundedRectangle:
-            pos: self.x + dp(1), self.y - dp(2)
+            texture: self.shadow_tex
+            pos: self.x + dp(2), self.y - dp(3) if self.state == 'down' else self.y - dp(2)
             size: self.width, self.height
-            radius: [self.radius]
-        # Bakgrunnsfyll
+            radius: [self.radius + dp(1)]
+        # Bakgrunnsfyll – ekte vertikal gradient (lysere topp, mørkere bunn).
+        # Velger riktig tekstur basert på aktiv-tilstand (cached i memory).
         Color:
-            rgba: self.bg_color
+            rgba: 1, 1, 1, 1
         RoundedRectangle:
+            texture: self.bg_tex_active if self.state == 'down' else self.bg_tex_inactive
             pos: self.pos
             size: self.size
             radius: [self.radius]
@@ -313,58 +421,17 @@ Builder.load_string('''
             rgba: self.border_color[0], self.border_color[1], self.border_color[2], self.border_color[3] * (1.0 if self.state == 'down' else 0.55)
         Line:
             rounded_rectangle: (self.x, self.y, self.width, self.height, self.radius)
-            width: 1.5
-        # AKTIV-INDIKATOR: myk gull-glød i bunnen.
-        # Bygges som 9 stablede rektangler – bredeste lag svakest i bunn,
-        # smaleste lag sterkest øverst i stabelen. Det visuelle resultatet
-        # er en myk lysstripe som peaker i senter og fader gradvis ut til
-        # transparent på sidene. Kantene er ikke synlige fordi alpha-økingen
-        # er liten per lag.
+            width: 3.0
+        # AKTIV-INDIKATOR: ekte glatt cosinus-gradient via tekstur.
+        # Stripa er 3px høy, går nesten helt ut til kantene.
+        # Teksturen er en horisontal gull-glød som peaker i senter.
+        # Når state ikke er 'down', tegner vi størrelse 0 (usynlig).
         Color:
-            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.06) if self.state == 'down' else (0, 0, 0, 0)
+            rgba: 1, 1, 1, 1 if self.state == 'down' else 0
         Rectangle:
-            pos: self.x + dp(2), self.y + dp(2)
-            size: (self.width - dp(4)) if self.state == 'down' else 0, dp(2)
-        Color:
-            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.10) if self.state == 'down' else (0, 0, 0, 0)
-        Rectangle:
-            pos: self.x + dp(6), self.y + dp(2)
-            size: (self.width - dp(12)) if self.state == 'down' else 0, dp(2)
-        Color:
-            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.16) if self.state == 'down' else (0, 0, 0, 0)
-        Rectangle:
-            pos: self.x + dp(10), self.y + dp(2)
-            size: (self.width - dp(20)) if self.state == 'down' else 0, dp(2)
-        Color:
-            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.24) if self.state == 'down' else (0, 0, 0, 0)
-        Rectangle:
-            pos: self.x + dp(15), self.y + dp(2)
-            size: (self.width - dp(30)) if self.state == 'down' else 0, dp(2)
-        Color:
-            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.34) if self.state == 'down' else (0, 0, 0, 0)
-        Rectangle:
-            pos: self.x + dp(20), self.y + dp(2)
-            size: (self.width - dp(40)) if self.state == 'down' else 0, dp(2)
-        Color:
-            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.46) if self.state == 'down' else (0, 0, 0, 0)
-        Rectangle:
-            pos: self.x + dp(26), self.y + dp(2)
-            size: (self.width - dp(52)) if self.state == 'down' else 0, dp(2)
-        Color:
-            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.60) if self.state == 'down' else (0, 0, 0, 0)
-        Rectangle:
-            pos: self.x + dp(33), self.y + dp(2)
-            size: (self.width - dp(66)) if self.state == 'down' else 0, dp(2)
-        Color:
-            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.75) if self.state == 'down' else (0, 0, 0, 0)
-        Rectangle:
-            pos: self.x + dp(42), self.y + dp(2)
-            size: (self.width - dp(84)) if self.state == 'down' else 0, dp(2)
-        Color:
-            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.90) if self.state == 'down' else (0, 0, 0, 0)
-        Rectangle:
-            pos: self.x + dp(54), self.y + dp(2)
-            size: (self.width - dp(108)) if self.state == 'down' else 0, dp(2)
+            texture: self.glow_tex
+            pos: self.x + dp(4), self.y + dp(3)
+            size: (self.width - dp(8)) if self.state == 'down' else 0, dp(3)
 
 <RBox>:
     canvas.before:
@@ -388,7 +455,7 @@ Builder.load_string('''
             rgba: self.frame_color
         Line:
             rectangle: (self.x, self.y, self.width, self.height)
-            width: 1.5
+            width: 3.0
 ''')
 
 class RBtn(Button):
@@ -397,6 +464,11 @@ class RBtn(Button):
     border_color = ListProperty(GDIM)
     radius       = NumericProperty(dp(14))
     _pressed     = BooleanProperty(False)
+    shadow_tex   = ObjectProperty(None, allownone=True)
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.shadow_tex = get_drop_shadow_tex()
 
     def on_press(self):
         self._pressed = True
@@ -413,15 +485,42 @@ class RToggle(ToggleButton):
     bg_color     = ListProperty(BTN)
     shadow_color = ListProperty(SHAD)
     border_color = ListProperty(GDIM)
-    border_width = NumericProperty(1.5)
+    border_width = NumericProperty(3.0)
     radius       = NumericProperty(dp(14))
+    shadow_tex   = ObjectProperty(None, allownone=True)
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.shadow_tex = get_drop_shadow_tex()
 
 class RTab(ToggleButton):
-    """Toggle-knapp for fane-bar – flat (ingen skygge), aktiv-stripe i bunn."""
-    bg_color        = ListProperty(BTN)
-    border_color    = ListProperty(GDIM)
-    indicator_color = ListProperty(GOLD)
-    radius          = NumericProperty(dp(10))
+    """Toggle-knapp for fane-bar – ekte gradient på bakgrunn og aktiv-stripe.
+
+    Bruker fire teksturer (alle cached globalt):
+    - bg_tex_inactive: vertikal grønn gradient for inaktiv tilstand
+    - bg_tex_active: lysere vertikal grønn gradient når aktiv
+    - shadow_tex: vertikal mørk gradient for skygge under fanen
+    - glow_tex: horisontal cosinus-glød for gull-stripa i bunnen
+
+    Dette gir ekte glatte gradienter uten synlige trinn.
+    """
+    bg_color          = ListProperty(BTN)         # ikke brukt for fyll, men
+                                                  # bevart for kompatibilitet
+    border_color      = ListProperty(GDIM)
+    indicator_color   = ListProperty(GOLD)
+    radius            = NumericProperty(dp(10))
+    glow_tex          = ObjectProperty(None, allownone=True)
+    bg_tex_active     = ObjectProperty(None, allownone=True)
+    bg_tex_inactive   = ObjectProperty(None, allownone=True)
+    shadow_tex        = ObjectProperty(None, allownone=True)
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        # Hent cached teksturer ved opprettelse
+        self.glow_tex = get_gold_glow_tex()
+        self.bg_tex_active = get_tab_active_bg_tex()
+        self.bg_tex_inactive = get_tab_inactive_bg_tex()
+        self.shadow_tex = get_drop_shadow_tex()
 
 class RBox(BoxLayout):
     bg_color = ListProperty(BG2)
