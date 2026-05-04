@@ -2005,7 +2005,7 @@ try:
                         keep_ratio=True,   # cover hele skjermen
                         opacity=0.85,       # lys nok til å sees gjennom
                                             # halvgjennomsiktige paneler
-                        size_hint=(1, 1),
+                        size_hint=(1, 0.5),
                         pos_hint={'x': 0, 'y': 0},
                     )
                     wrapper.add_widget(bg_img)
