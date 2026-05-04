@@ -1822,14 +1822,17 @@ try:
                     Clock.schedule_once(lambda dt: cb(ok), 0)
             threading.Thread(target=_c, daemon=True).start()
         def cast_img(self, url, cb=None):
-            clean_url = url.split('?', 1)[0].lower()
-            ext = os.path.splitext(clean_url)[1]
+            url_without_params = url.split('?', 1)[0].lower()
+            file_extension = os.path.splitext(url_without_params)[1]
             mime_type = {
                 '.jpg': 'image/jpeg',
                 '.jpeg': 'image/jpeg',
                 '.png': 'image/png',
                 '.webp': 'image/webp',
-            }.get(ext, 'image/jpeg')
+            }.get(file_extension)
+            if not mime_type:
+                mime_type = 'image/jpeg'
+                log(f"Cast image fallback MIME for {url_without_params}")
             self.cast_media(url, mime_type, cb=cb)
         def disconnect(self):
             try:
