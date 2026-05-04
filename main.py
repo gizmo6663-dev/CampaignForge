@@ -83,9 +83,10 @@ try:
         touch_cb kalles med (canvas_x, canvas_y) i CANVAS_W x CANVAS_H omraade.
         Appen selv konverterer til grid-ruter.
         """
-        def __init__(self, touch_cb=None, **kw):
+        def __init__(self, touch_cb=None, canvas_size_cb=None, **kw):
             super().__init__(**kw)
             self._touch_cb = touch_cb
+            self._canvas_size_cb = canvas_size_cb
 
         def on_touch_down(self, touch):
             if not self.collide_point(*touch.pos):
@@ -102,9 +103,15 @@ try:
             iy = touch.y - off_y
             if ix < 0 or iy < 0 or ix > nw or iy > nh:
                 return False
+            if self._canvas_size_cb:
+                cw, ch = self._canvas_size_cb()
+            else:
+                cw, ch = CANVAS_W, CANVAS_H
+            if cw <= 0 or ch <= 0:
+                return False
             # Skaler til CANVAS-koord, flip y (Kivy origo nede, PIL oppe)
-            cx = ix * CANVAS_W / nw
-            cy = (nh - iy) * CANVAS_H / nh
+            cx = ix * cw / nw
+            cy = (nh - iy) * ch / nh
             self._touch_cb(cx, cy)
             return True
     # === D&D 5E 2024 KARAKTERFELT ===
@@ -1800,19 +1807,33 @@ try:
                 if cb:
                     Clock.schedule_once(lambda dt: cb(ok), 0)
             threading.Thread(target=_c, daemon=True).start()
-        def cast_img(self, url, cb=None):
+        def cast_media(self, url, mime_type, cb=None):
             if not self.mc:
                 return
             def _c():
                 try:
-                    self.mc.play_media(url, 'image/jpeg')
+                    self.mc.play_media(url, mime_type)
                     self.mc.block_until_active()
                     ok = True
-                except:
+                except Exception as e:
+                    log(f"Cast media error ({mime_type}): {e}")
                     ok = False
                 if cb:
                     Clock.schedule_once(lambda dt: cb(ok), 0)
             threading.Thread(target=_c, daemon=True).start()
+        def cast_img(self, url, cb=None):
+            url_without_params = url.split('?', 1)[0].lower()
+            file_extension = os.path.splitext(url_without_params)[1]
+            mime_type = {
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.png': 'image/png',
+                '.webp': 'image/webp',
+            }.get(file_extension)
+            if not mime_type:
+                mime_type = 'image/jpeg'
+                log(f"Cast image fallback MIME for {url_without_params}")
+            self.cast_media(url, mime_type, cb=cb)
         def disconnect(self):
             try:
                 if self._br:
@@ -4418,6 +4439,11 @@ try:
             """Antall rader som faar plass."""
             return CANVAS_H // self._battle_cell_size()
 
+        def _battle_render_size(self):
+            """Faktisk render-stoerrelse for aktivt rutenett."""
+            cell = self._battle_cell_size()
+            return self._bm_grid_cols * cell, self._battle_grid_rows() * cell
+
         def _battle_save(self):
             """Lagre battlemap-tilstand til JSON."""
             save_json(BATTLE_FILE, {
@@ -4473,6 +4499,7 @@ try:
                 allow_stretch=True,
                 keep_ratio=True,
                 nocache=True,  # force reload ved endring
+                canvas_size_cb=self._battle_render_size,
                 touch_cb=self._battle_on_map_touch)
             map_box.add_widget(self._bm_img)
             p.add_widget(map_box)
@@ -4580,6 +4607,7 @@ try:
                 t['col'] = col
                 t['row'] = row
                 self._bm_sel_token = None
+                self._battle_save()
                 self._battle_refresh_img()
                 self._battle_update_info(
                     f"{t.get('name','?')} flyttet {feet} ft "
@@ -4593,6 +4621,7 @@ try:
                 self._bm_fog.remove(cell)
             else:
                 self._bm_fog.append(cell)
+            self._battle_save()
             self._battle_refresh_img()
 
         def _battle_handle_measure_tap(self, col, row):
@@ -4646,8 +4675,7 @@ try:
                 cell = self._battle_cell_size()
                 cols = self._bm_grid_cols
                 rows = self._battle_grid_rows()
-                w = cols * cell
-                h = rows * cell
+                w, h = self._battle_render_size()
 
                 # Base: bakgrunn eller svart
                 if self._bm_bg and os.path.exists(self._bm_bg):
@@ -4852,6 +4880,7 @@ try:
 
         def _battle_toggle_grid(self):
             self._bm_show_grid = not self._bm_show_grid
+            self._battle_save()
             self._battle_show_menu()   # rerender meny-tekst
             # og selve kartet neste gang
 
@@ -4869,6 +4898,7 @@ try:
             self._bm_fog = [
                 c for c in self._bm_fog
                 if 0 <= c[0] < cols and 0 <= c[1] < rows]
+            self._battle_save()
             self._battle_show_menu()
 
         def _battle_fill_fog(self):
@@ -4878,19 +4908,23 @@ try:
             self._bm_fog = [[c, r]
                             for c in range(cols)
                             for r in range(rows)]
+            self._battle_save()
             self._battle_show_menu()
 
         def _battle_clear_fog(self):
             self._bm_fog = []
+            self._battle_save()
             self._battle_show_menu()
 
         def _battle_clear_tokens(self):
             self._bm_tokens = []
             self._bm_sel_token = None
+            self._battle_save()
             self._battle_show_menu()
 
         def _battle_clear_bg(self):
             self._bm_bg = None
+            self._battle_save()
             self._battle_show_menu()
 
         def _battle_sync_from_init(self):
@@ -4932,6 +4966,7 @@ try:
                 })
             self._bm_tokens = new_tokens
             self._bm_sel_token = None
+            self._battle_save()
             self._mk_battle_map()
 
         def _battle_cast(self):
@@ -4946,20 +4981,11 @@ try:
             self._bm_cast_counter += 1
             url = self.server.url(BATTLE_PNG)
             url = f"{url}?t={self._bm_cast_counter}"
-            # Bruk PNG mime
-            def _c():
-                try:
-                    self.cast.mc.play_media(url, 'image/png')
-                    self.cast.mc.block_until_active()
-                    Clock.schedule_once(
-                        lambda dt: self._battle_update_info(
-                            "Sendt til TV."), 0)
-                except Exception as e:
-                    log(f"Cast battlemap error: {e}")
-                    Clock.schedule_once(
-                        lambda dt: self._battle_update_info(
-                            "Cast feilet."), 0)
-            threading.Thread(target=_c, daemon=True).start()
+            self.cast.cast_media(
+                url,
+                'image/png',
+                cb=lambda ok: self._battle_update_info(
+                    "Sendt til TV." if ok else "Cast feilet."))
 
         def _battle_pick_bg(self):
             """Vis bildevalg fra MAPS_DIR."""
@@ -5015,6 +5041,7 @@ try:
 
         def _battle_set_bg(self, path):
             self._bm_bg = path
+            self._battle_save()
             self._battle_show_menu()
 
 
