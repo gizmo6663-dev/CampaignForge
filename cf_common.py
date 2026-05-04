@@ -8,6 +8,7 @@ import os, json
 from functools import partial
 
 from kivy.app import App
+from kivy.clock import Clock
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.gridlayout import GridLayout
@@ -422,10 +423,33 @@ class RToggle(ToggleButton):
     inactive_text_color = ListProperty(DIM)
 
     def __init__(self, **kwargs):
+        self._style_ready = False
+        self._initial_state = kwargs.get('state', 'normal')
+        self._initial_bg_color = list(kwargs['bg_color']) if 'bg_color' in kwargs else None
+        self._initial_text_color = list(kwargs['color']) if 'color' in kwargs else None
+        self._has_active_bg_color = 'active_bg_color' in kwargs
+        self._has_inactive_bg_color = 'inactive_bg_color' in kwargs
+        self._has_active_text_color = 'active_text_color' in kwargs
+        self._has_inactive_text_color = 'inactive_text_color' in kwargs
         super().__init__(**kwargs)
-        self._sync_state_style()
+        Clock.schedule_once(self._finish_style_init, 0)
 
     def on_state(self, *args):
+        if self._style_ready:
+            self._sync_state_style()
+
+    def _finish_style_init(self, *_):
+        if self._initial_bg_color is not None:
+            if self._initial_state == 'down' and not self._has_active_bg_color:
+                self.active_bg_color = self._initial_bg_color
+            elif self._initial_state != 'down' and not self._has_inactive_bg_color:
+                self.inactive_bg_color = self._initial_bg_color
+        if self._initial_text_color is not None:
+            if self._initial_state == 'down' and not self._has_active_text_color:
+                self.active_text_color = self._initial_text_color
+            elif self._initial_state != 'down' and not self._has_inactive_text_color:
+                self.inactive_text_color = self._initial_text_color
+        self._style_ready = True
         self._sync_state_style()
 
     def _sync_state_style(self):
