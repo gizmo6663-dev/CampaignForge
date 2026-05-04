@@ -71,6 +71,19 @@ class ScenariosMixin:
                 bg_color=BTNH if act else BTN,
                 color=GOLD if act else DIM,
                 font_size=sp(FONT_SMALL), bold=True)
+
+            def _on_state(btn, st):
+                # Oppdater farger ved state-bytte (binding fungerer ikke
+                # av seg selv siden bg_color er en widget-property, ikke
+                # en KV-uttrykksverdi)
+                if st == 'down':
+                    btn.bg_color = BTNH
+                    btn.color = GOLD
+                else:
+                    btn.bg_color = BTN
+                    btn.color = DIM
+
+            b.bind(state=_on_state)
             b.bind(on_release=lambda btn, k=key: self._lyd_switch(k))
             return b
     

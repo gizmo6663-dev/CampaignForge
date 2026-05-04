@@ -222,12 +222,12 @@ Builder.load_string('''
         Line:
             points: self.x + dp(4), self.y + dp(2), self.x + self.width - dp(4), self.y + dp(2)
             width: 1.0
-        # --- Tynnere, dempet ramme (passer paletten bedre) ---
+        # --- Ramme helt ute i kanten (ikke insat) ---
         Color:
             rgba: self.border_color
         Line:
-            rounded_rectangle: (self.x + dp(1), self.y + dp(1), self.width - dp(2), self.height - dp(2), self.radius)
-            width: 1.3
+            rounded_rectangle: (self.x, self.y, self.width, self.height, self.radius)
+            width: 1.5
 
 <RToggle>:
     background_normal: ''
@@ -274,11 +274,11 @@ Builder.load_string('''
         Line:
             points: self.x + dp(4), self.y + dp(2), self.x + self.width - dp(4), self.y + dp(2)
             width: 1.0
-        # --- Tykkere gull-ramme ---
+        # --- Ramme helt ute i kanten ---
         Color:
             rgba: self.border_color
         Line:
-            rounded_rectangle: (self.x + dp(1), self.y + dp(1), self.width - dp(2), self.height - dp(2), self.radius)
+            rounded_rectangle: (self.x, self.y, self.width, self.height, self.radius)
             width: self.border_width
 
 <RTab>:
@@ -308,30 +308,63 @@ Builder.load_string('''
         Line:
             rounded_rectangle: (self.x + dp(2), self.y + dp(2), self.width - dp(4), self.height - dp(4), self.radius - dp(1))
             width: 1.0
-        # Border – dempet, tynn (ikke kraftig gull)
+        # Border – helt ute i kanten, tydelig
         Color:
-            rgba: self.border_color[0], self.border_color[1], self.border_color[2], self.border_color[3] * (1.0 if self.state == 'down' else 0.45)
+            rgba: self.border_color[0], self.border_color[1], self.border_color[2], self.border_color[3] * (1.0 if self.state == 'down' else 0.55)
         Line:
-            rounded_rectangle: (self.x + dp(1), self.y + dp(1), self.width - dp(2), self.height - dp(2), self.radius)
-            width: 1.2
-        # AKTIV-INDIKATOR: gull-stripe i bunnen med horisontal gradient
-        # Tre stablede rektangler som fader fra senter til kantene gir
-        # følelsen av en myk lysstripe i stedet for skarp kant.
+            rounded_rectangle: (self.x, self.y, self.width, self.height, self.radius)
+            width: 1.5
+        # AKTIV-INDIKATOR: myk gull-glød i bunnen.
+        # Bygges som 9 stablede rektangler – bredeste lag svakest i bunn,
+        # smaleste lag sterkest øverst i stabelen. Det visuelle resultatet
+        # er en myk lysstripe som peaker i senter og fader gradvis ut til
+        # transparent på sidene. Kantene er ikke synlige fordi alpha-økingen
+        # er liten per lag.
         Color:
-            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.20) if self.state == 'down' else (0, 0, 0, 0)
+            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.06) if self.state == 'down' else (0, 0, 0, 0)
         Rectangle:
-            pos: self.x + dp(8), self.y + dp(2)
-            size: (self.width - dp(16)) if self.state == 'down' else 0, dp(2)
+            pos: self.x + dp(2), self.y + dp(2)
+            size: (self.width - dp(4)) if self.state == 'down' else 0, dp(2)
         Color:
-            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.50) if self.state == 'down' else (0, 0, 0, 0)
+            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.10) if self.state == 'down' else (0, 0, 0, 0)
+        Rectangle:
+            pos: self.x + dp(6), self.y + dp(2)
+            size: (self.width - dp(12)) if self.state == 'down' else 0, dp(2)
+        Color:
+            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.16) if self.state == 'down' else (0, 0, 0, 0)
+        Rectangle:
+            pos: self.x + dp(10), self.y + dp(2)
+            size: (self.width - dp(20)) if self.state == 'down' else 0, dp(2)
+        Color:
+            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.24) if self.state == 'down' else (0, 0, 0, 0)
+        Rectangle:
+            pos: self.x + dp(15), self.y + dp(2)
+            size: (self.width - dp(30)) if self.state == 'down' else 0, dp(2)
+        Color:
+            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.34) if self.state == 'down' else (0, 0, 0, 0)
         Rectangle:
             pos: self.x + dp(20), self.y + dp(2)
             size: (self.width - dp(40)) if self.state == 'down' else 0, dp(2)
         Color:
-            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.85) if self.state == 'down' else (0, 0, 0, 0)
+            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.46) if self.state == 'down' else (0, 0, 0, 0)
         Rectangle:
-            pos: self.x + dp(34), self.y + dp(2)
-            size: (self.width - dp(68)) if self.state == 'down' else 0, dp(2)
+            pos: self.x + dp(26), self.y + dp(2)
+            size: (self.width - dp(52)) if self.state == 'down' else 0, dp(2)
+        Color:
+            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.60) if self.state == 'down' else (0, 0, 0, 0)
+        Rectangle:
+            pos: self.x + dp(33), self.y + dp(2)
+            size: (self.width - dp(66)) if self.state == 'down' else 0, dp(2)
+        Color:
+            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.75) if self.state == 'down' else (0, 0, 0, 0)
+        Rectangle:
+            pos: self.x + dp(42), self.y + dp(2)
+            size: (self.width - dp(84)) if self.state == 'down' else 0, dp(2)
+        Color:
+            rgba: (self.indicator_color[0], self.indicator_color[1], self.indicator_color[2], 0.90) if self.state == 'down' else (0, 0, 0, 0)
+        Rectangle:
+            pos: self.x + dp(54), self.y + dp(2)
+            size: (self.width - dp(108)) if self.state == 'down' else 0, dp(2)
 
 <RBox>:
     canvas.before:
@@ -355,7 +388,7 @@ Builder.load_string('''
             rgba: self.frame_color
         Line:
             rectangle: (self.x, self.y, self.width, self.height)
-            width: 1.3
+            width: 1.5
 ''')
 
 class RBtn(Button):
@@ -380,7 +413,7 @@ class RToggle(ToggleButton):
     bg_color     = ListProperty(BTN)
     shadow_color = ListProperty(SHAD)
     border_color = ListProperty(GDIM)
-    border_width = NumericProperty(1.3)
+    border_width = NumericProperty(1.5)
     radius       = NumericProperty(dp(14))
 
 class RTab(ToggleButton):
