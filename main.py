@@ -63,9 +63,10 @@ try:
         LOOP_BG, LOOP_BG_ON, ONE_BG, ONE_BORDER,
         IMG_EXT, SND_EXT, HTTP_PORT,
         AMBIENT_SOUNDS, VOGLER_STAGES,
-        RBtn, RToggle, RBox, FramedBox,
-        mkbtn, mklbl, mkvol, mksep,
+        RBtn, RToggle, RTab, RBox, FramedBox,
+        mkbtn, mklbl, mkvol, mksep, mkdiv,
         save_json, load_json, ensure_dirs,
+        FONT_H1, FONT_H2, FONT_BODY, FONT_SMALL, FONT_DIM,
     )
     from audio_layers import LayerPlayer, OneShotPlayer
     from scenarios import ScenariosMixin
@@ -2002,10 +2003,10 @@ try:
                     bg_img = Image(
                         source=bg_path,
                         allow_stretch=True,
-                        keep_ratio=True,   # cover hele skjermen
+                        keep_ratio=False,   # cover hele skjermen
                         opacity=0.85,       # lys nok til å sees gjennom
                                             # halvgjennomsiktige paneler
-                        size_hint=(1, 0.6),
+                        size_hint=(1, 1),
                         pos_hint={'x': 0, 'y': 0},
                     )
                     wrapper.add_widget(bg_img)
@@ -2032,15 +2033,23 @@ try:
 
             # FANER
             tabs = RBox(size_hint_y=None, height=dp(52), spacing=dp(4),
-                        padding=[dp(8), 0], bg_color=BTN)
+                        padding=[dp(8), dp(4)], bg_color=BTN)
             self._tabs = {}
-            for key, txt in [('img','Bilder'),('lyd','Lyd'),('tool','Karakter'),('rules','Regler'),('cast','Cast')]:
+            # Faner med ASCII-safe ikon-prefiks for visuell variasjon
+            tab_defs = [
+                ('img',   'Bilder'),
+                ('lyd',   'Lyd'),
+                ('tool',  'Karakter'),
+                ('rules', 'Regler'),
+                ('cast',  'Cast'),
+            ]
+            for key, txt in tab_defs:
                 active = key == 'img'
-                b = RToggle(text=txt, group='tabs',
-                            state='down' if active else 'normal',
-                            bg_color=BTNH if active else BTN,
-                            color=GOLD if active else DIM,
-                            font_size=sp(11))
+                b = RTab(text=txt, group='tabs',
+                         state='down' if active else 'normal',
+                         bg_color=BTNH if active else BTN,
+                         color=GOLD if active else DIM,
+                         font_size=sp(FONT_SMALL))
                 b.bind(state=self._tab_color)
                 b.bind(on_release=lambda x, k=key: self._tab(k))
                 tabs.add_widget(b)

@@ -40,9 +40,10 @@ from cf_common import (
     SND_EXT, MUSIC_DIR, ONESHOT_DIR,
     SCENARIO_FILE, LIBRARY_FILE,
     AMBIENT_SOUNDS, VOGLER_STAGES,
-    RBtn, RToggle, RBox, FramedBox,
-    mkbtn, mklbl, mkvol, mksep,
+    RBtn, RToggle, RTab, RBox, FramedBox,
+    mkbtn, mklbl, mkvol, mksep, mkdiv,
     save_json, load_json, log,
+    FONT_H1, FONT_H2, FONT_BODY, FONT_SMALL, FONT_DIM,
 )
 from audio_layers import LayerPlayer
 
@@ -64,12 +65,12 @@ class ScenariosMixin:
     
         def _mk_sub(key, label):
             act = self._lyd_sub == key
-            b = RToggle(
+            b = RTab(
                 text=label, group='lyd_sub',
                 state='down' if act else 'normal',
                 bg_color=BTNH if act else BTN,
                 color=GOLD if act else DIM,
-                font_size=sp(11), bold=True)
+                font_size=sp(FONT_SMALL), bold=True)
             b.bind(on_release=lambda btn, k=key: self._lyd_switch(k))
             return b
     
@@ -174,7 +175,8 @@ class ScenariosMixin:
     
         p.add_widget(mklbl("Hvert scenario inneholder scener.\n"
                            "Hver scene har lyd-bokser (lag) og one-shots.",
-                           color=DIM, size=10, wrap=True))
+                           color=DIM, size=FONT_DIM, wrap=True))
+        p.add_widget(mkdiv())
     
         scroll = ScrollView()
         g = GridLayout(cols=1, spacing=dp(4), padding=dp(6),
@@ -305,6 +307,7 @@ class ScenariosMixin:
                               lambda: self._scn_add_scene(),
                               accent=True))
         p.add_widget(top2)
+        p.add_widget(mkdiv())
     
         scroll = ScrollView()
         g = GridLayout(cols=1, spacing=dp(4), padding=dp(6),
@@ -477,6 +480,7 @@ class ScenariosMixin:
             loop_grid.add_widget(w)
         loop_scroll.add_widget(loop_grid)
         p.add_widget(loop_scroll)
+        p.add_widget(mkdiv(margin_y=2, alpha=0.20))
     
         # One-shot overskrift + +/- (kun i edit-modus)
         os_hdr = BoxLayout(size_hint_y=None, height=dp(38), spacing=dp(6))
@@ -504,6 +508,7 @@ class ScenariosMixin:
             os_row.add_widget(w)
         os_scroll.add_widget(os_row)
         p.add_widget(os_scroll)
+        p.add_widget(mkdiv(margin_y=2, alpha=0.20))
     
         # === MASTER-VOLUM ===
         mv_row = BoxLayout(size_hint_y=None, height=dp(36),
