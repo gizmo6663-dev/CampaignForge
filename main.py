@@ -2118,6 +2118,26 @@ try:
             self.chars = load_json(CHAR_FILE, [])
             self.scenarios = load_json(SCENARIO_FILE, [])
             self.library = load_json(LIBRARY_FILE, [])
+            # Last fiendedata fra bundlet enemies.json (i APP_DIR – ved
+            # siden av main.py i APK-en). Inneholder statblokker for alle
+            # 65 vanlige fiender med AC/HP/angrep/spells.
+            self._enemies_data = {}
+            try:
+                enemies_path = os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "enemies.json")
+                if os.path.exists(enemies_path):
+                    with open(enemies_path, 'r', encoding='utf-8') as f:
+                        raw = json.load(f)
+                    # Hopp over _meta-noekkelen
+                    self._enemies_data = {
+                        k: v for k, v in raw.items()
+                        if not k.startswith('_')}
+                    log(f"Loaded {len(self._enemies_data)} enemy statblocks")
+                else:
+                    log(f"enemies.json not found at {enemies_path}")
+            except Exception as e:
+                log(f"Failed to load enemies.json: {e}")
             self.edit_idx = None
             # Scenario-state
             self._scn_view = 'list'      # 'list' | 'scenes' | 'editor'
@@ -4782,11 +4802,15 @@ try:
             return entry, ch
 
         def _battle_build_stat_panel(self):
-            """Bygg kompakt stat-panel for den med turen.
+            """Bygg stat-panel for den med turen.
 
-            For PC: HP +/-, AC, Speed, spell-slots med +/- per nivaa.
-            For fiende eller frittstaaende init-entry: HP +/-.
-            For tom init-liste: hjelpetekst."""
+            Layout:
+              Header: navn (stor, farget) | type-badge | HP-knapper
+              Row 1:  HP-tekst, AC, Speed, evt. CR
+              Section "ANGREP": liste av angrep med to-hit + skade
+              Section "TREKK": passive evner (kun fiender)
+              Section "MAGI": spell-slots (PC) eller spells-liste (fiende)
+            """
             if not hasattr(self, '_bm_stat_box') or self._bm_stat_box is None:
                 return
             box = self._bm_stat_box
@@ -4805,90 +4829,191 @@ try:
             type_color = (GOLD if tp == 'PC'
                           else (TXT if tp == 'NPC' else RED))
 
-            # === RAD 1: Navn + type + AC + Speed ===
-            top = BoxLayout(size_hint_y=None, height=dp(28), spacing=dp(6))
+            # Slaa opp fiendedata fra bundlet enemies.json (kun for
+            # fiender og NPC-er som ikke er i karakter-lista)
+            enemy_data = None
+            if ch is None:
+                enemy_data = self._enemies_data.get(name)
+                # Proev ogsaa case-insensitiv match
+                if enemy_data is None and self._enemies_data:
+                    nm_low = name.strip().lower()
+                    for k, v in self._enemies_data.items():
+                        if k.lower() == nm_low:
+                            enemy_data = v
+                            break
+
+            # ============================================================
+            # HEADER: navn + type-badge + HP-justering paa hoeyre side
+            # ============================================================
+            header = BoxLayout(size_hint_y=None, height=dp(38),
+                               spacing=dp(4))
+            # Navn (stort)
             name_lbl = Label(
-                text=f"[b]{name}[/b]  ({tp})",
-                markup=True, font_size=sp(13), color=type_color,
-                halign='left', valign='middle', size_hint_x=0.55)
+                text=f"[b]{name}[/b]",
+                markup=True, font_size=sp(16), color=type_color,
+                halign='left', valign='middle', size_hint_x=0.50)
             name_lbl.bind(size=lambda w, v: setattr(w, 'text_size', v))
-            top.add_widget(name_lbl)
+            header.add_widget(name_lbl)
+            # HP-justeringsknapper - kompakte
+            for delta, lbl, danger in [(-5, "-5", True),
+                                       (-1, "-1", True),
+                                       (+1, "+1", False),
+                                       (+5, "+5", False)]:
+                btn = mkbtn(
+                    lbl,
+                    lambda d=delta: self._battle_adjust_hp(d),
+                    small=True, danger=danger,
+                    size_hint_x=None)
+                btn.width = dp(40)
+                header.add_widget(btn)
+            box.add_widget(header)
 
-            if ch:
-                ac = ch.get('armor_class', 10)
-                spd = ch.get('speed', 30)
-                top.add_widget(mklbl(
-                    f"AC {ac}", color=DIM, size=11))
-                top.add_widget(mklbl(
-                    f"Spd {spd}", color=DIM, size=11))
-            else:
-                # Frittstaaende init-entry – vis DEX som info
-                dex_mod = entry.get('dex_mod', 0)
-                sgn = "+" if dex_mod >= 0 else ""
-                top.add_widget(mklbl(
-                    f"DEX {sgn}{dex_mod}", color=DIM, size=11))
-            box.add_widget(top)
-
-            # === RAD 2: HP +/- ===
-            hp_row = BoxLayout(size_hint_y=None, height=dp(36), spacing=dp(4))
+            # ============================================================
+            # STATS-RAD: HP, AC, Speed, CR
+            # ============================================================
+            stats_row = BoxLayout(size_hint_y=None, height=dp(22),
+                                  spacing=dp(8))
+            # HP-tekst
             if ch:
                 hp_cur = ch.get('hp_current', 0)
                 hp_max = ch.get('hp_max', 0)
                 hp_tmp = ch.get('hp_temp', 0)
                 tmp_txt = f" (+{hp_tmp})" if hp_tmp else ""
-                hp_lbl = Label(
-                    text=f"HP {hp_cur}/{hp_max}{tmp_txt}",
-                    font_size=sp(13), color=TXT, bold=True,
-                    halign='left', valign='middle')
-                hp_lbl.bind(size=lambda w, v: setattr(w, 'text_size', v))
-                hp_row.add_widget(hp_lbl)
-                for delta, lbl, danger in [(-5, "-5", True),
-                                           (-1, "-1", True),
-                                           (+1, "+1", False),
-                                           (+5, "+5", False)]:
-                    btn = mkbtn(
-                        lbl,
-                        lambda d=delta: self._battle_adjust_hp(d),
-                        small=True, danger=danger,
-                        size_hint_x=None)
-                    btn.width = dp(46)
-                    hp_row.add_widget(btn)
+                hp_str = f"HP {hp_cur}/{hp_max}{tmp_txt}"
             else:
-                # Bruker init-entry sitt hp-felt (fritekstformat
-                # "cur/max" som sync_from_init satte)
-                hp_txt = entry.get('hp', '?/?')
-                hp_lbl = Label(
-                    text=f"HP {hp_txt}",
-                    font_size=sp(13), color=TXT, bold=True,
-                    halign='left', valign='middle')
-                hp_lbl.bind(size=lambda w, v: setattr(w, 'text_size', v))
-                hp_row.add_widget(hp_lbl)
-                for delta, lbl, danger in [(-5, "-5", True),
-                                           (-1, "-1", True),
-                                           (+1, "+1", False),
-                                           (+5, "+5", False)]:
-                    btn = mkbtn(
-                        lbl,
-                        lambda d=delta: self._battle_adjust_hp(d),
-                        small=True, danger=danger,
-                        size_hint_x=None)
-                    btn.width = dp(46)
-                    hp_row.add_widget(btn)
-            box.add_widget(hp_row)
+                hp_str = f"HP {entry.get('hp', '?/?')}"
+            stats_row.add_widget(Label(
+                text=f"[b]{hp_str}[/b]", markup=True,
+                font_size=sp(12), color=TXT,
+                halign='left', valign='middle',
+                size_hint_x=0.40))
 
-            # === RAD 3+: Spell-slots (kun PC med slots) ===
+            # AC, Speed, CR – henter fra ch ELLER fra enemy_data
+            if ch:
+                ac = ch.get('armor_class', 10)
+                spd = ch.get('speed', 30)
+                stats_row.add_widget(mklbl(f"AC {ac}", color=DIM, size=11))
+                stats_row.add_widget(mklbl(f"Spd {spd}", color=DIM, size=11))
+            elif enemy_data:
+                ac = enemy_data.get('ac', '?')
+                spd = enemy_data.get('speed', '?')
+                cr = enemy_data.get('cr', '')
+                stats_row.add_widget(mklbl(
+                    f"AC {ac}", color=DIM, size=11, size_hint_x=None))
+                # Speed kan vaere lang – la den ta plass
+                spd_lbl = Label(
+                    text=f"Spd {spd}", font_size=sp(10), color=DIM,
+                    halign='left', valign='middle')
+                spd_lbl.bind(size=lambda w, v: setattr(w, 'text_size', v))
+                stats_row.add_widget(spd_lbl)
+                if cr:
+                    cr_lbl = mklbl(f"CR {cr}", color=GOLD, size=11,
+                                   size_hint_x=None)
+                    cr_lbl.width = dp(50)
+                    stats_row.add_widget(cr_lbl)
+            else:
+                # Frittstaaende entry uten karakter eller fiendedata
+                dex_mod = entry.get('dex_mod', 0)
+                sgn = "+" if dex_mod >= 0 else ""
+                stats_row.add_widget(mklbl(
+                    f"DEX {sgn}{dex_mod}", color=DIM, size=11))
+            box.add_widget(stats_row)
+
+            # ============================================================
+            # ABILITY SCORES (kun fra enemy_data – PC har egen visning
+            # i Karakter-fanen)
+            # ============================================================
+            if enemy_data and 'stats' in enemy_data:
+                ab_row = BoxLayout(size_hint_y=None, height=dp(20),
+                                   spacing=dp(2))
+                stats = enemy_data['stats']
+                for ab in ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']:
+                    score = stats.get(ab, 10)
+                    mod = (score - 10) // 2
+                    sgn = "+" if mod >= 0 else ""
+                    ab_lbl = Label(
+                        text=f"[b]{ab}[/b]\n{score} ({sgn}{mod})",
+                        markup=True, font_size=sp(9),
+                        color=TXT, halign='center', valign='middle')
+                    ab_lbl.bind(size=lambda w, v:
+                                setattr(w, 'text_size', v))
+                    ab_row.add_widget(ab_lbl)
+                box.add_widget(ab_row)
+
+            # Lite mellomrom
+            box.add_widget(Widget(size_hint_y=None, height=dp(2)))
+
+            # ============================================================
+            # SCROLLBART INNHOLD (angrep, traits, magi)
+            # Hvis det er mye data, blir scroll-able. Stat-panelet er
+            # uansett begrenset i hoeyde.
+            # ============================================================
+            scroll_content = BoxLayout(orientation='vertical',
+                                       size_hint_y=None, spacing=dp(2))
+            scroll_content.bind(
+                minimum_height=scroll_content.setter('height'))
+
+            # ANGREP (fra enemy_data)
+            if enemy_data and enemy_data.get('actions'):
+                scroll_content.add_widget(mklbl(
+                    "ANGREP", color=GOLD, size=10, bold=True, h=16))
+                for act in enemy_data['actions']:
+                    scroll_content.add_widget(self._make_action_row(act))
+
+            # PASSIVE EVNER (traits)
+            if enemy_data and enemy_data.get('traits'):
+                scroll_content.add_widget(Widget(
+                    size_hint_y=None, height=dp(2)))
+                scroll_content.add_widget(mklbl(
+                    "TREKK", color=GOLD, size=10, bold=True, h=16))
+                for tr in enemy_data['traits']:
+                    tlbl = Label(
+                        text=f"• {tr}", font_size=sp(10), color=DIM,
+                        halign='left', valign='top',
+                        size_hint_y=None, text_size=(None, None))
+                    tlbl.bind(width=lambda w, v:
+                              setattr(w, 'text_size', (v, None)))
+                    tlbl.bind(texture_size=lambda w, v:
+                              setattr(w, 'height', v[1] + dp(2)))
+                    scroll_content.add_widget(tlbl)
+
+            # SAVES + SKILLS-rad (komprimert – kun fiender)
+            if enemy_data:
+                extras = []
+                if enemy_data.get('saves'):
+                    extras.append(f"Saves: {enemy_data['saves']}")
+                if enemy_data.get('skills'):
+                    extras.append(f"Skills: {enemy_data['skills']}")
+                if enemy_data.get('senses'):
+                    extras.append(f"Senses: {enemy_data['senses']}")
+                if extras:
+                    scroll_content.add_widget(Widget(
+                        size_hint_y=None, height=dp(2)))
+                    for e in extras:
+                        elbl = Label(
+                            text=e, font_size=sp(9), color=DIM,
+                            halign='left', valign='top',
+                            size_hint_y=None)
+                        elbl.bind(width=lambda w, v:
+                                  setattr(w, 'text_size', (v, None)))
+                        elbl.bind(texture_size=lambda w, v:
+                                  setattr(w, 'height', v[1] + dp(2)))
+                        scroll_content.add_widget(elbl)
+
+            # MAGI – PC: spell-slots med +/-; fiende: spells-liste
             if ch:
                 slots = ch.get('spell_slots', {})
-                # Bare vis nivaaer som har total > 0
                 used_levels = sorted(
                     [int(lvl) for lvl, s in slots.items()
                      if s.get('total', 0) > 0])
                 if used_levels:
-                    box.add_widget(mklbl(
-                        "SPELL SLOTS", color=GDIM, size=10,
+                    scroll_content.add_widget(Widget(
+                        size_hint_y=None, height=dp(4)))
+                    scroll_content.add_widget(mklbl(
+                        "SPELL SLOTS", color=GOLD, size=10,
                         bold=True, h=16))
                     sl_row = BoxLayout(
-                        size_hint_y=None, height=dp(34), spacing=dp(3))
+                        size_hint_y=None, height=dp(38), spacing=dp(3))
                     for lvl in used_levels:
                         s = slots.get(str(lvl), {})
                         tot = s.get('total', 0)
@@ -4897,14 +5022,14 @@ try:
                         cell_box = BoxLayout(
                             orientation='vertical', spacing=dp(0),
                             size_hint_x=None)
-                        cell_box.width = dp(56)
+                        cell_box.width = dp(58)
                         cell_box.add_widget(Label(
                             text=f"L{lvl}: {rem}/{tot}",
                             font_size=sp(10),
                             color=TXT if rem else DIM,
                             size_hint_y=None, height=dp(14)))
                         bb = BoxLayout(
-                            size_hint_y=None, height=dp(20),
+                            size_hint_y=None, height=dp(22),
                             spacing=dp(2))
                         bb.add_widget(mkbtn(
                             "-",
@@ -4916,9 +5041,69 @@ try:
                             small=True))
                         cell_box.add_widget(bb)
                         sl_row.add_widget(cell_box)
-                    # Padding paa hoeyre side saa det ikke strekkes
                     sl_row.add_widget(Widget())
-                    box.add_widget(sl_row)
+                    scroll_content.add_widget(sl_row)
+            elif enemy_data and enemy_data.get('spells'):
+                scroll_content.add_widget(Widget(
+                    size_hint_y=None, height=dp(4)))
+                scroll_content.add_widget(mklbl(
+                    "MAGI", color=GOLD, size=10, bold=True, h=16))
+                sp_data = enemy_data['spells']
+                # Header: ability + DC + attack
+                head_parts = []
+                if sp_data.get('ability'):
+                    head_parts.append(sp_data['ability'])
+                if sp_data.get('save_dc'):
+                    head_parts.append(f"DC {sp_data['save_dc']}")
+                if sp_data.get('attack'):
+                    head_parts.append(f"Attack {sp_data['attack']}")
+                if head_parts:
+                    scroll_content.add_widget(mklbl(
+                        " | ".join(head_parts), color=DIM, size=10, h=14))
+                # Hver spell-niva-noekkel (ikke ability/save_dc/attack)
+                for k, v in sp_data.items():
+                    if k in ('ability', 'save_dc', 'attack'):
+                        continue
+                    if isinstance(v, list):
+                        spell_str = f"[b]{k}:[/b] {', '.join(v)}"
+                    else:
+                        spell_str = f"[b]{k}:[/b] {v}"
+                    slbl = Label(
+                        text=spell_str, markup=True,
+                        font_size=sp(10), color=TXT,
+                        halign='left', valign='top',
+                        size_hint_y=None)
+                    slbl.bind(width=lambda w, val:
+                              setattr(w, 'text_size', (val, None)))
+                    slbl.bind(texture_size=lambda w, val:
+                              setattr(w, 'height', val[1] + dp(2)))
+                    scroll_content.add_widget(slbl)
+
+            # Pakk innholdet i ScrollView
+            sv = ScrollView(size_hint=(1, 1), bar_width=dp(3))
+            sv.add_widget(scroll_content)
+            box.add_widget(sv)
+
+        def _make_action_row(self, act):
+            """Bygg én linje for et angrep/handling.
+
+            Format: [Navn]  th-bonus  damage-tekst
+            """
+            line = Label(
+                text=(f"[b]{act.get('name','?')}[/b] "
+                      f"{act.get('th','')} • "
+                      f"{act.get('dmg','')}"
+                      + (f" ({act.get('reach','')})"
+                         if act.get('reach') else "")
+                      + (f" ({act.get('range','')})"
+                         if act.get('range') else "")),
+                markup=True, font_size=sp(10), color=TXT,
+                halign='left', valign='top', size_hint_y=None)
+            line.bind(width=lambda w, v:
+                      setattr(w, 'text_size', (v, None)))
+            line.bind(texture_size=lambda w, v:
+                      setattr(w, 'height', v[1] + dp(2)))
+            return line
 
         def _battle_adjust_hp(self, delta):
             """Trekk fra eller legg til HP for den med turen.

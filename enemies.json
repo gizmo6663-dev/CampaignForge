@@ -1,0 +1,913 @@
+{
+  "_meta": {
+    "source": "D&D 5e SRD (OGL 1.0a)",
+    "format": "Compact statblocks for Campaign Forge battlemap stat-panel.",
+    "fields": {
+      "ac": "Armor Class",
+      "hp": "Average Hit Points",
+      "speed": "Movement string",
+      "stats": "STR/DEX/CON/INT/WIS/CHA scores",
+      "saves": "Saving throws (e.g. 'WIS +3')",
+      "skills": "Skill modifiers",
+      "senses": "Special senses + passive Perception (PP)",
+      "cr": "Challenge Rating",
+      "traits": "Passive special abilities",
+      "actions": "Each: name, th (to-hit), dmg (damage string), reach/range",
+      "spells": "Optional spellcasting block"
+    }
+  },
+
+  "Goblin": {
+    "size": "Small humanoid", "ac": 15, "hp": 7, "speed": "30 ft.",
+    "stats": {"STR":8,"DEX":14,"CON":10,"INT":10,"WIS":8,"CHA":8},
+    "skills": "Stealth +6", "senses": "darkvision 60 ft., PP 9", "cr": "1/4",
+    "traits": ["Nimble Escape: Disengage/Hide as bonus action."],
+    "actions": [
+      {"name":"Scimitar","th":"+4","dmg":"1d6+2 slashing","reach":"5 ft."},
+      {"name":"Shortbow","th":"+4","dmg":"1d6+2 piercing","range":"80/320 ft."}
+    ]
+  },
+  "Hobgoblin": {
+    "size": "Medium humanoid", "ac": 18, "hp": 11, "speed": "30 ft.",
+    "stats": {"STR":13,"DEX":12,"CON":12,"INT":10,"WIS":10,"CHA":9},
+    "senses": "darkvision 60 ft., PP 10", "cr": "1/2",
+    "traits": ["Martial Advantage: +2d6 dmg vs creature with ally within 5 ft."],
+    "actions": [
+      {"name":"Longsword","th":"+3","dmg":"1d8+1 slashing (1d10+1 2H)","reach":"5 ft."},
+      {"name":"Longbow","th":"+3","dmg":"1d8+1 piercing","range":"150/600 ft."}
+    ]
+  },
+  "Bugbear": {
+    "size": "Medium humanoid", "ac": 16, "hp": 27, "speed": "30 ft.",
+    "stats": {"STR":15,"DEX":14,"CON":13,"INT":8,"WIS":11,"CHA":9},
+    "skills": "Stealth +6, Survival +2", "senses": "darkvision 60 ft., PP 10", "cr": "1",
+    "traits": [
+      "Brute: weapons deal +1 damage die.",
+      "Surprise Attack: +2d6 dmg if target surprised."
+    ],
+    "actions": [
+      {"name":"Morningstar","th":"+4","dmg":"2d8+2 piercing","reach":"5 ft."},
+      {"name":"Javelin","th":"+4","dmg":"2d6+2 piercing","reach":"5 ft. or 30/120 ft."}
+    ]
+  },
+  "Orc": {
+    "size": "Medium humanoid", "ac": 13, "hp": 15, "speed": "30 ft.",
+    "stats": {"STR":16,"DEX":12,"CON":16,"INT":7,"WIS":11,"CHA":10},
+    "senses": "darkvision 60 ft., PP 10", "cr": "1/2",
+    "traits": ["Aggressive: bonus action to move toward hostile."],
+    "actions": [
+      {"name":"Greataxe","th":"+5","dmg":"1d12+3 slashing","reach":"5 ft."},
+      {"name":"Javelin","th":"+5","dmg":"1d6+3 piercing","reach":"5 ft. or 30/120 ft."}
+    ]
+  },
+  "Orc Chief": {
+    "size": "Medium humanoid", "ac": 16, "hp": 15, "speed": "30 ft.",
+    "stats": {"STR":18,"DEX":12,"CON":18,"INT":11,"WIS":11,"CHA":16},
+    "senses": "darkvision 60 ft., PP 10", "cr": "2",
+    "traits": [
+      "Aggressive: bonus action to move toward hostile.",
+      "Gruumsh's Favor: +1 attack die when reckless."
+    ],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Two greataxe attacks"},
+      {"name":"Greataxe","th":"+6","dmg":"1d12+4 slashing","reach":"5 ft."},
+      {"name":"Spear","th":"+6","dmg":"1d6+4 piercing","reach":"5 ft. or 20/60 ft."},
+      {"name":"Battle Cry (1/Day)","th":"—","dmg":"Allies in 30 ft. get advantage on attacks."}
+    ]
+  },
+  "Kobold": {
+    "size": "Small humanoid", "ac": 12, "hp": 5, "speed": "30 ft.",
+    "stats": {"STR":7,"DEX":15,"CON":9,"INT":8,"WIS":7,"CHA":8},
+    "senses": "darkvision 60 ft., PP 8", "cr": "1/8",
+    "traits": [
+      "Sunlight Sensitivity: disadvantage in sunlight.",
+      "Pack Tactics: advantage if ally within 5 ft. of target."
+    ],
+    "actions": [
+      {"name":"Dagger","th":"+4","dmg":"1d4+2 piercing","reach":"5 ft. or 20/60 ft."},
+      {"name":"Sling","th":"+4","dmg":"1d4+2 bludgeoning","range":"30/120 ft."}
+    ]
+  },
+  "Gnoll": {
+    "size": "Medium humanoid", "ac": 15, "hp": 22, "speed": "30 ft.",
+    "stats": {"STR":14,"DEX":12,"CON":11,"INT":6,"WIS":10,"CHA":7},
+    "senses": "darkvision 60 ft., PP 10", "cr": "1/2",
+    "traits": ["Rampage: when reducing target to 0 HP, bonus action move + bite."],
+    "actions": [
+      {"name":"Bite","th":"+4","dmg":"1d4+2 piercing","reach":"5 ft."},
+      {"name":"Spear","th":"+4","dmg":"1d6+2 piercing (1d8+2 2H)","reach":"5 ft. or 20/60 ft."},
+      {"name":"Longbow","th":"+3","dmg":"1d8+1 piercing","range":"150/600 ft."}
+    ]
+  },
+  "Bandit": {
+    "size": "Medium humanoid", "ac": 12, "hp": 11, "speed": "30 ft.",
+    "stats": {"STR":11,"DEX":12,"CON":12,"INT":10,"WIS":10,"CHA":10},
+    "senses": "PP 10", "cr": "1/8", "traits": [],
+    "actions": [
+      {"name":"Scimitar","th":"+3","dmg":"1d6+1 slashing","reach":"5 ft."},
+      {"name":"Light Crossbow","th":"+3","dmg":"1d8+1 piercing","range":"80/320 ft."}
+    ]
+  },
+  "Bandit Captain": {
+    "size": "Medium humanoid", "ac": 15, "hp": 65, "speed": "30 ft.",
+    "stats": {"STR":15,"DEX":16,"CON":14,"INT":14,"WIS":11,"CHA":14},
+    "saves": "STR +4, DEX +5, WIS +2",
+    "skills": "Athletics +4, Deception +4",
+    "senses": "PP 10", "cr": "2", "traits": [],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"2x scimitar + 1x dagger, OR 3x dagger throw"},
+      {"name":"Scimitar","th":"+5","dmg":"1d6+3 slashing","reach":"5 ft."},
+      {"name":"Dagger","th":"+5","dmg":"1d4+3 piercing","reach":"5 ft. or 20/60 ft."},
+      {"name":"Parry (Reaction)","th":"—","dmg":"+2 AC vs one attack."}
+    ]
+  },
+  "Cultist": {
+    "size": "Medium humanoid", "ac": 12, "hp": 9, "speed": "30 ft.",
+    "stats": {"STR":11,"DEX":12,"CON":10,"INT":10,"WIS":11,"CHA":10},
+    "skills": "Deception +2, Religion +2", "senses": "PP 10", "cr": "1/8",
+    "traits": ["Dark Devotion: advantage vs charm/fright."],
+    "actions": [
+      {"name":"Scimitar","th":"+3","dmg":"1d6+1 slashing","reach":"5 ft."}
+    ]
+  },
+  "Cult Fanatic": {
+    "size": "Medium humanoid", "ac": 13, "hp": 33, "speed": "30 ft.",
+    "stats": {"STR":11,"DEX":14,"CON":12,"INT":10,"WIS":13,"CHA":14},
+    "skills": "Deception +4, Persuasion +4, Religion +2",
+    "senses": "PP 11", "cr": "2",
+    "traits": ["Dark Devotion: advantage vs charm/fright."],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Two dagger attacks"},
+      {"name":"Dagger","th":"+4","dmg":"1d4+2 piercing","reach":"5 ft. or 20/60 ft."}
+    ],
+    "spells": {
+      "ability":"WIS","save_dc":11,"attack":"+3",
+      "Cantrips":["Light","Sacred Flame","Thaumaturgy"],
+      "1st (4)":["Command","Inflict Wounds","Shield of Faith"],
+      "2nd (3)":["Hold Person","Spiritual Weapon"]
+    }
+  },
+  "Thug": {
+    "size": "Medium humanoid", "ac": 11, "hp": 32, "speed": "30 ft.",
+    "stats": {"STR":15,"DEX":11,"CON":14,"INT":10,"WIS":10,"CHA":11},
+    "skills": "Intimidation +2", "senses": "PP 10", "cr": "1/2",
+    "traits": ["Pack Tactics: advantage if ally within 5 ft. of target."],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Two melee attacks"},
+      {"name":"Mace","th":"+4","dmg":"1d6+2 bludgeoning","reach":"5 ft."},
+      {"name":"Heavy Crossbow","th":"+2","dmg":"1d10 piercing","range":"100/400 ft."}
+    ]
+  },
+  "Guard": {
+    "size": "Medium humanoid", "ac": 16, "hp": 11, "speed": "30 ft.",
+    "stats": {"STR":13,"DEX":12,"CON":12,"INT":10,"WIS":11,"CHA":10},
+    "skills": "Perception +2", "senses": "PP 12", "cr": "1/8", "traits": [],
+    "actions": [
+      {"name":"Spear","th":"+3","dmg":"1d6+1 piercing (1d8+1 2H)","reach":"5 ft. or 20/60 ft."}
+    ]
+  },
+  "Knight": {
+    "size": "Medium humanoid", "ac": 18, "hp": 52, "speed": "30 ft.",
+    "stats": {"STR":16,"DEX":11,"CON":14,"INT":11,"WIS":11,"CHA":15},
+    "saves": "CON +4, WIS +2", "senses": "PP 10", "cr": "3",
+    "traits": ["Brave: advantage vs fright."],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Two greatsword attacks"},
+      {"name":"Greatsword","th":"+5","dmg":"2d6+3 slashing","reach":"5 ft."},
+      {"name":"Heavy Crossbow","th":"+2","dmg":"1d10 piercing","range":"100/400 ft."},
+      {"name":"Leadership (Recharge 4-6)","th":"—","dmg":"Allies in 30 ft. add 1d4 to attacks/saves for 1 min."},
+      {"name":"Parry (Reaction)","th":"—","dmg":"+2 AC vs one attack."}
+    ]
+  },
+  "Veteran": {
+    "size": "Medium humanoid", "ac": 17, "hp": 58, "speed": "30 ft.",
+    "stats": {"STR":16,"DEX":13,"CON":14,"INT":10,"WIS":11,"CHA":10},
+    "skills": "Athletics +5, Perception +2", "senses": "PP 12", "cr": "3",
+    "traits": [],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"2x longsword + 1x shortsword (BA)"},
+      {"name":"Longsword","th":"+5","dmg":"1d8+3 slashing (1d10+3 2H)","reach":"5 ft."},
+      {"name":"Shortsword","th":"+5","dmg":"1d6+3 piercing","reach":"5 ft."},
+      {"name":"Heavy Crossbow","th":"+3","dmg":"1d10 piercing","range":"100/400 ft."}
+    ]
+  },
+  "Skeleton": {
+    "size": "Medium undead", "ac": 13, "hp": 13, "speed": "30 ft.",
+    "stats": {"STR":10,"DEX":14,"CON":15,"INT":6,"WIS":8,"CHA":5},
+    "senses": "darkvision 60 ft., PP 9", "cr": "1/4",
+    "traits": ["Vulnerable: bludgeoning. Immune: poison, exhaustion."],
+    "actions": [
+      {"name":"Shortsword","th":"+4","dmg":"1d6+2 piercing","reach":"5 ft."},
+      {"name":"Shortbow","th":"+4","dmg":"1d6+2 piercing","range":"80/320 ft."}
+    ]
+  },
+  "Zombie": {
+    "size": "Medium undead", "ac": 8, "hp": 22, "speed": "20 ft.",
+    "stats": {"STR":13,"DEX":6,"CON":16,"INT":3,"WIS":6,"CHA":5},
+    "saves": "WIS +0", "senses": "darkvision 60 ft., PP 8", "cr": "1/4",
+    "traits": ["Undead Fortitude: when 0 HP, CON save (DC 5+dmg) drops to 1 HP. Fails on radiant or crit."],
+    "actions": [
+      {"name":"Slam","th":"+3","dmg":"1d6+1 bludgeoning","reach":"5 ft."}
+    ]
+  },
+  "Ghoul": {
+    "size": "Medium undead", "ac": 12, "hp": 22, "speed": "30 ft.",
+    "stats": {"STR":13,"DEX":15,"CON":10,"INT":7,"WIS":10,"CHA":6},
+    "senses": "darkvision 60 ft., PP 10", "cr": "1",
+    "traits": ["Immune: charm, exhaustion, poison."],
+    "actions": [
+      {"name":"Bite","th":"+2","dmg":"2d6+2 piercing","reach":"5 ft."},
+      {"name":"Claws","th":"+4","dmg":"2d4+2 slashing. DC 10 CON or paralyze 1 min (not elf/undead).","reach":"5 ft."}
+    ]
+  },
+  "Ghost": {
+    "size": "Medium undead", "ac": 11, "hp": 45, "speed": "0 ft., fly 40 ft. (hover)",
+    "stats": {"STR":7,"DEX":13,"CON":10,"INT":10,"WIS":12,"CHA":17},
+    "senses": "darkvision 60 ft., PP 11", "cr": "4",
+    "traits": [
+      "Ethereal Sight: see 60 ft. into Ethereal Plane.",
+      "Incorporeal Movement.",
+      "Immune: cold, necrotic, poison; resist non-magical weapons."
+    ],
+    "actions": [
+      {"name":"Withering Touch","th":"+5","dmg":"4d6+3 necrotic","reach":"5 ft."},
+      {"name":"Etherealness","th":"—","dmg":"Enter/leave Ethereal Plane."},
+      {"name":"Horrifying Visage","th":"—","dmg":"60 ft. cone, DC 13 WIS or fright 1 min + age 1d4x10 yrs."},
+      {"name":"Possession (Recharge 6)","th":"—","dmg":"Humanoid in 5 ft., DC 13 CHA or possessed."}
+    ]
+  },
+  "Wight": {
+    "size": "Medium undead", "ac": 14, "hp": 45, "speed": "30 ft.",
+    "stats": {"STR":15,"DEX":14,"CON":16,"INT":10,"WIS":13,"CHA":15},
+    "skills": "Perception +3, Stealth +4",
+    "senses": "darkvision 60 ft., PP 13", "cr": "3",
+    "traits": [
+      "Sunlight Sensitivity.",
+      "Resistant: necrotic + non-magical weapons."
+    ],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Two longsword OR two longbow attacks"},
+      {"name":"Life Drain","th":"+4","dmg":"1d6+2 necrotic. DC 13 CON or HP max reduced.","reach":"5 ft."},
+      {"name":"Longsword","th":"+4","dmg":"1d8+2 slashing (1d10+2 2H)","reach":"5 ft."},
+      {"name":"Longbow","th":"+4","dmg":"1d8+2 piercing","range":"150/600 ft."}
+    ]
+  },
+  "Specter": {
+    "size": "Medium undead", "ac": 12, "hp": 22, "speed": "0 ft., fly 50 ft. (hover)",
+    "stats": {"STR":1,"DEX":14,"CON":11,"INT":10,"WIS":10,"CHA":11},
+    "senses": "darkvision 60 ft., PP 10", "cr": "1",
+    "traits": [
+      "Incorporeal Movement.",
+      "Sunlight Sensitivity.",
+      "Immune: necrotic, poison; resist non-magical weapons."
+    ],
+    "actions": [
+      {"name":"Life Drain","th":"+4","dmg":"3d6 necrotic. DC 10 CON or HP max reduced.","reach":"5 ft."}
+    ]
+  },
+  "Wraith": {
+    "size": "Medium undead", "ac": 13, "hp": 67, "speed": "0 ft., fly 60 ft. (hover)",
+    "stats": {"STR":6,"DEX":16,"CON":16,"INT":12,"WIS":14,"CHA":15},
+    "senses": "darkvision 60 ft., PP 12", "cr": "5",
+    "traits": [
+      "Incorporeal Movement.",
+      "Sunlight Sensitivity.",
+      "Immune: necrotic, poison."
+    ],
+    "actions": [
+      {"name":"Life Drain","th":"+6","dmg":"4d8+3 necrotic. DC 14 CON or HP max reduced.","reach":"5 ft."},
+      {"name":"Create Specter","th":"—","dmg":"Targets humanoid corpse — rises as Specter."}
+    ]
+  },
+  "Mummy": {
+    "size": "Medium undead", "ac": 11, "hp": 58, "speed": "20 ft.",
+    "stats": {"STR":16,"DEX":8,"CON":15,"INT":6,"WIS":10,"CHA":12},
+    "saves": "WIS +2", "senses": "darkvision 60 ft., PP 10", "cr": "3",
+    "traits": ["Vulnerable: fire. Immune: necrotic, poison."],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Dreadful Glare + Rotting Fist"},
+      {"name":"Rotting Fist","th":"+5","dmg":"1d6+3 bludg + 3d6 necrotic. DC 12 CON or Mummy Rot.","reach":"5 ft."},
+      {"name":"Dreadful Glare","th":"—","dmg":"DC 11 WIS or fright 1 min."}
+    ]
+  },
+  "Vampire Spawn": {
+    "size": "Medium undead", "ac": 15, "hp": 82, "speed": "30 ft.",
+    "stats": {"STR":16,"DEX":16,"CON":16,"INT":11,"WIS":10,"CHA":12},
+    "saves": "DEX +6, WIS +3",
+    "skills": "Perception +3, Stealth +6",
+    "senses": "darkvision 60 ft., PP 13", "cr": "5",
+    "traits": [
+      "Regeneration: 10 HP/turn (none if radiant or holy water).",
+      "Spider Climb.",
+      "Vampire Weaknesses: forbid sunlight/running water/heart-staked."
+    ],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Claws + Bite"},
+      {"name":"Claws","th":"+6","dmg":"2d4+3 slashing. Grapple DC 13.","reach":"5 ft."},
+      {"name":"Bite","th":"+6","dmg":"1d6+3 pierce + 2d6 necrotic. HP max reduced; vampire heals same.","reach":"5 ft."}
+    ]
+  },
+
+  "Wolf": {
+    "size": "Medium beast", "ac": 13, "hp": 11, "speed": "40 ft.",
+    "stats": {"STR":12,"DEX":15,"CON":12,"INT":3,"WIS":12,"CHA":6},
+    "skills": "Perception +3, Stealth +4", "senses": "PP 13", "cr": "1/4",
+    "traits": [
+      "Keen Hearing & Smell.",
+      "Pack Tactics."
+    ],
+    "actions": [
+      {"name":"Bite","th":"+4","dmg":"2d4+2 piercing. DC 11 STR or knocked prone.","reach":"5 ft."}
+    ]
+  },
+  "Dire Wolf": {
+    "size": "Large beast", "ac": 14, "hp": 37, "speed": "50 ft.",
+    "stats": {"STR":17,"DEX":15,"CON":15,"INT":3,"WIS":12,"CHA":7},
+    "skills": "Perception +3, Stealth +4", "senses": "PP 13", "cr": "1",
+    "traits": [
+      "Keen Hearing & Smell.",
+      "Pack Tactics."
+    ],
+    "actions": [
+      {"name":"Bite","th":"+5","dmg":"2d6+3 piercing. DC 13 STR or knocked prone.","reach":"5 ft."}
+    ]
+  },
+  "Bear (Brown)": {
+    "size": "Large beast", "ac": 11, "hp": 34, "speed": "40 ft., climb 30 ft.",
+    "stats": {"STR":19,"DEX":10,"CON":16,"INT":2,"WIS":13,"CHA":7},
+    "skills": "Perception +3", "senses": "PP 13", "cr": "1",
+    "traits": ["Keen Smell."],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Bite + Claws"},
+      {"name":"Bite","th":"+5","dmg":"1d8+4 piercing","reach":"5 ft."},
+      {"name":"Claws","th":"+5","dmg":"2d6+4 slashing","reach":"5 ft."}
+    ]
+  },
+  "Giant Spider": {
+    "size": "Large beast", "ac": 14, "hp": 26, "speed": "30 ft., climb 30 ft.",
+    "stats": {"STR":14,"DEX":16,"CON":12,"INT":2,"WIS":11,"CHA":4},
+    "skills": "Stealth +7", "senses": "blindsight 10 ft., darkvision 60 ft., PP 10", "cr": "1",
+    "traits": ["Spider Climb.","Web Sense.","Web Walker."],
+    "actions": [
+      {"name":"Bite","th":"+5","dmg":"1d8+3 pierce + 2d8 poison. DC 11 CON or poisoned 1h.","reach":"5 ft."},
+      {"name":"Web (Recharge 5-6)","th":"+5","dmg":"DC 12 DEX or restrained until freed (DC 12 STR or 5 dmg).","range":"30/60 ft."}
+    ]
+  },
+  "Giant Rat": {
+    "size": "Small beast", "ac": 12, "hp": 7, "speed": "30 ft.",
+    "stats": {"STR":7,"DEX":15,"CON":11,"INT":2,"WIS":10,"CHA":4},
+    "senses": "darkvision 60 ft., PP 10", "cr": "1/8",
+    "traits": ["Keen Smell.","Pack Tactics."],
+    "actions": [
+      {"name":"Bite","th":"+4","dmg":"1d4+2 piercing","reach":"5 ft."}
+    ]
+  },
+  "Giant Scorpion": {
+    "size": "Large beast", "ac": 15, "hp": 52, "speed": "40 ft.",
+    "stats": {"STR":15,"DEX":13,"CON":15,"INT":1,"WIS":9,"CHA":3},
+    "senses": "blindsight 60 ft., PP 9", "cr": "3", "traits": [],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Two claws + sting"},
+      {"name":"Claw","th":"+4","dmg":"1d8+2 bludg. Grapple DC 12.","reach":"5 ft."},
+      {"name":"Sting","th":"+4","dmg":"1d10+2 pierce + 4d10 poison. DC 12 CON, half on save.","reach":"5 ft."}
+    ]
+  },
+  "Owlbear": {
+    "size": "Large monstrosity", "ac": 13, "hp": 59, "speed": "40 ft.",
+    "stats": {"STR":20,"DEX":12,"CON":17,"INT":3,"WIS":12,"CHA":7},
+    "skills": "Perception +3", "senses": "darkvision 60 ft., PP 13", "cr": "3",
+    "traits": ["Keen Sight & Smell."],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Beak + Claws"},
+      {"name":"Beak","th":"+7","dmg":"1d10+5 piercing","reach":"5 ft."},
+      {"name":"Claws","th":"+7","dmg":"2d8+5 slashing","reach":"5 ft."}
+    ]
+  },
+  "Troll": {
+    "size": "Large giant", "ac": 15, "hp": 84, "speed": "30 ft.",
+    "stats": {"STR":18,"DEX":13,"CON":20,"INT":7,"WIS":9,"CHA":7},
+    "skills": "Perception +2", "senses": "darkvision 60 ft., PP 12", "cr": "5",
+    "traits": [
+      "Keen Smell.",
+      "Regeneration: 10 HP/turn (none if acid/fire damages it that turn)."
+    ],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Bite + 2x Claw"},
+      {"name":"Bite","th":"+7","dmg":"1d6+4 piercing","reach":"5 ft."},
+      {"name":"Claw","th":"+7","dmg":"2d6+4 slashing","reach":"5 ft."}
+    ]
+  },
+  "Ogre": {
+    "size": "Large giant", "ac": 11, "hp": 59, "speed": "40 ft.",
+    "stats": {"STR":19,"DEX":8,"CON":16,"INT":5,"WIS":7,"CHA":7},
+    "senses": "darkvision 60 ft., PP 8", "cr": "2", "traits": [],
+    "actions": [
+      {"name":"Greatclub","th":"+6","dmg":"2d8+4 bludgeoning","reach":"5 ft."},
+      {"name":"Javelin","th":"+6","dmg":"2d6+4 piercing","reach":"5 ft. or 30/120 ft."}
+    ]
+  },
+  "Hill Giant": {
+    "size": "Huge giant", "ac": 13, "hp": 105, "speed": "40 ft.",
+    "stats": {"STR":21,"DEX":8,"CON":19,"INT":5,"WIS":9,"CHA":6},
+    "skills": "Perception +2", "senses": "PP 12", "cr": "5", "traits": [],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Two greatclub attacks"},
+      {"name":"Greatclub","th":"+8","dmg":"3d8+5 bludgeoning","reach":"10 ft."},
+      {"name":"Rock","th":"+8","dmg":"3d10+5 bludgeoning","range":"60/240 ft."}
+    ]
+  },
+  "Stone Giant": {
+    "size": "Huge giant", "ac": 17, "hp": 126, "speed": "40 ft.",
+    "stats": {"STR":23,"DEX":15,"CON":20,"INT":10,"WIS":12,"CHA":9},
+    "saves": "DEX +5, CON +8, WIS +4",
+    "skills": "Athletics +12, Perception +4",
+    "senses": "darkvision 60 ft., PP 14", "cr": "7",
+    "traits": ["Stone Camouflage."],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Two greatclub attacks"},
+      {"name":"Greatclub","th":"+9","dmg":"3d8+6 bludgeoning","reach":"15 ft."},
+      {"name":"Rock","th":"+9","dmg":"4d10+6 bludgeoning. DC 17 STR or prone if Large or smaller.","range":"60/240 ft."}
+    ]
+  },
+  "Frost Giant": {
+    "size": "Huge giant", "ac": 15, "hp": 138, "speed": "40 ft.",
+    "stats": {"STR":23,"DEX":9,"CON":21,"INT":9,"WIS":10,"CHA":12},
+    "saves": "CON +8, WIS +3, CHA +4",
+    "skills": "Athletics +9, Perception +3",
+    "senses": "PP 13", "cr": "8",
+    "traits": ["Immune: cold."],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Two greataxe attacks"},
+      {"name":"Greataxe","th":"+9","dmg":"3d12+6 slashing","reach":"10 ft."},
+      {"name":"Rock","th":"+9","dmg":"4d10+6 bludgeoning","range":"60/240 ft."}
+    ]
+  },
+  "Fire Giant": {
+    "size": "Huge giant", "ac": 18, "hp": 162, "speed": "30 ft.",
+    "stats": {"STR":25,"DEX":9,"CON":23,"INT":10,"WIS":14,"CHA":13},
+    "saves": "DEX +3, CON +10, CHA +5",
+    "skills": "Athletics +11, Perception +6",
+    "senses": "PP 16", "cr": "9",
+    "traits": ["Immune: fire."],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Two greatsword attacks"},
+      {"name":"Greatsword","th":"+11","dmg":"6d6+7 slashing","reach":"10 ft."},
+      {"name":"Rock","th":"+11","dmg":"4d10+7 bludgeoning","range":"60/240 ft."}
+    ]
+  },
+  "Cloud Giant": {
+    "size": "Huge giant", "ac": 14, "hp": 200, "speed": "40 ft.",
+    "stats": {"STR":27,"DEX":10,"CON":22,"INT":12,"WIS":16,"CHA":16},
+    "saves": "CON +10, WIS +7, CHA +7",
+    "skills": "Insight +7, Perception +7",
+    "senses": "PP 17", "cr": "9",
+    "traits": ["Keen Smell."],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Two morningstar attacks"},
+      {"name":"Morningstar","th":"+12","dmg":"3d8+8 piercing","reach":"10 ft."},
+      {"name":"Rock","th":"+12","dmg":"4d10+8 bludgeoning","range":"60/240 ft."}
+    ],
+    "spells": {
+      "ability":"CHA","save_dc":15,"attack":"+7",
+      "At will":["Detect Magic","Fog Cloud","Light"],
+      "3/Day":["Feather Fall","Fly","Misty Step","Telekinesis"],
+      "1/Day":["Control Weather","Gaseous Form"]
+    }
+  },
+  "Drow": {
+    "size": "Medium humanoid", "ac": 15, "hp": 13, "speed": "30 ft.",
+    "stats": {"STR":10,"DEX":14,"CON":10,"INT":11,"WIS":11,"CHA":12},
+    "skills": "Perception +2, Stealth +4",
+    "senses": "darkvision 120 ft., PP 12", "cr": "1/4",
+    "traits": [
+      "Fey Ancestry: advantage vs charm; immune to magical sleep.",
+      "Sunlight Sensitivity."
+    ],
+    "actions": [
+      {"name":"Shortsword","th":"+4","dmg":"1d6+2 piercing","reach":"5 ft."},
+      {"name":"Hand Crossbow","th":"+4","dmg":"1d6+2 pierce + 2d10 poison. DC 13 CON or unconscious 1h.","range":"30/120 ft."}
+    ],
+    "spells": {
+      "ability":"CHA","save_dc":11,
+      "At will":["Dancing Lights"],
+      "1/Day each":["Darkness","Faerie Fire"]
+    }
+  },
+  "Dryad": {
+    "size": "Medium fey", "ac": 11, "hp": 22, "speed": "30 ft.",
+    "stats": {"STR":10,"DEX":12,"CON":11,"INT":14,"WIS":15,"CHA":18},
+    "skills": "Perception +4, Stealth +3",
+    "senses": "darkvision 60 ft., PP 14", "cr": "1",
+    "traits": [
+      "Innate Spellcasting (CHA, DC 14).",
+      "Magic Resistance.",
+      "Speak with Beasts and Plants.",
+      "Tree Stride: 60 ft. tree to tree."
+    ],
+    "actions": [
+      {"name":"Club","th":"+2","dmg":"1d4 bludg (or 1d8+4 with Shillelagh)","reach":"5 ft."},
+      {"name":"Fey Charm","th":"—","dmg":"DC 14 WIS or charmed (humanoid 24h, beast/fey permanent)."}
+    ],
+    "spells": {
+      "ability":"CHA","save_dc":14,
+      "At will":["Druidcraft"],
+      "3/Day each":["Entangle","Goodberry"],
+      "1/Day each":["Barkskin","Pass without Trace","Shillelagh"]
+    }
+  },
+  "Satyr": {
+    "size": "Medium fey", "ac": 14, "hp": 31, "speed": "40 ft.",
+    "stats": {"STR":12,"DEX":16,"CON":11,"INT":12,"WIS":10,"CHA":14},
+    "skills": "Perception +2, Performance +6, Stealth +5",
+    "senses": "PP 12", "cr": "1/2",
+    "traits": ["Magic Resistance."],
+    "actions": [
+      {"name":"Ram","th":"+3","dmg":"2d4+1 bludgeoning","reach":"5 ft."},
+      {"name":"Shortsword","th":"+5","dmg":"1d6+3 piercing","reach":"5 ft."},
+      {"name":"Shortbow","th":"+5","dmg":"1d6+3 piercing","range":"80/320 ft."}
+    ]
+  },
+  "Harpy": {
+    "size": "Medium monstrosity", "ac": 11, "hp": 38, "speed": "20 ft., fly 40 ft.",
+    "stats": {"STR":12,"DEX":13,"CON":12,"INT":7,"WIS":10,"CHA":13},
+    "senses": "PP 10", "cr": "1", "traits": [],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Two attacks: club + claws"},
+      {"name":"Club","th":"+3","dmg":"1d4+1 bludgeoning","reach":"5 ft."},
+      {"name":"Claws","th":"+3","dmg":"2d4+1 slashing","reach":"5 ft."},
+      {"name":"Luring Song","th":"—","dmg":"300 ft. radius, DC 11 WIS or charmed. Walks toward harpy."}
+    ]
+  },
+  "Medusa": {
+    "size": "Medium monstrosity", "ac": 15, "hp": 127, "speed": "30 ft.",
+    "stats": {"STR":10,"DEX":15,"CON":16,"INT":12,"WIS":13,"CHA":15},
+    "skills": "Deception +5, Insight +4, Perception +4, Stealth +5",
+    "senses": "darkvision 60 ft., PP 14", "cr": "6",
+    "traits": ["Petrifying Gaze: 30 ft., DC 14 CON or petrified after 2 failed saves."],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Snake Hair + Shortsword OR Longbow"},
+      {"name":"Snake Hair","th":"+5","dmg":"1d4+2 pierce + 4d6 poison","reach":"5 ft."},
+      {"name":"Shortsword","th":"+5","dmg":"1d6+2 piercing","reach":"5 ft."},
+      {"name":"Longbow","th":"+5","dmg":"1d8+2 pierce + 3d6 poison","range":"150/600 ft."}
+    ]
+  },
+  "Minotaur": {
+    "size": "Large monstrosity", "ac": 14, "hp": 76, "speed": "40 ft.",
+    "stats": {"STR":18,"DEX":11,"CON":16,"INT":6,"WIS":16,"CHA":9},
+    "skills": "Perception +7", "senses": "darkvision 60 ft., PP 17", "cr": "3",
+    "traits": [
+      "Charge: if moves 10+ ft. straight, gore deals +2d8 + DC 14 STR or prone.",
+      "Reckless: advantage on melee, attacks vs it have advantage."
+    ],
+    "actions": [
+      {"name":"Greataxe","th":"+6","dmg":"2d12+4 slashing","reach":"5 ft."},
+      {"name":"Gore","th":"+6","dmg":"2d8+4 piercing","reach":"5 ft."}
+    ]
+  },
+  "Werewolf": {
+    "size": "Medium humanoid (shapechanger)", "ac": "11/12", "hp": 58, "speed": "30 ft. (40 wolf)",
+    "stats": {"STR":15,"DEX":13,"CON":14,"INT":10,"WIS":11,"CHA":10},
+    "skills": "Perception +4, Stealth +3",
+    "senses": "PP 14", "cr": "3",
+    "traits": [
+      "Shapechanger: human, hybrid, or wolf.",
+      "Keen Hearing & Smell.",
+      "Immune: bludg/pierce/slash from non-magical, non-silvered weapons (not human form)."
+    ],
+    "actions": [
+      {"name":"Multiattack (hybrid)","th":"—","dmg":"Bite + Claws OR Spear x2 (human)"},
+      {"name":"Bite (wolf/hybrid)","th":"+4","dmg":"1d8+2 pierce. DC 12 CON or werewolf curse.","reach":"5 ft."},
+      {"name":"Claws (hybrid)","th":"+4","dmg":"2d4+2 slashing","reach":"5 ft."},
+      {"name":"Spear (human)","th":"+4","dmg":"1d6+2 pierce (1d8+2 2H)","reach":"5 ft. or 20/60 ft."}
+    ]
+  },
+  "Wereboar": {
+    "size": "Medium humanoid (shapechanger)", "ac": "10/11", "hp": 78, "speed": "30 ft. (40 boar)",
+    "stats": {"STR":17,"DEX":10,"CON":15,"INT":10,"WIS":11,"CHA":8},
+    "skills": "Perception +2", "senses": "PP 12", "cr": "4",
+    "traits": [
+      "Shapechanger.",
+      "Charge (boar/hybrid): +1d6 dmg + DC 13 STR or prone if moves 15+ ft.",
+      "Relentless (Recharge after rest): when 14 dmg or less, drop to 1 HP instead.",
+      "Immune: bludg/pierce/slash from non-magical, non-silvered weapons (not human form)."
+    ],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Hybrid: tusk + maul. Human: 2 attacks."},
+      {"name":"Maul (hum/hybrid)","th":"+5","dmg":"2d6+3 bludgeoning","reach":"5 ft."},
+      {"name":"Tusk (boar/hybrid)","th":"+5","dmg":"1d6+3 slash. DC 12 CON or wereboar curse.","reach":"5 ft."}
+    ]
+  },
+  "Demon (Dretch)": {
+    "size": "Small fiend", "ac": 11, "hp": 18, "speed": "20 ft.",
+    "stats": {"STR":11,"DEX":11,"CON":12,"INT":5,"WIS":8,"CHA":3},
+    "senses": "darkvision 60 ft., PP 9", "cr": "1/4",
+    "traits": ["Immune: poison; resist cold/fire/lightning + non-magical weapons."],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Bite + Claws"},
+      {"name":"Bite","th":"+2","dmg":"1d6 piercing","reach":"5 ft."},
+      {"name":"Claws","th":"+2","dmg":"2d4 slashing","reach":"5 ft."},
+      {"name":"Fetid Cloud (1/Day)","th":"—","dmg":"10 ft. radius, DC 11 CON or poisoned 1 turn."}
+    ]
+  },
+  "Demon (Quasit)": {
+    "size": "Tiny fiend (shapechanger)", "ac": 13, "hp": 7, "speed": "40 ft.",
+    "stats": {"STR":5,"DEX":17,"CON":10,"INT":7,"WIS":10,"CHA":10},
+    "skills": "Stealth +5", "senses": "darkvision 120 ft., PP 10", "cr": "1",
+    "traits": [
+      "Shapechanger: bat/centipede/toad.",
+      "Magic Resistance.",
+      "Resistant: cold/fire/lightning + non-magical weapons. Immune: poison."
+    ],
+    "actions": [
+      {"name":"Claws","th":"+4","dmg":"1d4+3 pierce + 2d4 poison. DC 10 CON, half on save.","reach":"5 ft."},
+      {"name":"Scare (1/Day)","th":"—","dmg":"DC 10 WIS or fright 1 min."},
+      {"name":"Invisibility","th":"—","dmg":"Magical invisibility until attacks/cast."}
+    ]
+  },
+  "Imp": {
+    "size": "Tiny fiend (shapechanger)", "ac": 13, "hp": 10, "speed": "20 ft., fly 40 ft.",
+    "stats": {"STR":6,"DEX":17,"CON":13,"INT":11,"WIS":12,"CHA":14},
+    "skills": "Deception +4, Insight +3, Persuasion +4, Stealth +5",
+    "senses": "darkvision 120 ft., PP 11", "cr": "1",
+    "traits": [
+      "Shapechanger: rat/raven/spider.",
+      "Devil's Sight: magical darkness no obstacle.",
+      "Magic Resistance.",
+      "Resistant: cold + non-magical, non-silvered. Immune: fire, poison."
+    ],
+    "actions": [
+      {"name":"Sting (Bite in beast)","th":"+5","dmg":"1d4+3 pierce + 3d6 poison. DC 11 CON, half on save.","reach":"5 ft."},
+      {"name":"Invisibility","th":"—","dmg":"Magical invisibility until attacks/cast."}
+    ]
+  },
+  "Succubus": {
+    "size": "Medium fiend (shapechanger)", "ac": 15, "hp": 66, "speed": "30 ft., fly 60 ft.",
+    "stats": {"STR":8,"DEX":17,"CON":13,"INT":15,"WIS":12,"CHA":20},
+    "skills": "Deception +9, Insight +5, Perception +5, Persuasion +9, Stealth +7",
+    "senses": "darkvision 60 ft., PP 15", "cr": "4",
+    "traits": [
+      "Telepathic Bond: 1 creature on same plane.",
+      "Shapechanger: small/medium humanoid.",
+      "Resistant: cold/fire/lightning/poison + non-magical, non-silvered."
+    ],
+    "actions": [
+      {"name":"Claw (true form)","th":"+5","dmg":"1d6+3 slashing","reach":"5 ft."},
+      {"name":"Charm","th":"—","dmg":"30 ft., DC 15 WIS or charmed 1 day."},
+      {"name":"Draining Kiss","th":"—","dmg":"5d10+5 psychic. HP max reduced. Must be charmed/willing."},
+      {"name":"Etherealness","th":"—","dmg":"Enter/leave Ethereal."}
+    ]
+  },
+  "Pit Fiend": {
+    "size": "Large fiend (devil)", "ac": 19, "hp": 300, "speed": "30 ft., fly 60 ft.",
+    "stats": {"STR":26,"DEX":14,"CON":24,"INT":22,"WIS":18,"CHA":24},
+    "saves": "DEX +8, CON +13, WIS +10",
+    "senses": "truesight 120 ft., PP 14", "cr": "20",
+    "traits": [
+      "Fear Aura: 20 ft., DC 21 WIS or fright 1 min.",
+      "Magic Resistance.",
+      "Magic Weapons.",
+      "Immune: fire, poison; resist cold + non-magical, non-silvered."
+    ],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Bite + Claws + Mace + Tail"},
+      {"name":"Bite","th":"+14","dmg":"4d6+8 pierce. DC 21 CON or poisoned (-7d6 poison/turn).","reach":"10 ft."},
+      {"name":"Claws","th":"+14","dmg":"2d8+8 slashing","reach":"10 ft."},
+      {"name":"Mace","th":"+14","dmg":"2d6+8 bludg + 3d6 fire","reach":"10 ft."},
+      {"name":"Tail","th":"+14","dmg":"3d10+8 bludgeoning","reach":"10 ft."}
+    ],
+    "spells": {
+      "ability":"CHA","save_dc":21,
+      "At will":["Detect Magic","Fireball"],
+      "3/Day":["Hold Monster","Wall of Fire"]
+    }
+  },
+
+  "Dragon (Wyrmling White)": {
+    "size": "Medium dragon", "ac": 16, "hp": 32, "speed": "30 ft., burrow 15 ft., fly 60 ft., swim 30 ft.",
+    "stats": {"STR":14,"DEX":10,"CON":14,"INT":5,"WIS":10,"CHA":11},
+    "saves": "DEX +2, CON +4, WIS +2, CHA +2",
+    "skills": "Perception +4, Stealth +2",
+    "senses": "blindsight 10 ft., darkvision 60 ft., PP 14", "cr": "2",
+    "traits": ["Immune: cold."],
+    "actions": [
+      {"name":"Bite","th":"+4","dmg":"1d10+2 pierce + 1d4 cold","reach":"5 ft."},
+      {"name":"Cold Breath (Recharge 5-6)","th":"—","dmg":"15 ft. cone, DC 12 CON, 5d8 cold (half on save)."}
+    ]
+  },
+  "Dragon (Young Red)": {
+    "size": "Large dragon", "ac": 18, "hp": 178, "speed": "40 ft., climb 40 ft., fly 80 ft.",
+    "stats": {"STR":23,"DEX":10,"CON":21,"INT":14,"WIS":11,"CHA":19},
+    "saves": "DEX +4, CON +9, WIS +4, CHA +8",
+    "skills": "Perception +8, Stealth +4",
+    "senses": "blindsight 30 ft., darkvision 120 ft., PP 18", "cr": "10",
+    "traits": ["Immune: fire."],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Bite + 2x Claw"},
+      {"name":"Bite","th":"+10","dmg":"2d10+6 pierce + 1d6 fire","reach":"10 ft."},
+      {"name":"Claw","th":"+10","dmg":"2d6+6 slashing","reach":"5 ft."},
+      {"name":"Fire Breath (Recharge 5-6)","th":"—","dmg":"30 ft. cone, DC 17 DEX, 16d6 fire (half on save)."}
+    ]
+  },
+  "Dragon (Adult Red)": {
+    "size": "Huge dragon", "ac": 19, "hp": 256, "speed": "40 ft., climb 40 ft., fly 80 ft.",
+    "stats": {"STR":27,"DEX":10,"CON":25,"INT":16,"WIS":13,"CHA":21},
+    "saves": "DEX +6, CON +13, WIS +7, CHA +11",
+    "skills": "Perception +13, Stealth +6",
+    "senses": "blindsight 60 ft., darkvision 120 ft., PP 23", "cr": "17",
+    "traits": [
+      "Legendary Resistance (3/Day).",
+      "Immune: fire."
+    ],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Frightful Presence + Bite + 2x Claw"},
+      {"name":"Bite","th":"+14","dmg":"2d10+8 pierce + 2d6 fire","reach":"10 ft."},
+      {"name":"Claw","th":"+14","dmg":"2d6+8 slashing","reach":"5 ft."},
+      {"name":"Tail","th":"+14","dmg":"2d8+8 bludgeoning","reach":"15 ft."},
+      {"name":"Frightful Presence","th":"—","dmg":"120 ft., DC 19 WIS or fright 1 min."},
+      {"name":"Fire Breath (Recharge 5-6)","th":"—","dmg":"60 ft. cone, DC 21 DEX, 18d6 fire (half on save)."}
+    ]
+  },
+
+  "Beholder": {
+    "size": "Large aberration", "ac": 18, "hp": 180, "speed": "0 ft., fly 20 ft. (hover)",
+    "stats": {"STR":10,"DEX":14,"CON":18,"INT":17,"WIS":15,"CHA":17},
+    "saves": "INT +8, WIS +7, CHA +8",
+    "skills": "Perception +12",
+    "senses": "darkvision 120 ft., PP 22", "cr": "13",
+    "traits": [
+      "Antimagic Cone: 150 ft. cone from central eye. Magic suppressed inside.",
+      "Legendary actions (3/turn after another creature's turn)."
+    ],
+    "actions": [
+      {"name":"Bite","th":"+5","dmg":"4d6 piercing","reach":"5 ft."},
+      {"name":"Eye Rays (3/turn)","th":"—","dmg":"120 ft., random ray each turn from 10 different rays. See SRD."}
+    ],
+    "spells": {
+      "ability":"CHA",
+      "Eye rays (DCs 16-19)":["Charm","Paralyzing","Fear","Slowing","Enervation","Telekinetic","Sleep","Petrification","Disintegration","Death"]
+    }
+  },
+  "Lich": {
+    "size": "Medium undead", "ac": 17, "hp": 135, "speed": "30 ft.",
+    "stats": {"STR":11,"DEX":16,"CON":16,"INT":20,"WIS":14,"CHA":16},
+    "saves": "CON +10, INT +12, WIS +9",
+    "skills": "Arcana +18, History +12, Insight +9, Perception +9",
+    "senses": "truesight 120 ft., PP 19", "cr": "21",
+    "traits": [
+      "Legendary Resistance (3/Day).",
+      "Rejuvenation (with phylactery).",
+      "Spellcasting: 18th-level wizard.",
+      "Turn Resistance.",
+      "Immune: poison + non-magical weapons; resist cold/lightning/necrotic."
+    ],
+    "actions": [
+      {"name":"Paralyzing Touch","th":"+12","dmg":"3d6 cold. DC 18 CON or paralyzed 1 min.","reach":"5 ft."}
+    ],
+    "spells": {
+      "ability":"INT","save_dc":20,"attack":"+12",
+      "Cantrips":["Mage Hand","Prestidigitation","Ray of Frost"],
+      "1st (4)":["Detect Magic","Magic Missile","Shield","Thunderwave"],
+      "2nd (3)":["Detect Thoughts","Invisibility","Mirror Image"],
+      "3rd (3)":["Animate Dead","Counterspell","Dispel Magic","Fireball"],
+      "4th (3)":["Blight","Dimension Door"],
+      "5th (3)":["Cloudkill","Scrying"],
+      "6th (1)":["Disintegrate","Globe of Invulnerability"],
+      "7th (1)":["Finger of Death","Plane Shift"],
+      "8th (1)":["Dominate Monster","Power Word Stun"],
+      "9th (1)":["Power Word Kill"]
+    }
+  },
+
+  "Elemental (Fire)": {
+    "size": "Large elemental", "ac": 13, "hp": 102, "speed": "50 ft.",
+    "stats": {"STR":10,"DEX":17,"CON":16,"INT":6,"WIS":10,"CHA":7},
+    "senses": "darkvision 60 ft., PP 10", "cr": "5",
+    "traits": [
+      "Fire Form: ignites flammable. Touch deals 1d10 fire.",
+      "Illumination: 30 ft. bright + 30 ft. dim.",
+      "Water Susceptibility: 1 cold dmg per gallon.",
+      "Immune: fire, poison; resist non-magical weapons."
+    ],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Two touch attacks"},
+      {"name":"Touch","th":"+6","dmg":"2d6+3 fire. Ignites unworn flammable items.","reach":"5 ft."}
+    ]
+  },
+  "Elemental (Water)": {
+    "size": "Large elemental", "ac": 14, "hp": 114, "speed": "30 ft., swim 90 ft.",
+    "stats": {"STR":18,"DEX":14,"CON":18,"INT":5,"WIS":10,"CHA":8},
+    "senses": "darkvision 60 ft., PP 10", "cr": "5",
+    "traits": [
+      "Water Form.",
+      "Freeze: cold dmg partially restrains it.",
+      "Resist: acid + non-magical weapons. Immune: poison."
+    ],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Two slam attacks"},
+      {"name":"Slam","th":"+7","dmg":"2d8+4 bludgeoning","reach":"5 ft."},
+      {"name":"Whelm (Recharge 4-6)","th":"—","dmg":"Each creature in space: DC 15 STR. Half from save."}
+    ]
+  },
+  "Elemental (Earth)": {
+    "size": "Large elemental", "ac": 17, "hp": 126, "speed": "30 ft., burrow 30 ft.",
+    "stats": {"STR":20,"DEX":8,"CON":20,"INT":5,"WIS":10,"CHA":5},
+    "senses": "darkvision 60 ft., tremorsense 60 ft., PP 10", "cr": "5",
+    "traits": [
+      "Earth Glide.",
+      "Siege Monster: double dmg to objects/structures.",
+      "Vulnerable: thunder. Resist: non-magical weapons. Immune: poison."
+    ],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Two slam attacks"},
+      {"name":"Slam","th":"+8","dmg":"2d8+5 bludgeoning","reach":"10 ft."}
+    ]
+  },
+  "Elemental (Air)": {
+    "size": "Large elemental", "ac": 15, "hp": 90, "speed": "0 ft., fly 90 ft. (hover)",
+    "stats": {"STR":14,"DEX":20,"CON":14,"INT":6,"WIS":10,"CHA":6},
+    "senses": "darkvision 60 ft., PP 10", "cr": "5",
+    "traits": [
+      "Air Form.",
+      "Resist: lightning, thunder + non-magical weapons. Immune: poison."
+    ],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Two slam attacks"},
+      {"name":"Slam","th":"+8","dmg":"2d8+5 bludgeoning","reach":"5 ft."},
+      {"name":"Whirlwind (Recharge 4-6)","th":"—","dmg":"Each creature in 10 ft. radius cylinder: DC 13 STR or 3d8 bludg + flung 20 ft."}
+    ]
+  },
+
+  "Mimic": {
+    "size": "Medium monstrosity (shapechanger)", "ac": 12, "hp": 58, "speed": "15 ft.",
+    "stats": {"STR":17,"DEX":12,"CON":15,"INT":5,"WIS":13,"CHA":8},
+    "skills": "Stealth +5", "senses": "darkvision 60 ft., PP 11", "cr": "2",
+    "traits": [
+      "Shapechanger: object form.",
+      "Adhesive: target hit by pseudopod is grappled.",
+      "False Appearance.",
+      "Grappler: advantage on attacks vs grappled.",
+      "Immune: acid (when in object form)."
+    ],
+    "actions": [
+      {"name":"Pseudopod","th":"+5","dmg":"1d8+3 bludg. Grapple if surprised.","reach":"5 ft."},
+      {"name":"Bite","th":"+5","dmg":"1d8+3 pierce + 1d8 acid","reach":"5 ft."}
+    ]
+  },
+  "Doppelganger": {
+    "size": "Medium monstrosity (shapechanger)", "ac": 14, "hp": 52, "speed": "30 ft.",
+    "stats": {"STR":11,"DEX":18,"CON":14,"INT":11,"WIS":12,"CHA":14},
+    "skills": "Deception +6, Insight +3", "senses": "darkvision 60 ft., PP 11", "cr": "3",
+    "traits": [
+      "Shapechanger: any small/medium humanoid.",
+      "Ambusher: advantage on attacks vs surprised.",
+      "Surprise Attack: +3d6 dmg vs surprised.",
+      "Immune: charmed."
+    ],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Two slam attacks"},
+      {"name":"Slam","th":"+6","dmg":"1d6+4 bludgeoning","reach":"5 ft."},
+      {"name":"Read Thoughts","th":"—","dmg":"60 ft. range, lasts 1 min unless target succeeds DC 15 WIS."}
+    ]
+  },
+  "Rust Monster": {
+    "size": "Medium monstrosity", "ac": 14, "hp": 27, "speed": "40 ft.",
+    "stats": {"STR":13,"DEX":12,"CON":13,"INT":2,"WIS":13,"CHA":6},
+    "senses": "darkvision 60 ft., PP 11", "cr": "1/2",
+    "traits": [
+      "Iron Scent: detect ferrous metal within 30 ft.",
+      "Rust Metal: nonmagical iron object touched corrodes -1 cumulative penalty."
+    ],
+    "actions": [
+      {"name":"Bite","th":"+3","dmg":"1d8+1 piercing","reach":"5 ft."},
+      {"name":"Antennae","th":"—","dmg":"Touch corrodes nonmagical iron object."}
+    ]
+  },
+  "Gelatinous Cube": {
+    "size": "Large ooze", "ac": 6, "hp": 84, "speed": "15 ft.",
+    "stats": {"STR":14,"DEX":3,"CON":20,"INT":1,"WIS":6,"CHA":1},
+    "senses": "blindsight 60 ft., PP 8", "cr": "2",
+    "traits": [
+      "Ooze Cube: fully fills 10 ft. cube. DC 12 DEX or trapped + acid.",
+      "Transparent: DC 15 Perception to see when motionless.",
+      "Immune: blinded, charmed, deafened, exhaustion, fright, prone."
+    ],
+    "actions": [
+      {"name":"Pseudopod","th":"+4","dmg":"3d6 acid","reach":"5 ft."},
+      {"name":"Engulf","th":"—","dmg":"Move into space. DC 12 DEX or 6d6 acid + restrained inside."}
+    ]
+  },
+  "Shambling Mound": {
+    "size": "Large plant", "ac": 15, "hp": 136, "speed": "20 ft., swim 20 ft.",
+    "stats": {"STR":18,"DEX":8,"CON":16,"INT":5,"WIS":10,"CHA":5},
+    "skills": "Stealth +2", "senses": "blindsight 60 ft., PP 10", "cr": "5",
+    "traits": [
+      "Lightning Absorption: lightning instead heals it.",
+      "Resist: cold, fire. Immune: lightning."
+    ],
+    "actions": [
+      {"name":"Multiattack","th":"—","dmg":"Two slam attacks. If both hit Medium or smaller: grapple + Engulf."},
+      {"name":"Slam","th":"+7","dmg":"2d8+4 bludgeoning","reach":"10 ft."},
+      {"name":"Engulf","th":"—","dmg":"Grappled creature moves inside. Blinded, restrained. 2d8+4 bludg/turn."}
+    ]
+  }
+}

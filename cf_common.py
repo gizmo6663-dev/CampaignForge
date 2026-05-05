@@ -24,7 +24,6 @@ from kivy.utils import platform
 from kivy.metrics import dp, sp
 from kivy.properties import ListProperty, NumericProperty, BooleanProperty, ObjectProperty
 from kivy.lang import Builder
-from kivy.clock import Clock
 from kivy.graphics.texture import Texture
 
 # === STIER ===
@@ -134,22 +133,23 @@ BG_IMAGE_OVERRIDE = os.path.join(USER_DIR, "background.png")
 WOOD_BUNDLED  = os.path.join(APP_DIR, "dark-wood.png")
 WOOD_OVERRIDE = os.path.join(USER_DIR, "dark-wood.png")
 
-# === FARGER – MOSSY GROVE ===
-BG   = [0.05, 0.08, 0.06, 1]
-BG2  = [0.09, 0.13, 0.10, 0.82]   # lett translucent for bakgrunnsbilde
-INPUT= [0.06, 0.09, 0.07, 1]
-BTN  = [0.16, 0.24, 0.17, 1]
-BTNH = [0.28, 0.42, 0.26, 1]
-SHAD = [0.0, 0.01, 0.0, 0.35]   # mykere skygge (stables i tre lag)
+# === FARGER – ANCIENT TOME (mørk brun bakgrunn + grønne knapper + gull) ===
+# Bakgrunner er brune (matcher splash). Knapper og faner er grønne
+# (matcher emblemet og beholder den smaragd-aksenten Robin liker).
+BG   = [0.07, 0.05, 0.04, 1]      # mørk svart-brun (hovedbakgrunn)
+BG2  = [0.13, 0.09, 0.06, 0.85]   # mørk brun, lett translucent (paneler)
+INPUT= [0.10, 0.07, 0.05, 1]      # tekstfelt-bakgrunn, mørk brun
+BTN  = [0.16, 0.24, 0.17, 1]      # mosegroenn (knapper, idle) — som foer
+BTNH = [0.28, 0.42, 0.26, 1]      # lysere groenn (knapper, aktiv) — som foer
+SHAD = [0.0, 0.0, 0.0, 0.40]      # ren svart-skygge (mer kontrast paa brun)
 GOLD = [0.86, 0.74, 0.42, 1]      # antikk gull (overskrifter, aktive)
-GDIM = [0.42, 0.38, 0.22, 0.65]   # mer dempet og brunlig; transparent
-                                    # for å integrere med panel-bakgrunn
+GDIM = [0.55, 0.42, 0.22, 0.70]   # dempet brun-gull; for sub-overskrifter
 GBORDER = [0.86, 0.74, 0.42, 1]   # solid gull for knapper og faner
-TXT  = [0.86, 0.88, 0.74, 1]
-DIM  = [0.52, 0.58, 0.46, 1]
-RED  = [0.78, 0.30, 0.22, 1]
-GRN  = [0.45, 0.70, 0.38, 1]
-BLUE = [0.36, 0.50, 0.68, 1]
+TXT  = [0.92, 0.86, 0.72, 1]      # varm beige (kropps-tekst)
+DIM  = [0.62, 0.54, 0.42, 1]      # dempet beige (sekundaer-tekst)
+RED  = [0.82, 0.32, 0.22, 1]      # varm roed (advarsel/skade)
+GRN  = [0.55, 0.70, 0.38, 1]      # demping av groennt — beholder for PC-token
+BLUE = [0.42, 0.55, 0.72, 1]      # dempet blaa for info
 BLK  = [0.0, 0.0, 0.0, 1]
 
 # Indre kanter for "graverte" knapper (lys topp, mørk bunn)
@@ -157,10 +157,10 @@ INNER_HI = [1.0, 1.0, 0.9, 0.18]   # subtil lys-rim øverst
 INNER_LO = [0.0, 0.0, 0.0, 0.30]   # subtil mørk-rim nederst
 
 # Scenario-bokser
-LOOP_BG    = [0.16, 0.24, 0.17, 1]
-LOOP_BG_ON = [0.28, 0.42, 0.26, 1]
-ONE_BG     = [0.05, 0.10, 0.07, 1]
-ONE_BORDER = [0.55, 0.45, 0.25, 0.85]   # samme dempede tone som GDIM
+LOOP_BG    = [0.16, 0.24, 0.17, 1]      # mosegroenn (samme som BTN)
+LOOP_BG_ON = [0.28, 0.42, 0.26, 1]      # lysere groenn (samme som BTNH)
+ONE_BG     = [0.10, 0.07, 0.05, 1]      # mørk brun (matcher INPUT)
+ONE_BORDER = [0.55, 0.42, 0.22, 0.80]   # dempet gull-brune tone
 
 
 # === GRADIENT-TEKSTUR-HELPERE ===
@@ -529,23 +529,20 @@ Builder.load_string('''
 
 <WoodPanel>:
     canvas.before:
-        # Skygge under panelet (samme effekt som under knappene)
+        # Brun fyll – matcher hovedbakgrunn men litt lysere
         Color:
-            rgba: 1, 1, 1, 0.55
+            rgba: self.bg_color
         RoundedRectangle:
-            texture: self.shadow_tex
-            pos: self.x + dp(2), self.y - dp(2)
-            size: self.width, self.height
-            radius: [self.radius + dp(1)]
-        # Brun-grønn gradient-bakgrunn (samme tekstur som inaktiv knapp).
-        # Hvit Color så teksturens egne farger vises uendret.
-        Color:
-            rgba: 1, 1, 1, 1
-        RoundedRectangle:
-            texture: self.bg_tex_inactive
             pos: self.pos
             size: self.size
             radius: [self.radius]
+        # Subtil indre høylys-stripe i topp (gir "treverk"-feeling)
+        Color:
+            rgba: self.highlight_color
+        RoundedRectangle:
+            pos: self.x + dp(6), self.top - dp(8)
+            size: self.width - dp(12), dp(2)
+            radius: [dp(1)]
         # Gull-kant – samme som knappene
         Color:
             rgba: self.border_color
@@ -694,29 +691,20 @@ class RBox(BoxLayout):
     radius   = NumericProperty(dp(8))
 
 class WoodPanel(BoxLayout):
-    """Container med tre-bakgrunn og gull-kant – matcher knappene/fanene.
+    """Container med brun bakgrunn og gull-kant.
 
-    Bruker samme `bg_tex_inactive`-tekstur som inaktive knapper, slik at
-    paneler er visuelt konsistente med resten av appen. Kantfarge,
-    radius og kanttykkelse kan justeres via properties."""
+    Bruker en mørk brun fyll (matcher splash og hoved-bakgrunn) med
+    gull-kant rundt — slik at knapper/faner (grønne) skiller seg
+    visuelt fra paneler (brune)."""
     border_color = ListProperty(GBORDER)
     border_width = NumericProperty(2.0)
     radius       = NumericProperty(dp(12))
-    bg_tex_inactive = ObjectProperty(None, allownone=True)
-    shadow_tex   = ObjectProperty(None, allownone=True)
+    # Bakgrunn: mørk brun. Litt lysere enn BG for å skille panelet fra
+    # selve appbakgrunnen.
+    bg_color     = ListProperty([0.16, 0.11, 0.07, 0.95])
+    # Subtil indre høylys-stripe i toppen for "treverk-følelse"
+    highlight_color = ListProperty([1.0, 0.92, 0.72, 0.05])
     shadow_color = ListProperty(SHAD)
-
-    def __init__(self, **kw):
-        super().__init__(**kw)
-        # Lat-init av teksturer naar appen er klar
-        Clock.schedule_once(lambda dt: self._init_textures(), 0)
-
-    def _init_textures(self):
-        try:
-            self.bg_tex_inactive = get_tab_inactive_bg_tex()
-            self.shadow_tex = get_drop_shadow_tex()
-        except Exception:
-            pass
 
 class PreviewFrame(BoxLayout):
     bg_color = ListProperty([0.02, 0.02, 0.02, 1])
