@@ -63,6 +63,7 @@ SCENARIO_FILE = os.path.join(BASE_DIR, "scenarios.json")
 LIBRARY_FILE  = os.path.join(BASE_DIR, "library.json")
 BATTLE_FILE = os.path.join(BASE_DIR, "battlemap.json")
 BATTLE_PNG  = os.path.join(BASE_DIR, "battlemap_current.png")
+BATTLE_BG_PNG = os.path.join(BASE_DIR, "battlemap_bg_current.png")
 
 # Bakgrunnsbilde – bundlet ved siden av main.py i APK-en, eller
 # overstyrt med en fil i Documents/CampaignForge/.
