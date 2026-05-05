@@ -24,6 +24,7 @@ from kivy.utils import platform
 from kivy.metrics import dp, sp
 from kivy.properties import ListProperty, NumericProperty, BooleanProperty, ObjectProperty
 from kivy.lang import Builder
+from kivy.clock import Clock
 from kivy.graphics.texture import Texture
 
 # === STIER ===
@@ -526,6 +527,32 @@ Builder.load_string('''
             size: self.size
             radius: [self.radius]
 
+<WoodPanel>:
+    canvas.before:
+        # Skygge under panelet (samme effekt som under knappene)
+        Color:
+            rgba: 1, 1, 1, 0.55
+        RoundedRectangle:
+            texture: self.shadow_tex
+            pos: self.x + dp(2), self.y - dp(2)
+            size: self.width, self.height
+            radius: [self.radius + dp(1)]
+        # Brun-grønn gradient-bakgrunn (samme tekstur som inaktiv knapp).
+        # Hvit Color så teksturens egne farger vises uendret.
+        Color:
+            rgba: 1, 1, 1, 1
+        RoundedRectangle:
+            texture: self.bg_tex_inactive
+            pos: self.pos
+            size: self.size
+            radius: [self.radius]
+        # Gull-kant – samme som knappene
+        Color:
+            rgba: self.border_color
+        Line:
+            rounded_rectangle: (self.x, self.y, self.width, self.height, self.radius)
+            width: self.border_width
+
 <PreviewFrame>:
     canvas.before:
         Color:
@@ -665,6 +692,31 @@ class RTab(ToggleButton):
 class RBox(BoxLayout):
     bg_color = ListProperty(BG2)
     radius   = NumericProperty(dp(8))
+
+class WoodPanel(BoxLayout):
+    """Container med tre-bakgrunn og gull-kant – matcher knappene/fanene.
+
+    Bruker samme `bg_tex_inactive`-tekstur som inaktive knapper, slik at
+    paneler er visuelt konsistente med resten av appen. Kantfarge,
+    radius og kanttykkelse kan justeres via properties."""
+    border_color = ListProperty(GBORDER)
+    border_width = NumericProperty(2.0)
+    radius       = NumericProperty(dp(12))
+    bg_tex_inactive = ObjectProperty(None, allownone=True)
+    shadow_tex   = ObjectProperty(None, allownone=True)
+    shadow_color = ListProperty(SHAD)
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        # Lat-init av teksturer naar appen er klar
+        Clock.schedule_once(lambda dt: self._init_textures(), 0)
+
+    def _init_textures(self):
+        try:
+            self.bg_tex_inactive = get_tab_inactive_bg_tex()
+            self.shadow_tex = get_drop_shadow_tex()
+        except Exception:
+            pass
 
 class PreviewFrame(BoxLayout):
     bg_color = ListProperty([0.02, 0.02, 0.02, 1])

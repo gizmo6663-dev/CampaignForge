@@ -76,7 +76,7 @@ try:
         LOOP_BG, LOOP_BG_ON, ONE_BG, ONE_BORDER,
         IMG_EXT, SND_EXT, HTTP_PORT,
         AMBIENT_SOUNDS, VOGLER_STAGES,
-        RBtn, RToggle, RTab, RBox, PreviewFrame, FramedBox,
+        RBtn, RToggle, RTab, RBox, PreviewFrame, FramedBox, WoodPanel,
         mkbtn, mklbl, mkvol, mksep, mkdiv,
         save_json, load_json, ensure_dirs,
         FONT_H1, FONT_H2, FONT_BODY, FONT_SMALL, FONT_DIM,
@@ -4701,11 +4701,19 @@ try:
 
             # STAT-PANEL: viser HP/AC/Speed/spell-slots for den hvis tur
             # det er na, med +/- knapper for HP og spell-slots.
+            # Pakket i WoodPanel for visuell vekt og konsistens med
+            # resten av appen (samme tre-tekstur og gull-kant som
+            # knappene).
+            stat_wrap = WoodPanel(
+                orientation='vertical', spacing=dp(4),
+                padding=[dp(10), dp(8), dp(10), dp(8)],
+                size_hint_y=1.0)
             self._bm_stat_box = BoxLayout(
                 orientation='vertical', spacing=dp(2),
                 size_hint_y=1.0)
+            stat_wrap.add_widget(self._bm_stat_box)
             self._battle_build_stat_panel()
-            p.add_widget(self._bm_stat_box)
+            p.add_widget(stat_wrap)
 
             # INFO + NESTE-rad
             bot = BoxLayout(size_hint_y=None, height=dp(40),
