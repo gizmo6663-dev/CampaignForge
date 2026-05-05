@@ -4680,7 +4680,7 @@ try:
                 h = rows * cell
 
                 # Base: bakgrunn eller svart
-                stale_bg = bool(self._bm_bg and not os.path.exists(self._bm_bg))
+                stale_bg = self._bm_bg and not os.path.exists(self._bm_bg)
                 if stale_bg:
                     log(f"Battlemap bg missing, clearing stale path: {self._bm_bg}")
                     self._bm_bg = None
@@ -4782,6 +4782,7 @@ try:
                     try:
                         os.remove(old_display)
                     except FileNotFoundError:
+                        # Filen kan allerede vaere ryddet opp eller fjernet.
                         pass
                     except Exception as e:
                         log(f"Battlemap cleanup error: {e}")
