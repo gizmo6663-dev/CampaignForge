@@ -41,10 +41,11 @@ try:
             ImageOps as PILImageOps,
         )
         # Pillow eksponerer LANCZOS ulikt mellom versjoner.
+        PIL_LANCZOS_FALLBACK = 1
         PIL_LANCZOS = getattr(
             getattr(PILImage, 'Resampling', PILImage),
             'LANCZOS',
-            getattr(PILImage, 'LANCZOS', 1))
+            getattr(PILImage, 'LANCZOS', PIL_LANCZOS_FALLBACK))
         PIL_OK = True
         log("PIL imported OK")
     except ImportError:
