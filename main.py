@@ -4432,11 +4432,7 @@ try:
             self._bm_display_png = BATTLE_PNG
             if (PIL_OK and self._bm_bg and self._bm_bg != BATTLE_BG_PNG
                     and os.path.exists(self._bm_bg)):
-                saved_bg = self._bm_bg
-                saved_label = self._bm_bg_label
-                if not self._battle_store_bg_copy(saved_bg, quiet=True):
-                    self._bm_bg = saved_bg
-                    self._bm_bg_label = saved_label
+                self._battle_store_bg_copy(self._bm_bg, quiet=True)
             if not self._bm_bg_label:
                 if self._bm_bg and self._bm_bg != BATTLE_BG_PNG:
                     self._bm_bg_label = os.path.basename(self._bm_bg)
