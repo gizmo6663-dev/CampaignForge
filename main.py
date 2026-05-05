@@ -2218,7 +2218,7 @@ try:
 
         def _dismiss_splash(self, dt):
             if self.splash:
-                anim = Animation(opacity=0, duration=0.8)
+                anim = Animation(opacity=0, duration=1.3)
                 def _remove(*a):
                     if self.splash.parent:
                         self.splash.parent.remove_widget(self.splash)
