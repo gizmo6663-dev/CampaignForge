@@ -4898,8 +4898,13 @@ try:
                 ac = enemy_data.get('ac', '?')
                 spd = enemy_data.get('speed', '?')
                 cr = enemy_data.get('cr', '')
-                stats_row.add_widget(mklbl(
-                    f"AC {ac}", color=DIM, size=11, size_hint_x=None))
+                # AC – fast bredde
+                ac_lbl = Label(
+                    text=f"AC {ac}", font_size=sp(11), color=DIM,
+                    size_hint_x=None, width=dp(50),
+                    halign='left', valign='middle')
+                ac_lbl.bind(size=lambda w, v: setattr(w, 'text_size', v))
+                stats_row.add_widget(ac_lbl)
                 # Speed kan vaere lang – la den ta plass
                 spd_lbl = Label(
                     text=f"Spd {spd}", font_size=sp(10), color=DIM,
@@ -4907,9 +4912,12 @@ try:
                 spd_lbl.bind(size=lambda w, v: setattr(w, 'text_size', v))
                 stats_row.add_widget(spd_lbl)
                 if cr:
-                    cr_lbl = mklbl(f"CR {cr}", color=GOLD, size=11,
-                                   size_hint_x=None)
-                    cr_lbl.width = dp(50)
+                    cr_lbl = Label(
+                        text=f"CR {cr}", font_size=sp(11), color=GOLD,
+                        bold=True, size_hint_x=None, width=dp(60),
+                        halign='right', valign='middle')
+                    cr_lbl.bind(size=lambda w, v:
+                                setattr(w, 'text_size', v))
                     stats_row.add_widget(cr_lbl)
             else:
                 # Frittstaaende entry uten karakter eller fiendedata
