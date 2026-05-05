@@ -4784,6 +4784,7 @@ try:
                 t['col'] = col
                 t['row'] = row
                 self._bm_sel_token = None
+                self._battle_save()
                 self._battle_refresh_img()
                 self._battle_update_info(
                     f"{t.get('name','?')} flyttet {feet} ft "
@@ -4797,6 +4798,7 @@ try:
                 self._bm_fog.remove(cell)
             else:
                 self._bm_fog.append(cell)
+            self._battle_save()
             self._battle_refresh_img()
 
         def _battle_handle_measure_tap(self, col, row):
@@ -4850,14 +4852,17 @@ try:
                 cell = self._battle_cell_size()
                 cols = self._bm_grid_cols
                 rows = self._battle_grid_rows()
-                w = cols * cell
-                h = rows * cell
+                w = CANVAS_W
+                h = CANVAS_H
+                grid_w = cols * cell
+                grid_h = rows * cell
 
                 # Base: bakgrunn eller svart
                 stale_bg = self._bm_bg and not os.path.exists(self._bm_bg)
                 if stale_bg:
                     log(f"Battlemap bg missing, clearing stale path: {self._bm_bg}")
                     self._bm_bg = None
+                    self._bm_bg_label = None
                 if self._bm_bg:
                     try:
                         with PILImage.open(self._bm_bg) as bg_src:
@@ -4881,10 +4886,10 @@ try:
                     grid_col = (255, 217, 115, 100)   # dempet gull
                     for c in range(cols + 1):
                         x = c * cell
-                        draw.line([(x, 0), (x, h)], fill=grid_col, width=1)
+                        draw.line([(x, 0), (x, grid_h)], fill=grid_col, width=1)
                     for r in range(rows + 1):
                         y = r * cell
-                        draw.line([(0, y), (w, y)], fill=grid_col, width=1)
+                        draw.line([(0, y), (grid_w, y)], fill=grid_col, width=1)
 
                 # MAAL-LINJE
                 if (self._bm_mode == 'measure'
@@ -5081,6 +5086,7 @@ try:
 
         def _battle_toggle_grid(self):
             self._bm_show_grid = not self._bm_show_grid
+            self._battle_save()
             self._battle_refresh_img()
             self._battle_show_menu()   # rerender meny-tekst
             # og selve kartet neste gang
@@ -5099,6 +5105,8 @@ try:
             self._bm_fog = [
                 c for c in self._bm_fog
                 if 0 <= c[0] < cols and 0 <= c[1] < rows]
+            self._bm_sel_token = None
+            self._battle_save()
             self._battle_refresh_img()
             self._battle_show_menu()
 
@@ -5109,17 +5117,20 @@ try:
             self._bm_fog = [[c, r]
                             for c in range(cols)
                             for r in range(rows)]
+            self._battle_save()
             self._battle_refresh_img()
             self._battle_show_menu()
 
         def _battle_clear_fog(self):
             self._bm_fog = []
+            self._battle_save()
             self._battle_refresh_img()
             self._battle_show_menu()
 
         def _battle_clear_tokens(self):
             self._bm_tokens = []
             self._bm_sel_token = None
+            self._battle_save()
             self._battle_refresh_img()
             self._battle_show_menu()
 
@@ -5132,6 +5143,7 @@ try:
                 pass
             except Exception as e:
                 log(f"Battlemap bg cleanup error: {e}")
+            self._battle_save()
             self._battle_refresh_img()
             self._battle_show_menu()
 
@@ -5174,6 +5186,7 @@ try:
                 })
             self._bm_tokens = new_tokens
             self._bm_sel_token = None
+            self._battle_save()
             self._battle_refresh_img()
             self._mk_battle_map()
 
@@ -5248,6 +5261,7 @@ try:
             if not self._battle_store_bg_copy(path):
                 self._battle_show_menu()
                 return
+            self._battle_save()
             self._battle_refresh_img()
             self._battle_show_menu()
 
