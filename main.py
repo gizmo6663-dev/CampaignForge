@@ -65,7 +65,7 @@ try:
     from cf_common import (
         log as _cf_log,  # cf_common har sin egen log; unngå navnekollisjon
         USE_JNIUS, MediaPlayer,
-        BASE_DIR, IMG_DIR, MUSIC_DIR, ONESHOT_DIR, MAPS_DIR,
+        BASE_DIR, DATA_DIR, IMG_DIR, MUSIC_DIR, ONESHOT_DIR, MAPS_DIR,
         CHAR_FILE, SCENARIO_FILE, LIBRARY_FILE,
         BATTLE_FILE, BATTLE_PNG, BATTLE_BG_PNG,
         APP_DIR, BG_IMAGE_BUNDLED, BG_IMAGE_OVERRIDE,
@@ -1764,8 +1764,25 @@ try:
 
     # === SERVER / CAST / PLAYERS ===
     class QuietHandler(SimpleHTTPRequestHandler):
+        """HTTP-handler som søker både i DATA_DIR (battlemap-PNG, app-data)
+        og BASE_DIR (brukerens bilder, musikk, kart)."""
+        def __init__(self, *args, **kwargs):
+            kwargs.pop('directory', None)
+            super().__init__(*args, directory=BASE_DIR, **kwargs)
+
         def log_message(self, f, *a):
             pass
+
+        def translate_path(self, path):
+            clean = path.split('?', 1)[0].split('#', 1)[0].lstrip('/')
+            for root in (DATA_DIR, BASE_DIR):
+                cand = os.path.normpath(os.path.join(root, clean))
+                real_root = os.path.realpath(root)
+                if (cand.startswith(real_root)
+                        and os.path.exists(cand)):
+                    return cand
+            # Fallback – gir 404
+            return os.path.join(BASE_DIR, clean)
 
     class MediaServer:
         def __init__(self):
@@ -1774,9 +1791,9 @@ try:
             if self._h:
                 return
             try:
-                h = partial(QuietHandler, directory=BASE_DIR)
-                self._h = HTTPServer(('0.0.0.0', HTTP_PORT), h)
-                threading.Thread(target=self._h.serve_forever, daemon=True).start()
+                self._h = HTTPServer(('0.0.0.0', HTTP_PORT), QuietHandler)
+                threading.Thread(target=self._h.serve_forever,
+                                 daemon=True).start()
             except:
                 pass
         def stop(self):
@@ -1794,7 +1811,17 @@ try:
             except:
                 return "127.0.0.1"
         def url(self, fp):
-            return f"http://{self.ip()}:{HTTP_PORT}/{os.path.relpath(fp, BASE_DIR)}"
+            # Bygg URL relativt til riktig rot. DATA_DIR sjekkes først
+            # siden battlemap-PNG ligger der. Fallback til BASE_DIR.
+            for root in (DATA_DIR, BASE_DIR):
+                try:
+                    rel = os.path.relpath(fp, root)
+                    if not rel.startswith('..'):
+                        return f"http://{self.ip()}:{HTTP_PORT}/{rel}"
+                except ValueError:
+                    pass
+            return (f"http://{self.ip()}:{HTTP_PORT}/"
+                    f"{os.path.basename(fp)}")
 
     class CastMgr:
         def __init__(self):
@@ -4518,6 +4545,11 @@ try:
             if hasattr(self, '_bm_init_done'):
                 return
             self._bm_init_done = True
+            # Sikre at _init_list finnes – battlemap leser den i
+            # _battle_next_turn og _battle_sync_from_init. Uten denne
+            # garantien krasjer 'Neste' og '+ Fra initiativ' hvis
+            # brukeren aldri har åpnet Karakter-fanen.
+            self._init_tracker_init()
             # Last lagret tilstand hvis finnes
             saved = load_json(BATTLE_FILE, {})
             self._bm_bg = saved.get('bg', None)          # sti til bakgrunn
@@ -5092,16 +5124,16 @@ try:
             # og selve kartet neste gang
 
         def _battle_set_cols(self, n):
-            """Endre antall kolonner. Kast alle tokens utenfor."""
+            """Endre antall kolonner. Klem tokens innenfor det nye grid-et
+            i stedet for å slette dem (mindre frustrerende ved feiltrykk)."""
             self._bm_grid_cols = n
             cols = n
             rows = self._battle_grid_rows()
-            # Fjern tokens som havner utenfor
-            self._bm_tokens = [
-                t for t in self._bm_tokens
-                if (0 <= t.get('col', 0) < cols
-                    and 0 <= t.get('row', 0) < rows)]
-            # Fjern fog utenfor
+            # Klem tokens inn i grid (behold dem)
+            for t in self._bm_tokens:
+                t['col'] = max(0, min(cols - 1, t.get('col', 0)))
+                t['row'] = max(0, min(rows - 1, t.get('row', 0)))
+            # Fjern fog utenfor (ufarlig å miste ved dimensjonsendring)
             self._bm_fog = [
                 c for c in self._bm_fog
                 if 0 <= c[0] < cols and 0 <= c[1] < rows]
@@ -5191,16 +5223,21 @@ try:
             self._mk_battle_map()
 
         def _battle_cast(self):
-            """Cast gjeldende PNG til TV (cache-bust med query-streng)."""
+            """Cast gjeldende PNG til TV (cache-bust med query-streng).
+            Returnerer til kart-UI etter cast så info-label er synlig
+            for brukeren (i menyen er info-label ikke i widget-treet)."""
             if not CAST_AVAILABLE or not self.cast.mc:
                 self._bm_cast_live = False
-                self._battle_update_info(
-                    "Ingen Cast-enhet tilkoblet. "
-                    "Gaa til Cast-fanen.")
+                self._bm_last_info = ("Ingen Cast-enhet tilkoblet. "
+                                      "Gaa til Cast-fanen.")
+                self._mk_battle_map()
                 return
             # Sikre at PNG er oppdatert
             self._battle_render()
             self._bm_cast_live = True
+            # Tilbake til kartet først, slik at success/error-melding
+            # vises i en synlig info-label.
+            self._mk_battle_map()
             self._battle_cast_current(
                 success_msg="Sendt til TV.",
                 error_msg="Cast feilet.")

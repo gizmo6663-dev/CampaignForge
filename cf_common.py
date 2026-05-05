@@ -26,12 +26,49 @@ from kivy.properties import ListProperty, NumericProperty, BooleanProperty, Obje
 from kivy.lang import Builder
 from kivy.graphics.texture import Texture
 
-# === LOGG ===
-LOG = "/sdcard/Documents/CampaignForge/crash.log"
+# === STIER ===
+# Android 13+ scoped storage gjør at appen IKKE kan opprette/skrive nye
+# filer i /sdcard/Documents/... uten MANAGE_EXTERNAL_STORAGE.
+# Skille:
+#   USER_DIR  – brukerens mappe i Documents (kun for filer brukeren
+#               legger inn selv via filbehandler – f.eks. kart, bilder,
+#               musikk). Appen LESER herfra.
+#   DATA_DIR  – appens private mappe (alltid skrivbar uten tillatelser).
+#               Alle JSON-filer, generert PNG og logg legges hit.
+
+if platform == 'android':
+    DATA_DIR = os.environ.get(
+        'ANDROID_PRIVATE',
+        '/data/data/org.rpg.campaignforge/files')
+    USER_DIR = "/sdcard/Documents/CampaignForge"
+else:
+    # Desktop/testing: alt i hjemmemappen
+    DATA_DIR = os.path.expanduser("~/.campaignforge")
+    USER_DIR = DATA_DIR
+
+# Sørg for at den private data-mappen finnes (skal alltid lykkes)
 try:
-    os.makedirs(os.path.dirname(LOG), exist_ok=True)
+    os.makedirs(DATA_DIR, exist_ok=True)
 except Exception:
     pass
+
+# Bruker-innhold (les-fra)
+BASE_DIR    = USER_DIR     # bevart navn for kompatibilitet med eldre kode
+IMG_DIR     = os.path.join(USER_DIR, "images")
+MUSIC_DIR   = os.path.join(USER_DIR, "music")
+ONESHOT_DIR = os.path.join(USER_DIR, "oneshots")
+MAPS_DIR    = os.path.join(USER_DIR, "maps")
+
+# App-skrevne filer (privat skrivbar mappe)
+CHAR_FILE     = os.path.join(DATA_DIR, "characters.json")
+SCENARIO_FILE = os.path.join(DATA_DIR, "scenarios.json")
+LIBRARY_FILE  = os.path.join(DATA_DIR, "library.json")
+BATTLE_FILE   = os.path.join(DATA_DIR, "battlemap.json")
+BATTLE_PNG    = os.path.join(DATA_DIR, "battlemap_current.png")
+BATTLE_BG_PNG = os.path.join(DATA_DIR, "battlemap_bg_current.png")
+
+# === LOGG (i privat mappe – unngår permission-feil) ===
+LOG = os.path.join(DATA_DIR, "crash.log")
 
 def log(msg):
     try:
@@ -39,6 +76,28 @@ def log(msg):
             f.write(msg + "\n")
     except Exception:
         pass
+
+# === MIGRASJON FRA GAMMEL STI ===
+def _migrate_legacy_files():
+    """Flytt JSON-filer fra gammel /sdcard-sti til ny privat sti.
+    Kjøres én gang ved oppstart. Hopper over hvis ny fil allerede finnes
+    eller hvis lese-tilgangen til den gamle filen ikke er tilgjengelig."""
+    if platform != 'android' or USER_DIR == DATA_DIR:
+        return
+    legacy_files = ("battlemap.json", "characters.json",
+                    "scenarios.json", "library.json", "crash.log")
+    for fn in legacy_files:
+        src = os.path.join(USER_DIR, fn)
+        dst = os.path.join(DATA_DIR, fn)
+        if os.path.exists(src) and not os.path.exists(dst):
+            try:
+                with open(src, 'rb') as fs, open(dst, 'wb') as fd:
+                    fd.write(fs.read())
+                log(f"Migrert {fn}: {src} -> {dst}")
+            except Exception as e:
+                log(f"Migrasjon av {fn} feilet: {e}")
+
+_migrate_legacy_files()
 
 # === ANDROID MEDIAPLAYER (jnius) ===
 USE_JNIUS = False
@@ -52,30 +111,18 @@ if platform == 'android':
     except Exception:
         pass
 
-# === STIER ===
-BASE_DIR    = "/sdcard/Documents/CampaignForge"
-IMG_DIR     = os.path.join(BASE_DIR, "images")
-MUSIC_DIR   = os.path.join(BASE_DIR, "music")
-ONESHOT_DIR = os.path.join(BASE_DIR, "oneshots")
-MAPS_DIR    = os.path.join(BASE_DIR, "maps")
-CHAR_FILE     = os.path.join(BASE_DIR, "characters.json")
-SCENARIO_FILE = os.path.join(BASE_DIR, "scenarios.json")
-LIBRARY_FILE  = os.path.join(BASE_DIR, "library.json")
-BATTLE_FILE = os.path.join(BASE_DIR, "battlemap.json")
-BATTLE_PNG  = os.path.join(BASE_DIR, "battlemap_current.png")
-BATTLE_BG_PNG = os.path.join(BASE_DIR, "battlemap_bg_current.png")
-
 # Bakgrunnsbilde – bundlet ved siden av main.py i APK-en, eller
-# overstyrt med en fil i Documents/CampaignForge/.
+# overstyrt med en fil i Documents/CampaignForge/ (bruker kan legge
+# inn egen bakgrunn).
 APP_DIR = os.path.dirname(os.path.abspath(__file__)) \
     if "__file__" in globals() else os.getcwd()
 BG_IMAGE_BUNDLED  = os.path.join(APP_DIR, "background.png")
-BG_IMAGE_OVERRIDE = os.path.join(BASE_DIR, "background.png")
+BG_IMAGE_OVERRIDE = os.path.join(USER_DIR, "background.png")
 # Trebakgrunn – legges UNDER background.png som heldekkende tekstur.
 # Bundlet med APK-en. Brukeren kan også legge en alternativ
 # dark-wood.png i Documents/CampaignForge/.
 WOOD_BUNDLED  = os.path.join(APP_DIR, "dark-wood.png")
-WOOD_OVERRIDE = os.path.join(BASE_DIR, "dark-wood.png")
+WOOD_OVERRIDE = os.path.join(USER_DIR, "dark-wood.png")
 
 # === FARGER – MOSSY GROVE ===
 BG   = [0.05, 0.08, 0.06, 1]
@@ -284,13 +331,23 @@ VOGLER_STAGES = [
 
 # === MAPPER (kalles etter at tillatelser er gitt) ===
 def ensure_dirs():
+    # Privat data-mappe – skal alltid lykkes på Android
+    try:
+        os.makedirs(DATA_DIR, exist_ok=True)
+    except Exception as e:
+        log(f"makedirs DATA_DIR {DATA_DIR}: {e}")
+    # Brukerens mapper – kan feile på Android 13+ uten manuell oppretting,
+    # men vi prøver siden noen enheter / tillatelser tillater det
     for d in [IMG_DIR, MUSIC_DIR, ONESHOT_DIR, MAPS_DIR]:
         try:
             os.makedirs(d, exist_ok=True)
         except Exception as e:
             log(f"makedirs {d}: {e}")
-    log(f"Dirs OK: img={os.path.exists(IMG_DIR)}, "
-        f"mus={os.path.exists(MUSIC_DIR)}, one={os.path.exists(ONESHOT_DIR)}")
+    log(f"Dirs OK: data={os.path.exists(DATA_DIR)}, "
+        f"img={os.path.exists(IMG_DIR)}, "
+        f"mus={os.path.exists(MUSIC_DIR)}, "
+        f"one={os.path.exists(ONESHOT_DIR)}, "
+        f"maps={os.path.exists(MAPS_DIR)}")
 
 # === JSON ===
 def load_json(p, d=None):
