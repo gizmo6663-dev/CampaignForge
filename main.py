@@ -4562,7 +4562,8 @@ try:
                 return False
             try:
                 with PILImage.open(source_path) as bg_src:
-                    bg_img = PILImageOps.exif_transpose(bg_src).convert('RGB')
+                    bg_ready = PILImageOps.exif_transpose(bg_src) or bg_src
+                    bg_img = bg_ready.convert('RGB')
                     bg_img = bg_img.resize(
                         (CANVAS_W, CANVAS_H),
                         resample=getattr(PILImage, 'Resampling', PILImage).LANCZOS)
@@ -4854,7 +4855,8 @@ try:
                 if self._bm_bg:
                     try:
                         with PILImage.open(self._bm_bg) as bg_src:
-                            bg = PILImageOps.exif_transpose(bg_src).convert('RGB')
+                            bg_ready = PILImageOps.exif_transpose(bg_src) or bg_src
+                            bg = bg_ready.convert('RGB')
                             if bg.size != (w, h):
                                 bg = bg.resize(
                                     (w, h),
