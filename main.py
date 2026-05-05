@@ -4573,6 +4573,9 @@ try:
             self._bm_show_grid = saved.get('show_grid', True)
             self._bm_tokens = saved.get('tokens', [])
             self._bm_fog = saved.get('fog', [])          # liste av [col,row]
+            # Auto-synlighet rundt PC-tokens. 0 = av, 3 = standard
+            # (3 ruters Chebyshev-radius). Justerbar i meny.
+            self._bm_pc_vis_radius = int(saved.get('pc_vis_radius', 3))
             self._bm_mode = 'move'                       # 'move','fog','measure'
             self._bm_sel_token = None                    # idx i _bm_tokens
             self._bm_measure_start = None                # [col,row]
@@ -4608,6 +4611,7 @@ try:
                 'show_grid': self._bm_show_grid,
                 'tokens': self._bm_tokens,
                 'fog': self._bm_fog,
+                'pc_vis_radius': self._bm_pc_vis_radius,
             })
 
         def _battle_store_bg_copy(self, source_path, quiet=False):
@@ -4676,7 +4680,16 @@ try:
             # KARTBILDE (generer og vis)
             self._battle_render()
 
-            map_box = RBox(bg_color=BLK, radius=dp(8))
+            # Lås kartboksen til 16:9 så vi ikke får svart letterbox.
+            # CANVAS er 1280x720 (16:9), saa hoeyden binder vi til
+            # bredden * 720/1280 = bredden * 0.5625.
+            map_box = RBox(bg_color=BLK, radius=dp(8),
+                           size_hint_y=None)
+
+            def _bind_map_h(w, val):
+                w.height = val * (CANVAS_H / CANVAS_W)
+
+            map_box.bind(width=_bind_map_h)
             self._bm_img = _BMImage(
                 source=getattr(self, '_bm_display_png', BATTLE_PNG),
                 allow_stretch=True,
@@ -4685,6 +4698,14 @@ try:
                 touch_cb=self._battle_on_map_touch)
             map_box.add_widget(self._bm_img)
             p.add_widget(map_box)
+
+            # STAT-PANEL: viser HP/AC/Speed/spell-slots for den hvis tur
+            # det er na, med +/- knapper for HP og spell-slots.
+            self._bm_stat_box = BoxLayout(
+                orientation='vertical', spacing=dp(2),
+                size_hint_y=1.0)
+            self._battle_build_stat_panel()
+            p.add_widget(self._bm_stat_box)
 
             # INFO + NESTE-rad
             bot = BoxLayout(size_hint_y=None, height=dp(40),
@@ -4727,6 +4748,220 @@ try:
             self._bm_last_info = txt
             if hasattr(self, '_bm_info_lbl') and self._bm_info_lbl:
                 self._bm_info_lbl.text = txt
+
+        # ---------- STAT-PANEL FOR DEN MED TUREN ----------
+        def _battle_find_char_by_name(self, name):
+            """Slaa opp PC i self.chars via navn (case-insensitiv)."""
+            if not name:
+                return None
+            target = name.strip().lower()
+            for ch in self.chars:
+                if ch.get('name', '').strip().lower() == target:
+                    return ch
+            return None
+
+        def _battle_current_actor(self):
+            """Hent init-entry + evt. matching karakter for den med turen.
+
+            Returnerer (entry, char) der char er None for fiender og
+            for PC-er som ikke finnes i karakter-lista (f.eks. fjernet)."""
+            if not self._init_list:
+                return None, None
+            entry = self._init_list[0]
+            ch = None
+            if entry.get('type') == 'PC':
+                ch = self._battle_find_char_by_name(entry.get('name', ''))
+            return entry, ch
+
+        def _battle_build_stat_panel(self):
+            """Bygg kompakt stat-panel for den med turen.
+
+            For PC: HP +/-, AC, Speed, spell-slots med +/- per nivaa.
+            For fiende eller frittstaaende init-entry: HP +/-.
+            For tom init-liste: hjelpetekst."""
+            if not hasattr(self, '_bm_stat_box') or self._bm_stat_box is None:
+                return
+            box = self._bm_stat_box
+            box.clear_widgets()
+
+            entry, ch = self._battle_current_actor()
+            if entry is None:
+                box.add_widget(mklbl(
+                    "Ingen i initiativ-lista. Legg til deltakere "
+                    "i Karakterer-fanen, eller i battlemap-meny.",
+                    color=DIM, size=11, h=20))
+                return
+
+            name = entry.get('name', '?')
+            tp = entry.get('type', 'F')
+            type_color = (GOLD if tp == 'PC'
+                          else (TXT if tp == 'NPC' else RED))
+
+            # === RAD 1: Navn + type + AC + Speed ===
+            top = BoxLayout(size_hint_y=None, height=dp(28), spacing=dp(6))
+            name_lbl = Label(
+                text=f"[b]{name}[/b]  ({tp})",
+                markup=True, font_size=sp(13), color=type_color,
+                halign='left', valign='middle', size_hint_x=0.55)
+            name_lbl.bind(size=lambda w, v: setattr(w, 'text_size', v))
+            top.add_widget(name_lbl)
+
+            if ch:
+                ac = ch.get('armor_class', 10)
+                spd = ch.get('speed', 30)
+                top.add_widget(mklbl(
+                    f"AC {ac}", color=DIM, size=11))
+                top.add_widget(mklbl(
+                    f"Spd {spd}", color=DIM, size=11))
+            else:
+                # Frittstaaende init-entry – vis DEX som info
+                dex_mod = entry.get('dex_mod', 0)
+                sgn = "+" if dex_mod >= 0 else ""
+                top.add_widget(mklbl(
+                    f"DEX {sgn}{dex_mod}", color=DIM, size=11))
+            box.add_widget(top)
+
+            # === RAD 2: HP +/- ===
+            hp_row = BoxLayout(size_hint_y=None, height=dp(36), spacing=dp(4))
+            if ch:
+                hp_cur = ch.get('hp_current', 0)
+                hp_max = ch.get('hp_max', 0)
+                hp_tmp = ch.get('hp_temp', 0)
+                tmp_txt = f" (+{hp_tmp})" if hp_tmp else ""
+                hp_lbl = Label(
+                    text=f"HP {hp_cur}/{hp_max}{tmp_txt}",
+                    font_size=sp(13), color=TXT, bold=True,
+                    halign='left', valign='middle')
+                hp_lbl.bind(size=lambda w, v: setattr(w, 'text_size', v))
+                hp_row.add_widget(hp_lbl)
+                for delta, lbl, danger in [(-5, "-5", True),
+                                           (-1, "-1", True),
+                                           (+1, "+1", False),
+                                           (+5, "+5", False)]:
+                    btn = mkbtn(
+                        lbl,
+                        lambda d=delta: self._battle_adjust_hp(d),
+                        small=True, danger=danger,
+                        size_hint_x=None)
+                    btn.width = dp(46)
+                    hp_row.add_widget(btn)
+            else:
+                # Bruker init-entry sitt hp-felt (fritekstformat
+                # "cur/max" som sync_from_init satte)
+                hp_txt = entry.get('hp', '?/?')
+                hp_lbl = Label(
+                    text=f"HP {hp_txt}",
+                    font_size=sp(13), color=TXT, bold=True,
+                    halign='left', valign='middle')
+                hp_lbl.bind(size=lambda w, v: setattr(w, 'text_size', v))
+                hp_row.add_widget(hp_lbl)
+                for delta, lbl, danger in [(-5, "-5", True),
+                                           (-1, "-1", True),
+                                           (+1, "+1", False),
+                                           (+5, "+5", False)]:
+                    btn = mkbtn(
+                        lbl,
+                        lambda d=delta: self._battle_adjust_hp(d),
+                        small=True, danger=danger,
+                        size_hint_x=None)
+                    btn.width = dp(46)
+                    hp_row.add_widget(btn)
+            box.add_widget(hp_row)
+
+            # === RAD 3+: Spell-slots (kun PC med slots) ===
+            if ch:
+                slots = ch.get('spell_slots', {})
+                # Bare vis nivaaer som har total > 0
+                used_levels = sorted(
+                    [int(lvl) for lvl, s in slots.items()
+                     if s.get('total', 0) > 0])
+                if used_levels:
+                    box.add_widget(mklbl(
+                        "SPELL SLOTS", color=GDIM, size=10,
+                        bold=True, h=16))
+                    sl_row = BoxLayout(
+                        size_hint_y=None, height=dp(34), spacing=dp(3))
+                    for lvl in used_levels:
+                        s = slots.get(str(lvl), {})
+                        tot = s.get('total', 0)
+                        exp = s.get('expended', 0)
+                        rem = max(0, tot - exp)
+                        cell_box = BoxLayout(
+                            orientation='vertical', spacing=dp(0),
+                            size_hint_x=None)
+                        cell_box.width = dp(56)
+                        cell_box.add_widget(Label(
+                            text=f"L{lvl}: {rem}/{tot}",
+                            font_size=sp(10),
+                            color=TXT if rem else DIM,
+                            size_hint_y=None, height=dp(14)))
+                        bb = BoxLayout(
+                            size_hint_y=None, height=dp(20),
+                            spacing=dp(2))
+                        bb.add_widget(mkbtn(
+                            "-",
+                            lambda L=lvl: self._battle_adjust_slot(L, -1),
+                            small=True, danger=True))
+                        bb.add_widget(mkbtn(
+                            "+",
+                            lambda L=lvl: self._battle_adjust_slot(L, +1),
+                            small=True))
+                        cell_box.add_widget(bb)
+                        sl_row.add_widget(cell_box)
+                    # Padding paa hoeyre side saa det ikke strekkes
+                    sl_row.add_widget(Widget())
+                    box.add_widget(sl_row)
+
+        def _battle_adjust_hp(self, delta):
+            """Trekk fra eller legg til HP for den med turen.
+
+            Skriver til karakter-fila for PC-er. For frittstaaende init-
+            entries oppdateres bare entry-en (ikke karakter-fila)."""
+            entry, ch = self._battle_current_actor()
+            if entry is None:
+                return
+            if ch:
+                cur = int(ch.get('hp_current', 0))
+                mx = int(ch.get('hp_max', 0))
+                new_val = max(0, min(mx if mx > 0 else 999, cur + delta))
+                ch['hp_current'] = new_val
+                # Hold init-entry sitt hp-felt synkronisert
+                entry['hp'] = f"{new_val}/{mx}"
+                save_json(CHAR_FILE, self.chars)
+            else:
+                # Frittstaaende entry: parse "cur/max" og endre cur
+                hp_str = entry.get('hp', '0/0')
+                try:
+                    cur_s, max_s = hp_str.split('/', 1)
+                    cur = int(cur_s)
+                    mx = int(max_s)
+                except (ValueError, AttributeError):
+                    cur, mx = 0, 0
+                new_val = max(0, min(mx if mx > 0 else 999, cur + delta))
+                entry['hp'] = f"{new_val}/{mx}"
+            self._battle_build_stat_panel()
+            self._battle_update_info(
+                f"{entry.get('name','?')}: HP {entry.get('hp','?')}")
+
+        def _battle_adjust_slot(self, level, delta):
+            """Endre antall brukte spell-slots paa et nivaa.
+
+            delta=+1 betyr 'bruk en slot' (expended++).
+            delta=-1 betyr 'gjenopprett en slot' (expended--)."""
+            entry, ch = self._battle_current_actor()
+            if ch is None:
+                return
+            slots = ch.setdefault('spell_slots', {})
+            s = slots.setdefault(str(level), {'total': 0, 'expended': 0})
+            tot = int(s.get('total', 0))
+            exp = int(s.get('expended', 0))
+            new_exp = max(0, min(tot, exp + delta))
+            s['expended'] = new_exp
+            save_json(CHAR_FILE, self.chars)
+            self._battle_build_stat_panel()
+            rem = max(0, tot - new_exp)
+            self._battle_update_info(
+                f"{entry.get('name','?')}: L{level} {rem}/{tot}")
 
         def _battle_refresh_img(self):
             """Rerender + force reload av Kivy-bildet."""
@@ -4890,6 +5125,8 @@ try:
             self._init_list.append(top)
             self._bm_sel_token = None
             self._battle_refresh_img()
+            # Oppdater stat-panelet for den nye aktoeren
+            self._battle_build_stat_panel()
             # Vis hvem sin tur det er naa
             new_top = self._init_list[0]
             self._battle_update_info(
@@ -5024,14 +5261,52 @@ try:
                             pass
 
                 # ============================================================
+                # AUTO-SYNLIGHET RUNDT PC-TOKENS
+                # Beregn et sett av "synlige" ruter rundt hver PC-token
+                # (Chebyshev-distanse <= radius). Fog som overlapper disse
+                # rutene skjules i begge versjoner — ellers ville svart fog
+                # paa TV gjort det umulig for spillerne aa se sine egne
+                # karakterer.
+                # ============================================================
+                vis_radius = self._bm_pc_vis_radius
+                visible = set()
+                if vis_radius > 0:
+                    for t in self._bm_tokens:
+                        if t.get('type') != 'PC':
+                            continue
+                        tc = t.get('col', 0)
+                        tr = t.get('row', 0)
+                        sz = t.get('size', 1)
+                        # Sentralrute(r): for stoerre tokens, dekk alle
+                        # ruter token okkuperer
+                        for dc in range(sz):
+                            for dr in range(sz):
+                                bc = tc + dc
+                                br = tr + dr
+                                # Ruter innenfor vis_radius (Chebyshev)
+                                for ec in range(bc - vis_radius,
+                                                bc + vis_radius + 1):
+                                    for er in range(br - vis_radius,
+                                                    br + vis_radius + 1):
+                                        if (0 <= ec < cols
+                                                and 0 <= er < rows):
+                                            visible.add((ec, er))
+
+                # Filtrer fog: ekskluder ruter som er "synlige" rundt PC-er
+                effective_fog = [
+                    fc for fc in self._bm_fog
+                    if (fc[0], fc[1]) not in visible
+                ]
+
+                # ============================================================
                 # CAST-VERSJON (BATTLE_PNG): UGJENNOMSIKTIG SVART TAAKE
                 # Spillerne skal ikke se hva som ligger under taaken.
                 # ============================================================
                 cast_img = base_img.copy()
-                if self._bm_fog:
+                if effective_fog:
                     cast_draw = PILDraw.Draw(cast_img, 'RGBA')
                     # Alpha 255 = helt ugjennomsiktig svart
-                    for fc in self._bm_fog:
+                    for fc in effective_fog:
                         fx, fy = fc[0] * cell, fc[1] * cell
                         cast_draw.rectangle(
                             [(fx, fy), (fx + cell, fy + cell)],
@@ -5042,10 +5317,10 @@ try:
                 # APP-VERSJON (_bm_display_png): SEMI-TRANSPARENT TAAKE
                 # DM ser kartet gjennom taaken for aa kunne planlegge.
                 # ============================================================
-                if self._bm_fog:
+                if effective_fog:
                     app_draw = PILDraw.Draw(base_img, 'RGBA')
                     # Alpha 150 = ca 60% gjennomsiktig (som foer)
-                    for fc in self._bm_fog:
+                    for fc in effective_fog:
                         fx, fy = fc[0] * cell, fc[1] * cell
                         app_draw.rectangle(
                             [(fx, fy), (fx + cell, fy + cell)],
@@ -5173,6 +5448,23 @@ try:
                 danger=True, small=True, size_hint_x=0.5))
             g.add_widget(fog_row)
 
+            # SYNLIGHET RUNDT PC-er
+            vis_r = self._bm_pc_vis_radius
+            vis_lbl_txt = (f"PC-syn: {vis_r} ruter"
+                           if vis_r > 0 else "PC-syn: AV")
+            g.add_widget(mklbl(vis_lbl_txt, color=DIM, size=11, h=20))
+            vis_row = BoxLayout(size_hint_y=None, height=dp(42),
+                                spacing=dp(4))
+            for n in [0, 2, 3, 4, 6]:
+                lbl = "Av" if n == 0 else str(n)
+                btn = mkbtn(
+                    lbl,
+                    lambda x=n: self._battle_set_pc_vis(x),
+                    accent=(n == vis_r),
+                    small=True)
+                vis_row.add_widget(btn)
+            g.add_widget(vis_row)
+
             # TOKENS
             g.add_widget(mklbl("TOKENS", color=GDIM,
                                size=10, bold=True, h=20))
@@ -5244,6 +5536,13 @@ try:
 
         def _battle_clear_fog(self):
             self._bm_fog = []
+            self._battle_save()
+            self._battle_refresh_img()
+            self._battle_show_menu()
+
+        def _battle_set_pc_vis(self, radius):
+            """Sett synligheten rundt PC-tokens (Chebyshev-radius)."""
+            self._bm_pc_vis_radius = max(0, int(radius))
             self._battle_save()
             self._battle_refresh_img()
             self._battle_show_menu()
