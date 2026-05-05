@@ -475,7 +475,7 @@ Builder.load_string('''
             size: self.size
             radius: [self.radius]
         Color:
-            rgba: self.glow_color
+            rgba: self.glow_color if self.has_content else (0, 0, 0, 0)
         RoundedRectangle:
             pos: self.x + dp(4), self.y + self.height * 0.55
             size: self.width - dp(8), self.height * 0.22
@@ -607,6 +607,7 @@ class PreviewFrame(BoxLayout):
     inner_frame_color = ListProperty([0.36, 0.29, 0.16, 0.95])
     glow_color = ListProperty([0.86, 0.74, 0.42, 0.08])
     highlight_color = ListProperty([1.0, 0.96, 0.82, 0.09])
+    has_content = BooleanProperty(False)
     radius = NumericProperty(dp(18))
 
 class FramedBox(BoxLayout):
