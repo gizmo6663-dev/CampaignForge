@@ -2213,7 +2213,7 @@ try:
             Clock.schedule_once(lambda dt: request_android_permissions(), 0.5)
             Clock.schedule_once(lambda dt: self._init(), 3)
             # Fade ut splash etter 2.5 sek
-            Clock.schedule_once(self._dismiss_splash, 2.5)
+            Clock.schedule_once(self._dismiss_splash, 3.5)
             return wrapper
 
         def _dismiss_splash(self, dt):
