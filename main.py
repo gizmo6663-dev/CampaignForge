@@ -2296,6 +2296,8 @@ try:
                 self.preview.source = path
                 Animation(opacity=1, duration=0.4).start(self.preview)
                 if self.auto_cast and self.cast.mc:
+                    if hasattr(self, '_bm_cast_live'):
+                        self._bm_cast_live = False
                     self.img_lbl.text = "Caster..."
                     self.cast.cast_img(self.server.url(path),
                                        cb=lambda ok: setattr(self.img_lbl, 'text',
@@ -2651,6 +2653,8 @@ try:
 
         def _dc(self):
             self.cast.disconnect()
+            if hasattr(self, '_bm_cast_live'):
+                self._bm_cast_live = False
             self.cast_lbl.text = "Frakoblet"
 
         # ---------- KARAKTERER ----------
@@ -4422,6 +4426,7 @@ try:
             self._bm_measure_start = None                # [col,row]
             self._bm_last_info = ""
             self._bm_cast_counter = 0
+            self._bm_cast_live = False
             self._bm_render_rev = 0
             self._bm_display_png = BATTLE_PNG
 
@@ -4548,6 +4553,40 @@ try:
                 if self._bm_img.source != src:
                     self._bm_img.source = src
                 self._bm_img.reload()
+            self._battle_sync_cast_if_live()
+
+        def _battle_sync_cast_if_live(self):
+            """Oppdaterer TV automatisk hvis battlemap allerede er castet."""
+            if not getattr(self, '_bm_cast_live', False):
+                return
+            if not CAST_AVAILABLE or not getattr(self.cast, 'mc', None):
+                self._bm_cast_live = False
+                return
+            self._battle_cast_current()
+
+        def _battle_cast_current(self, success_msg=None, error_msg=None):
+            """Send gjeldende battlemap-PNG til TV."""
+            self._bm_cast_counter += 1
+            url = self.server.url(BATTLE_PNG)
+            url = f"{url}?t={self._bm_cast_counter}"
+
+            def _c():
+                try:
+                    self.cast.mc.play_media(url, 'image/png')
+                    self.cast.mc.block_until_active()
+                    if success_msg:
+                        Clock.schedule_once(
+                            lambda dt, msg=success_msg:
+                                self._battle_update_info(msg), 0)
+                except Exception as e:
+                    log(f"Cast battlemap error: {e}")
+                    self._bm_cast_live = False
+                    if error_msg:
+                        Clock.schedule_once(
+                            lambda dt, msg=error_msg:
+                                self._battle_update_info(msg), 0)
+
+            threading.Thread(target=_c, daemon=True).start()
 
         def _battle_mode_switch(self, mode):
             """Bytt mellom flytt / taake / maal."""
@@ -4707,14 +4746,6 @@ try:
                         y = r * cell
                         draw.line([(0, y), (w, y)], fill=grid_col, width=1)
 
-                # TAAKE (semi-transparent moerk)
-                fog_col = (10, 10, 15, 210)
-                for fc in self._bm_fog:
-                    fx, fy = fc[0] * cell, fc[1] * cell
-                    draw.rectangle(
-                        [(fx, fy), (fx + cell, fy + cell)],
-                        fill=fog_col)
-
                 # MAAL-LINJE
                 if (self._bm_mode == 'measure'
                         and self._bm_measure_start is not None):
@@ -4766,6 +4797,14 @@ try:
                                       fill=(0, 0, 0, 255), font=font)
                         except Exception:
                             pass
+
+                # TAAKE legges sist for å skjule alt under.
+                fog_col = (0, 0, 0, 255)
+                for fc in self._bm_fog:
+                    fx, fy = fc[0] * cell, fc[1] * cell
+                    draw.rectangle(
+                        [(fx, fy), (fx + cell, fy + cell)],
+                        fill=fog_col)
 
                 # Lagre
                 img.save(BATTLE_PNG, 'PNG')
@@ -4903,6 +4942,7 @@ try:
 
         def _battle_toggle_grid(self):
             self._bm_show_grid = not self._bm_show_grid
+            self._battle_refresh_img()
             self._battle_show_menu()   # rerender meny-tekst
             # og selve kartet neste gang
 
@@ -4920,6 +4960,7 @@ try:
             self._bm_fog = [
                 c for c in self._bm_fog
                 if 0 <= c[0] < cols and 0 <= c[1] < rows]
+            self._battle_refresh_img()
             self._battle_show_menu()
 
         def _battle_fill_fog(self):
@@ -4929,19 +4970,23 @@ try:
             self._bm_fog = [[c, r]
                             for c in range(cols)
                             for r in range(rows)]
+            self._battle_refresh_img()
             self._battle_show_menu()
 
         def _battle_clear_fog(self):
             self._bm_fog = []
+            self._battle_refresh_img()
             self._battle_show_menu()
 
         def _battle_clear_tokens(self):
             self._bm_tokens = []
             self._bm_sel_token = None
+            self._battle_refresh_img()
             self._battle_show_menu()
 
         def _battle_clear_bg(self):
             self._bm_bg = None
+            self._battle_refresh_img()
             self._battle_show_menu()
 
         def _battle_sync_from_init(self):
@@ -4983,34 +5028,23 @@ try:
                 })
             self._bm_tokens = new_tokens
             self._bm_sel_token = None
+            self._battle_refresh_img()
             self._mk_battle_map()
 
         def _battle_cast(self):
             """Cast gjeldende PNG til TV (cache-bust med query-streng)."""
             if not CAST_AVAILABLE or not self.cast.mc:
+                self._bm_cast_live = False
                 self._battle_update_info(
                     "Ingen Cast-enhet tilkoblet. "
                     "Gaa til Cast-fanen.")
                 return
             # Sikre at PNG er oppdatert
             self._battle_render()
-            self._bm_cast_counter += 1
-            url = self.server.url(BATTLE_PNG)
-            url = f"{url}?t={self._bm_cast_counter}"
-            # Bruk PNG mime
-            def _c():
-                try:
-                    self.cast.mc.play_media(url, 'image/png')
-                    self.cast.mc.block_until_active()
-                    Clock.schedule_once(
-                        lambda dt: self._battle_update_info(
-                            "Sendt til TV."), 0)
-                except Exception as e:
-                    log(f"Cast battlemap error: {e}")
-                    Clock.schedule_once(
-                        lambda dt: self._battle_update_info(
-                            "Cast feilet."), 0)
-            threading.Thread(target=_c, daemon=True).start()
+            self._bm_cast_live = True
+            self._battle_cast_current(
+                success_msg="Sendt til TV.",
+                error_msg="Cast feilet.")
 
         def _battle_pick_bg(self):
             """Vis bildevalg fra MAPS_DIR."""
@@ -5066,6 +5100,7 @@ try:
 
         def _battle_set_bg(self, path):
             self._bm_bg = path
+            self._battle_refresh_img()
             self._battle_show_menu()
 
 

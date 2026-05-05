@@ -68,6 +68,7 @@ Sub-faner for karakterarbeid og kamp-støtte:
 - Komponér battlemap fra bakgrunnsbilde + token-overlegg
 - 16:9 canvas (1280×720) optimalisert for TV-casting
 - 5 ft per rute (D&D 5e-standard)
+- Fog of war kan dekke hele kartet og avdekkes rute for rute
 - Bruker Pillow (PIL) for bildebehandling — deaktiveres gracefully hvis PIL ikke er tilgjengelig
 - Lagrer konfigurasjon i `battlemap.json` og genererer `battlemap_current.png`
 
@@ -79,6 +80,7 @@ Sub-faner for karakterarbeid og kamp-støtte:
 ### 📺 Cast
 - Oppdager Chromecast-enheter på lokalnett via mDNS
 - Caster bilder og battlemaps direkte til TV
+- Castet battlemap oppdateres fortløpende når kartet endres
 - Lokal HTTP-server (port 8089) serverer media til Chromecast
 - Auto-cast: bilder caster automatisk når de vises hvis en enhet er tilkoblet
 
