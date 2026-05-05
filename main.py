@@ -76,6 +76,8 @@ try:
     CANVAS_W = 1280
     CANVAS_H = 720
     FT_PER_SQUARE = 5   # D&D 5e standard
+    MAIN_BG_OVERLAY_ALPHA = 0.35
+    SPLASH_BG_OVERLAY_ALPHA = 0.42
 
     class _BMImage(Image):
         """Image-widget for battlemap: konverterer trykk til canvas-px.
@@ -2078,7 +2080,7 @@ try:
             # I FloatLayout tegnes barn i rekkefølgen de legges til.
             wood_path, bg_path = self._resolve_theme_backgrounds()
             self._add_theme_background_layers(wrapper, wood_path, bg_path,
-                                              overlay_alpha=0.35)
+                                              overlay_alpha=MAIN_BG_OVERLAY_ALPHA)
 
             main = BoxLayout(orientation='vertical', spacing=0,
                              size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
@@ -2137,7 +2139,8 @@ try:
             self.splash = FloatLayout(size_hint=(1, 1),
                                       pos_hint={'x': 0, 'y': 0})
             self._add_theme_background_layers(
-                self.splash, wood_path, bg_path, overlay_alpha=0.42, base_color=BG)
+                self.splash, wood_path, bg_path,
+                overlay_alpha=SPLASH_BG_OVERLAY_ALPHA, base_color=BG)
             splash_text = BoxLayout(orientation='vertical',
                                     size_hint=(1, 1),
                                     pos_hint={'x': 0, 'y': 0})

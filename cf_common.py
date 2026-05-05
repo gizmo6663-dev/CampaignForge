@@ -463,7 +463,7 @@ Builder.load_string('''
 <PreviewFrame>:
     canvas.before:
         Color:
-            rgba: 0, 0, 0, 0.34
+            rgba: self.shadow_color
         RoundedRectangle:
             pos: self.x + dp(3), self.y - dp(4)
             size: self.width, self.height
@@ -491,7 +491,7 @@ Builder.load_string('''
             rounded_rectangle: (self.x + dp(1.5), self.y + dp(1.5), self.width - dp(3), self.height - dp(3), self.radius - dp(1))
             width: 2.0
         Color:
-            rgba: 1, 0.96, 0.82, 0.09
+            rgba: self.highlight_color
         Line:
             rounded_rectangle: (self.x + dp(7), self.y + dp(7), self.width - dp(14), self.height - dp(14), self.radius - dp(6))
             width: 0.9
@@ -602,9 +602,11 @@ class RBox(BoxLayout):
 
 class PreviewFrame(BoxLayout):
     bg_color = ListProperty([0.02, 0.02, 0.02, 1])
+    shadow_color = ListProperty([0.0, 0.0, 0.0, 0.34])
     frame_color = ListProperty([0.80, 0.68, 0.36, 0.95])
     inner_frame_color = ListProperty([0.36, 0.29, 0.16, 0.95])
     glow_color = ListProperty([0.86, 0.74, 0.42, 0.08])
+    highlight_color = ListProperty([1.0, 0.96, 0.82, 0.09])
     radius = NumericProperty(dp(18))
 
 class FramedBox(BoxLayout):
