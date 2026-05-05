@@ -2050,6 +2050,7 @@ try:
             self.tracks = []
             self.ct = -1
             self.sel_img = None
+            self.preview_box = None
             self.auto_cast = True
             self.cur_folder = IMG_DIR
             self.player = APlayer() if USE_JNIUS else FPlayer()
@@ -2304,7 +2305,7 @@ try:
 
         def _sel_img(self, path):
             self.sel_img = path
-            if hasattr(self, 'preview_box'):
+            if self.preview_box:
                 self.preview_box.has_content = True
             self.img_lbl.text = os.path.basename(path)
             self.img_lbl.color = GOLD
