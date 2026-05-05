@@ -4417,9 +4417,15 @@ try:
             # Last lagret tilstand hvis finnes
             saved = load_json(BATTLE_FILE, {})
             self._bm_bg = saved.get('bg', None)          # sti til bakgrunn
-            self._bm_bg_label = (saved.get('bg_label')
-                                 or (os.path.basename(self._bm_bg)
-                                     if self._bm_bg else None))
+            saved_bg_label = saved.get('bg_label')
+            if saved_bg_label:
+                self._bm_bg_label = saved_bg_label
+            elif self._bm_bg and self._bm_bg != BATTLE_BG_PNG:
+                self._bm_bg_label = os.path.basename(self._bm_bg)
+            elif self._bm_bg:
+                self._bm_bg_label = "Lagret bakgrunn"
+            else:
+                self._bm_bg_label = None
             self._bm_grid_cols = saved.get('cols', 20)
             self._bm_show_grid = saved.get('show_grid', True)
             self._bm_tokens = saved.get('tokens', [])
