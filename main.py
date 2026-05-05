@@ -64,7 +64,7 @@ try:
         LOOP_BG, LOOP_BG_ON, ONE_BG, ONE_BORDER,
         IMG_EXT, SND_EXT, HTTP_PORT,
         AMBIENT_SOUNDS, VOGLER_STAGES,
-        RBtn, RToggle, RTab, RBox, FramedBox,
+        RBtn, RToggle, RTab, RBox, PreviewFrame, FramedBox,
         mkbtn, mklbl, mkvol, mksep, mkdiv,
         save_json, load_json, ensure_dirs,
         FONT_H1, FONT_H2, FONT_BODY, FONT_SMALL, FONT_DIM,
@@ -1967,6 +1967,80 @@ try:
 
     # ============================================================
     class CampaignForgeApp(App, ScenariosMixin):
+        def _resolve_theme_backgrounds(self):
+            wood_path = None
+            if os.path.exists(WOOD_OVERRIDE):
+                wood_path = WOOD_OVERRIDE
+                log(f"Tre-bakgrunn: override {wood_path}")
+            elif os.path.exists(WOOD_BUNDLED):
+                wood_path = WOOD_BUNDLED
+                log(f"Tre-bakgrunn: bundlet {wood_path}")
+            else:
+                log("Tre-bakgrunn: ingen funnet")
+
+            bg_path = None
+            if os.path.exists(BG_IMAGE_OVERRIDE):
+                bg_path = BG_IMAGE_OVERRIDE
+                log(f"Emblem: override {bg_path}")
+            elif os.path.exists(BG_IMAGE_BUNDLED):
+                bg_path = BG_IMAGE_BUNDLED
+                log(f"Emblem: bundlet {bg_path}")
+            else:
+                log("Emblem: ingen funnet")
+            return wood_path, bg_path
+
+        def _add_theme_background_layers(self, parent, wood_path=None, bg_path=None,
+                                         overlay_alpha=0.35, base_color=None):
+            if base_color:
+                base = Widget(size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
+                with base.canvas:
+                    from kivy.graphics import Color as _C, Rectangle as _R
+                    _C(*base_color)
+                    base_rect = _R(pos=base.pos, size=base.size)
+                base.bind(pos=lambda w, v, r=base_rect: setattr(r, 'pos', w.pos),
+                          size=lambda w, v, r=base_rect: setattr(r, 'size', w.size))
+                parent.add_widget(base)
+
+            if wood_path:
+                try:
+                    wood_img = Image(
+                        source=wood_path,
+                        allow_stretch=True,
+                        keep_ratio=False,
+                        opacity=1.0,
+                        size_hint=(1, 1),
+                        pos_hint={'x': 0, 'y': 0},
+                    )
+                    parent.add_widget(wood_img)
+                    log("Tre-bakgrunn lastet OK")
+                except Exception as e:
+                    log(f"Tre-bakgrunn-feil: {e}")
+
+            if bg_path:
+                try:
+                    bg_img = Image(
+                        source=bg_path,
+                        allow_stretch=True,
+                        keep_ratio=True,
+                        opacity=0.85,
+                        size_hint=(1, 0.63),
+                        pos_hint={'x': 0, 'y': 0},
+                    )
+                    parent.add_widget(bg_img)
+                    log("Emblem lastet OK")
+                except Exception as e:
+                    log(f"Emblem-feil: {e}")
+
+            if overlay_alpha and (wood_path or bg_path):
+                dim = Widget(size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
+                with dim.canvas:
+                    from kivy.graphics import Color as _C, Rectangle as _R
+                    _C(0, 0, 0, overlay_alpha)
+                    dim_rect = _R(pos=dim.pos, size=dim.size)
+                dim.bind(pos=lambda w, v, r=dim_rect: setattr(r, 'pos', w.pos),
+                         size=lambda w, v, r=dim_rect: setattr(r, 'size', w.size))
+                parent.add_widget(dim)
+
         def build(self):
             log("=== BUILD (CampaignForge v0.1.0) ===")
             Window.clearcolor = BG
@@ -2002,74 +2076,9 @@ try:
             # 3) Mørk dim-overlay – demper kontrasten før UI tegnes.
             # 4) UI-paneler (oppå alt).
             # I FloatLayout tegnes barn i rekkefølgen de legges til.
-
-            # --- Lag 1: TREBAKGRUNN ---
-            wood_path = None
-            if os.path.exists(WOOD_OVERRIDE):
-                wood_path = WOOD_OVERRIDE
-                log(f"Tre-bakgrunn: override {wood_path}")
-            elif os.path.exists(WOOD_BUNDLED):
-                wood_path = WOOD_BUNDLED
-                log(f"Tre-bakgrunn: bundlet {wood_path}")
-
-            if wood_path:
-                try:
-                    wood_img = Image(
-                        source=wood_path,
-                        allow_stretch=True,
-                        keep_ratio=False,   # dekk hele skjermen
-                        opacity=1.0,
-                        size_hint=(1, 1),
-                        pos_hint={'x': 0, 'y': 0},
-                    )
-                    wrapper.add_widget(wood_img)
-                    log("Tre-bakgrunn lastet OK")
-                except Exception as e:
-                    log(f"Tre-bakgrunn-feil: {e}")
-            else:
-                log("Tre-bakgrunn: ingen funnet")
-
-            # --- Lag 2: D&D-EMBLEM ---
-            # Plasseres i nedre del av skjermen (size_hint y=0.63),
-            # sentrert vannrett, beholder bildeforhold.
-            bg_path = None
-            if os.path.exists(BG_IMAGE_OVERRIDE):
-                bg_path = BG_IMAGE_OVERRIDE
-                log(f"Emblem: override {bg_path}")
-            elif os.path.exists(BG_IMAGE_BUNDLED):
-                bg_path = BG_IMAGE_BUNDLED
-                log(f"Emblem: bundlet {bg_path}")
-
-            if bg_path:
-                try:
-                    bg_img = Image(
-                        source=bg_path,
-                        allow_stretch=True,
-                        keep_ratio=True,    # behold bildeforhold
-                        opacity=0.85,       # lys nok til å sees gjennom
-                                            # halvgjennomsiktige paneler
-                        size_hint=(1, 0.63),
-                        pos_hint={'x': 0, 'y': 0},
-                    )
-                    wrapper.add_widget(bg_img)
-                    log("Emblem lastet OK")
-                except Exception as e:
-                    log(f"Emblem-feil: {e}")
-
-            # --- Lag 3: MØRK DIM-OVERLAY ---
-            # Dempes lett for å sikre lesbarhet av UI-paneler.
-            if wood_path or bg_path:
-                dim = Widget(size_hint=(1, 1),
-                             pos_hint={'x': 0, 'y': 0})
-                with dim.canvas:
-                    from kivy.graphics import Color as _C, Rectangle as _R
-                    _C(0, 0, 0, 0.35)
-                    _bg_rect = _R(pos=dim.pos, size=dim.size)
-                dim.bind(pos=lambda w, v, r=_bg_rect:
-                              setattr(r, 'pos', w.pos),
-                        size=lambda w, v, r=_bg_rect:
-                              setattr(r, 'size', w.size))
-                wrapper.add_widget(dim)
+            wood_path, bg_path = self._resolve_theme_backgrounds()
+            self._add_theme_background_layers(wrapper, wood_path, bg_path,
+                                              overlay_alpha=0.35)
 
             main = BoxLayout(orientation='vertical', spacing=0,
                              size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
@@ -2125,28 +2134,32 @@ try:
             wrapper.add_widget(main)
 
             # === SPLASH SCREEN ===
-            self.splash = RBox(bg_color=BG, radius=0,
-                               orientation='vertical',
-                               size_hint=(1, 1),
-                               pos_hint={'x': 0, 'y': 0})
+            self.splash = FloatLayout(size_hint=(1, 1),
+                                      pos_hint={'x': 0, 'y': 0})
+            self._add_theme_background_layers(
+                self.splash, wood_path, bg_path, overlay_alpha=0.42, base_color=BG)
+            splash_text = BoxLayout(orientation='vertical',
+                                    size_hint=(1, 1),
+                                    pos_hint={'x': 0, 'y': 0})
             # Sentrert innhold
-            self.splash.add_widget(Widget())  # fyll topp
+            splash_text.add_widget(Widget())  # fyll topp
             t1 = Label(text="CAMPAIGN", font_size=sp(42), color=GOLD,
                        bold=True, size_hint_y=None, height=dp(60),
                        halign='center')
             t1.bind(size=t1.setter('text_size'))
-            self.splash.add_widget(t1)
+            splash_text.add_widget(t1)
             t2 = Label(text="FORGE", font_size=sp(42), color=GDIM,
                        bold=True, size_hint_y=None, height=dp(60),
                        halign='center')
             t2.bind(size=t2.setter('text_size'))
-            self.splash.add_widget(t2)
+            splash_text.add_widget(t2)
             sub = Label(text="Dungeon Master's Companion", font_size=sp(13),
                         color=DIM, size_hint_y=None, height=dp(30),
                         halign='center')
             sub.bind(size=sub.setter('text_size'))
-            self.splash.add_widget(sub)
-            self.splash.add_widget(Widget())  # fyll bunn
+            splash_text.add_widget(sub)
+            splash_text.add_widget(Widget())  # fyll bunn
+            self.splash.add_widget(splash_text)
             wrapper.add_widget(self.splash)
 
             self._tab('img')
@@ -2195,8 +2208,7 @@ try:
         # ---------- BILDER ----------
         def _mk_img(self):
             p = BoxLayout(orientation='vertical', spacing=dp(6))
-            # Svart bakgrunn bak preview-bildet
-            preview_box = RBox(size_hint_y=0.4, bg_color=BLK, radius=dp(12))
+            preview_box = PreviewFrame(size_hint_y=0.4, padding=dp(10))
             self.preview = Image(allow_stretch=True, keep_ratio=True,
                                  color=[1, 1, 1, 0] if not self.sel_img else [1, 1, 1, 1])
             if self.sel_img:
