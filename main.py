@@ -4683,7 +4683,6 @@ try:
         def _battle_refresh_img(self):
             """Rerender + force reload av Kivy-bildet."""
             self._battle_render()
-            self._battle_save()
             if hasattr(self, '_bm_img') and self._bm_img:
                 src = getattr(self, '_bm_display_png', BATTLE_PNG)
                 if self._bm_img.source != src:
@@ -4785,6 +4784,7 @@ try:
                 t['col'] = col
                 t['row'] = row
                 self._bm_sel_token = None
+                self._battle_save()
                 self._battle_refresh_img()
                 self._battle_update_info(
                     f"{t.get('name','?')} flyttet {feet} ft "
@@ -4798,6 +4798,7 @@ try:
                 self._bm_fog.remove(cell)
             else:
                 self._bm_fog.append(cell)
+            self._battle_save()
             self._battle_refresh_img()
 
         def _battle_handle_measure_tap(self, col, row):
@@ -5085,6 +5086,7 @@ try:
 
         def _battle_toggle_grid(self):
             self._bm_show_grid = not self._bm_show_grid
+            self._battle_save()
             self._battle_refresh_img()
             self._battle_show_menu()   # rerender meny-tekst
             # og selve kartet neste gang
@@ -5103,6 +5105,8 @@ try:
             self._bm_fog = [
                 c for c in self._bm_fog
                 if 0 <= c[0] < cols and 0 <= c[1] < rows]
+            self._bm_sel_token = None
+            self._battle_save()
             self._battle_refresh_img()
             self._battle_show_menu()
 
@@ -5113,17 +5117,20 @@ try:
             self._bm_fog = [[c, r]
                             for c in range(cols)
                             for r in range(rows)]
+            self._battle_save()
             self._battle_refresh_img()
             self._battle_show_menu()
 
         def _battle_clear_fog(self):
             self._bm_fog = []
+            self._battle_save()
             self._battle_refresh_img()
             self._battle_show_menu()
 
         def _battle_clear_tokens(self):
             self._bm_tokens = []
             self._bm_sel_token = None
+            self._battle_save()
             self._battle_refresh_img()
             self._battle_show_menu()
 
@@ -5136,6 +5143,7 @@ try:
                 pass
             except Exception as e:
                 log(f"Battlemap bg cleanup error: {e}")
+            self._battle_save()
             self._battle_refresh_img()
             self._battle_show_menu()
 
@@ -5178,6 +5186,7 @@ try:
                 })
             self._bm_tokens = new_tokens
             self._bm_sel_token = None
+            self._battle_save()
             self._battle_refresh_img()
             self._mk_battle_map()
 
@@ -5252,6 +5261,7 @@ try:
             if not self._battle_store_bg_copy(path):
                 self._battle_show_menu()
                 return
+            self._battle_save()
             self._battle_refresh_img()
             self._battle_show_menu()
 
