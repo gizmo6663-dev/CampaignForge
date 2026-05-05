@@ -56,7 +56,7 @@ try:
         USE_JNIUS, MediaPlayer,
         BASE_DIR, IMG_DIR, MUSIC_DIR, ONESHOT_DIR, MAPS_DIR,
         CHAR_FILE, SCENARIO_FILE, LIBRARY_FILE,
-        BATTLE_FILE, BATTLE_PNG,
+        BATTLE_FILE, BATTLE_PNG, BATTLE_BG_PNG,
         APP_DIR, BG_IMAGE_BUNDLED, BG_IMAGE_OVERRIDE,
         WOOD_BUNDLED, WOOD_OVERRIDE,
         BG, BG2, INPUT, BTN, BTNH, SHAD, GOLD, GDIM, TXT, DIM,
@@ -4417,6 +4417,7 @@ try:
             # Last lagret tilstand hvis finnes
             saved = load_json(BATTLE_FILE, {})
             self._bm_bg = saved.get('bg', None)          # sti til bakgrunn
+            self._bm_bg_label = saved.get('bg_label')
             self._bm_grid_cols = saved.get('cols', 20)
             self._bm_show_grid = saved.get('show_grid', True)
             self._bm_tokens = saved.get('tokens', [])
@@ -4429,6 +4430,14 @@ try:
             self._bm_cast_live = False
             self._bm_render_rev = 0
             self._bm_display_png = BATTLE_PNG
+            if (PIL_OK and self._bm_bg and self._bm_bg != BATTLE_BG_PNG
+                    and os.path.exists(self._bm_bg)):
+                self._battle_store_bg_copy(self._bm_bg, quiet=True)
+            if not self._bm_bg_label:
+                if self._bm_bg and self._bm_bg != BATTLE_BG_PNG:
+                    self._bm_bg_label = os.path.basename(self._bm_bg)
+                elif self._bm_bg:
+                    self._bm_bg_label = "Lagret bakgrunn"
 
         def _battle_cell_size(self):
             """Beregn px/rute basert paa kolonner og canvas-bredde."""
@@ -4442,11 +4451,29 @@ try:
             """Lagre battlemap-tilstand til JSON."""
             save_json(BATTLE_FILE, {
                 'bg': self._bm_bg,
+                'bg_label': self._bm_bg_label,
                 'cols': self._bm_grid_cols,
                 'show_grid': self._bm_show_grid,
                 'tokens': self._bm_tokens,
                 'fog': self._bm_fog,
             })
+
+        def _battle_store_bg_copy(self, source_path, quiet=False):
+            """Lagre valgt bakgrunn som app-eid PNG-kopi."""
+            if not source_path:
+                return False
+            try:
+                with PILImage.open(source_path) as bg_src:
+                    bg_img = bg_src.convert('RGB')
+                    bg_img.save(BATTLE_BG_PNG, 'PNG')
+                self._bm_bg = BATTLE_BG_PNG
+                self._bm_bg_label = os.path.basename(source_path)
+                return True
+            except Exception as e:
+                log(f"Battlemap bg copy error: {e}")
+                if not quiet:
+                    self._battle_update_info("Kunne ikke lese valgt bakgrunn.")
+                return False
 
         def _mk_battle_map(self):
             """Bygg Kart-sub-fanen."""
@@ -4862,8 +4889,7 @@ try:
                 danger=True, small=True, size_hint_x=0.4))
             g.add_widget(bg_row)
 
-            cur_bg = (os.path.basename(self._bm_bg)
-                      if self._bm_bg else "(ingen)")
+            cur_bg = self._bm_bg_label or "(ingen)"
             g.add_widget(mklbl(f"Naa: {cur_bg}", color=DIM,
                                size=10, h=18))
 
@@ -4986,6 +5012,13 @@ try:
 
         def _battle_clear_bg(self):
             self._bm_bg = None
+            self._bm_bg_label = None
+            try:
+                os.remove(BATTLE_BG_PNG)
+            except FileNotFoundError:
+                pass
+            except Exception as e:
+                log(f"Battlemap bg cleanup error: {e}")
             self._battle_refresh_img()
             self._battle_show_menu()
 
@@ -5099,7 +5132,9 @@ try:
             self.tool_area.add_widget(p)
 
         def _battle_set_bg(self, path):
-            self._bm_bg = path
+            if not self._battle_store_bg_copy(path):
+                self._battle_show_menu()
+                return
             self._battle_refresh_img()
             self._battle_show_menu()
 
