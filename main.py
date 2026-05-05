@@ -40,6 +40,7 @@ try:
             ImageFont as PILFont,
             ImageOps as PILImageOps,
         )
+        # Pillow eksponerer LANCZOS ulikt mellom versjoner.
         PIL_LANCZOS = getattr(
             getattr(PILImage, 'Resampling', PILImage),
             'LANCZOS',
@@ -4864,7 +4865,7 @@ try:
                                 bg = bg.resize(
                                     (w, h),
                                     resample=PIL_LANCZOS)
-                            img = bg
+                            img = bg.copy()
                     except Exception as e:
                         log(f"Battlemap bg load error: {e}")
                         img = PILImage.new('RGB', (w, h), (20, 30, 25))
