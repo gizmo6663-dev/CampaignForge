@@ -477,9 +477,9 @@ Builder.load_string('''
         Color:
             rgba: self.glow_color if self.has_content else (0, 0, 0, 0)
         RoundedRectangle:
-            pos: self.x + dp(4), self.y + self.height * 0.55
-            size: self.width - dp(8), self.height * 0.22
-            radius: [self.radius]
+            pos: self.x + dp(14), self.top - dp(12)
+            size: self.width - dp(28), dp(4)
+            radius: [dp(2)]
         Color:
             rgba: self.inner_frame_color
         Line:
