@@ -39,6 +39,7 @@ try:
             ImageDraw as PILDraw,
             ImageFont as PILFont,
             ImageOps as PILImageOps,
+            ImageEnhance as PILImageEnhance,
         )
         # Pillow eksponerer LANCZOS ulikt mellom versjoner.
         PIL_LANCZOS_FALLBACK = 1
@@ -4554,6 +4555,7 @@ try:
             saved = load_json(BATTLE_FILE, {})
             self._bm_bg = saved.get('bg', None)          # sti til bakgrunn
             self._bm_bg_label = saved.get('bg_label')
+            self._bm_bg_brightness = float(saved.get('bg_brightness', 1.0))
             self._bm_grid_cols = saved.get('cols', 20)
             self._bm_show_grid = saved.get('show_grid', True)
             self._bm_tokens = saved.get('tokens', [])
@@ -4588,6 +4590,7 @@ try:
             save_json(BATTLE_FILE, {
                 'bg': self._bm_bg,
                 'bg_label': self._bm_bg_label,
+                'bg_brightness': self._bm_bg_brightness,
                 'cols': self._bm_grid_cols,
                 'show_grid': self._bm_show_grid,
                 'tokens': self._bm_tokens,
@@ -4899,17 +4902,22 @@ try:
                     try:
                         with PILImage.open(self._bm_bg) as bg_src:
                             bg = bg_src.convert('RGB')
-                            if bg.size != (w, h):
+                            if bg.size != (grid_w, grid_h):
                                 bg = bg.resize(
-                                    (w, h),
+                                    (grid_w, grid_h),
                                     resample=PIL_LANCZOS)
                             bg.load()
                             img = bg
                     except Exception as e:
                         log(f"Battlemap bg load error: {e}")
-                        img = PILImage.new('RGB', (w, h), (20, 30, 25))
+                        img = PILImage.new('RGB', (grid_w, grid_h), (45, 55, 50))
                 else:
-                    img = PILImage.new('RGB', (w, h), (20, 30, 25))
+                    img = PILImage.new('RGB', (grid_w, grid_h), (45, 55, 50))
+
+                # Bruk lysstyrke-justering hvis satt
+                brightness = self._bm_bg_brightness
+                if brightness != 1.0:
+                    img = PILImageEnhance.Brightness(img).enhance(brightness)
 
                 draw = PILDraw.Draw(img, 'RGBA')
 
@@ -4976,7 +4984,7 @@ try:
                             pass
 
                 # TAAKE legges sist for å skjule alt under.
-                fog_col = (0, 0, 0, 255)
+                fog_col = (0, 0, 0, 150)
                 for fc in self._bm_fog:
                     fx, fy = fc[0] * cell, fc[1] * cell
                     draw.rectangle(
@@ -5042,6 +5050,27 @@ try:
             cur_bg = self._bm_bg_label or "(ingen)"
             g.add_widget(mklbl(f"Naa: {cur_bg}", color=DIM,
                                size=10, h=18))
+
+            # LYSSTYRKE (bakgrunn)
+            bright_val = self._bm_bg_brightness
+            bright_pct = int(round(bright_val * 100))
+            bright_lbl = mklbl(
+                f"Lysstyrke: {bright_pct}%", color=DIM, size=10, h=18)
+            g.add_widget(bright_lbl)
+            bright_row = BoxLayout(size_hint_y=None, height=dp(32),
+                                   padding=[dp(4), 0])
+            bright_sl = Slider(min=0.1, max=2.0, value=bright_val,
+                               size_hint_x=1.0)
+
+            def _on_brightness(slider, value):
+                self._bm_bg_brightness = round(value, 2)
+                bright_lbl.text = f"Lysstyrke: {int(round(value * 100))}%"
+                self._battle_save()
+                self._battle_refresh_img()
+
+            bright_sl.bind(value=_on_brightness)
+            bright_row.add_widget(bright_sl)
+            g.add_widget(bright_row)
 
             # RUTENETT
             g.add_widget(mklbl("RUTENETT", color=GDIM,
