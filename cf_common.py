@@ -85,7 +85,8 @@ BTNH = [0.28, 0.42, 0.26, 1]
 SHAD = [0.0, 0.01, 0.0, 0.35]   # mykere skygge (stables i tre lag)
 GOLD = [0.86, 0.74, 0.42, 1]      # antikk gull (overskrifter, aktive)
 GDIM = [0.42, 0.38, 0.22, 0.65]   # mer dempet og brunlig; transparent
-                                   # for å integrere med panel-bakgrunn
+                                    # for å integrere med panel-bakgrunn
+GBORDER = [0.86, 0.74, 0.42, 1]   # solid gull for knapper og faner
 TXT  = [0.86, 0.88, 0.74, 1]
 DIM  = [0.52, 0.58, 0.46, 1]
 RED  = [0.78, 0.30, 0.22, 1]
@@ -206,6 +207,20 @@ def get_tab_inactive_bg_tex():
         _GRADIENT_CACHE[key] = make_vert_gradient_tex(top, bot, height=128)
     return _GRADIENT_CACHE[key]
 
+
+def get_button_bg_tex(base_rgba, pressed=False):
+    """Vertikal gradient for knapper, bygget fra valgt basefarge."""
+    rgb = tuple(round(c, 4) for c in base_rgba[:3])
+    alpha = base_rgba[3] if len(base_rgba) > 3 else 1.0
+    key = ('btn_bg', rgb, round(alpha, 4), pressed)
+    if key not in _GRADIENT_CACHE:
+        lift = 1.10 if pressed else 1.25
+        sink = 0.62 if pressed else 0.72
+        top = tuple(min(1.0, c * lift) for c in rgb) + (alpha,)
+        bot = tuple(min(1.0, c * sink) for c in rgb) + (alpha,)
+        _GRADIENT_CACHE[key] = make_vert_gradient_tex(top, bot, height=128)
+    return _GRADIENT_CACHE[key]
+
 def get_drop_shadow_tex():
     """Vertikal gradient for drop-shadow under knapper.
 
@@ -319,8 +334,9 @@ Builder.load_string('''
             radius: [self.radius + dp(2)]
         # --- Bakgrunnsfyll (mørkere når trykket) ---
         Color:
-            rgba: self.bg_color[0] * (0.85 if self._pressed else 1.0), self.bg_color[1] * (0.85 if self._pressed else 1.0), self.bg_color[2] * (0.85 if self._pressed else 1.0), self.bg_color[3]
+            rgba: 1, 1, 1, 1
         RoundedRectangle:
+            texture: self.bg_tex_pressed if self._pressed else self.bg_tex_normal
             pos: self.pos
             size: self.size
             radius: [self.radius]
@@ -361,8 +377,9 @@ Builder.load_string('''
             radius: [self.radius + dp(2)]
         # --- Bakgrunnsfyll (mørkere når aktiv) ---
         Color:
-            rgba: self.bg_color[0] * (0.85 if self.state == 'down' else 1.0), self.bg_color[1] * (0.85 if self.state == 'down' else 1.0), self.bg_color[2] * (0.85 if self.state == 'down' else 1.0), self.bg_color[3]
+            rgba: 1, 1, 1, 1
         RoundedRectangle:
+            texture: self.bg_tex_active if self.state == 'down' else self.bg_tex_normal
             pos: self.pos
             size: self.size
             radius: [self.radius]
@@ -418,7 +435,7 @@ Builder.load_string('''
             width: 1.0
         # Border – helt ute i kanten, tydelig
         Color:
-            rgba: self.border_color[0], self.border_color[1], self.border_color[2], self.border_color[3] * (1.0 if self.state == 'down' else 0.55)
+            rgba: self.border_color
         Line:
             rounded_rectangle: (self.x, self.y, self.width, self.height, self.radius)
             width: 3.0
@@ -461,14 +478,24 @@ Builder.load_string('''
 class RBtn(Button):
     bg_color     = ListProperty(BTN)
     shadow_color = ListProperty(SHAD)
-    border_color = ListProperty(GDIM)
+    border_color = ListProperty(GBORDER)
     radius       = NumericProperty(dp(14))
     _pressed     = BooleanProperty(False)
     shadow_tex   = ObjectProperty(None, allownone=True)
+    bg_tex_normal = ObjectProperty(None, allownone=True)
+    bg_tex_pressed = ObjectProperty(None, allownone=True)
 
     def __init__(self, **kw):
         super().__init__(**kw)
         self.shadow_tex = get_drop_shadow_tex()
+        self._refresh_bg_textures()
+
+    def _refresh_bg_textures(self):
+        self.bg_tex_normal = get_button_bg_tex(self.bg_color, pressed=False)
+        self.bg_tex_pressed = get_button_bg_tex(self.bg_color, pressed=True)
+
+    def on_bg_color(self, *_):
+        self._refresh_bg_textures()
 
     def on_press(self):
         self._pressed = True
@@ -484,14 +511,24 @@ class RBtn(Button):
 class RToggle(ToggleButton):
     bg_color     = ListProperty(BTN)
     shadow_color = ListProperty(SHAD)
-    border_color = ListProperty(GDIM)
+    border_color = ListProperty(GBORDER)
     border_width = NumericProperty(3.0)
     radius       = NumericProperty(dp(14))
     shadow_tex   = ObjectProperty(None, allownone=True)
+    bg_tex_normal = ObjectProperty(None, allownone=True)
+    bg_tex_active = ObjectProperty(None, allownone=True)
 
     def __init__(self, **kw):
         super().__init__(**kw)
         self.shadow_tex = get_drop_shadow_tex()
+        self._refresh_bg_textures()
+
+    def _refresh_bg_textures(self):
+        self.bg_tex_normal = get_button_bg_tex(self.bg_color, pressed=False)
+        self.bg_tex_active = get_button_bg_tex(self.bg_color, pressed=True)
+
+    def on_bg_color(self, *_):
+        self._refresh_bg_textures()
 
 class RTab(ToggleButton):
     """Toggle-knapp for fane-bar – ekte gradient på bakgrunn og aktiv-stripe.
@@ -506,7 +543,7 @@ class RTab(ToggleButton):
     """
     bg_color          = ListProperty(BTN)         # ikke brukt for fyll, men
                                                   # bevart for kompatibilitet
-    border_color      = ListProperty(GDIM)
+    border_color      = ListProperty(GBORDER)
     indicator_color   = ListProperty(GOLD)
     radius            = NumericProperty(dp(10))
     glow_tex          = ObjectProperty(None, allownone=True)
