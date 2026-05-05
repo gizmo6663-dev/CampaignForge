@@ -4556,7 +4556,7 @@ try:
             self._battle_sync_cast_if_live()
 
         def _battle_sync_cast_if_live(self):
-            """Oppdater TV automatisk hvis battlemap allerede er castet."""
+            """Oppdaterer TV automatisk hvis battlemap allerede er castet."""
             if not getattr(self, '_bm_cast_live', False):
                 return
             if not CAST_AVAILABLE or not getattr(self.cast, 'mc', None):
@@ -4798,7 +4798,7 @@ try:
                         except Exception:
                             pass
 
-                # TAAKE legges sist for aa skjule alt under.
+                # TAAKE legges sist for å skjule alt under.
                 fog_col = (0, 0, 0, 255)
                 for fc in self._bm_fog:
                     fx, fy = fc[0] * cell, fc[1] * cell
