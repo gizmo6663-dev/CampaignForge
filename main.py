@@ -78,6 +78,11 @@ try:
     FT_PER_SQUARE = 5   # D&D 5e standard
     MAIN_BG_OVERLAY_ALPHA = 0.35
     SPLASH_BG_OVERLAY_ALPHA = 0.42
+    # Ligger litt høyere enn sentrum for å holde tittelen fri fra emblemet.
+    SPLASH_TEXT_CENTER_Y = 0.73
+    SPLASH_FONT_FILE = "DragonHunter-9Ynxj.otf"
+    SPLASH_FONT_PATH = os.path.join(APP_DIR, SPLASH_FONT_FILE)
+    SPLASH_FONT_KW = {'font_name': SPLASH_FONT_PATH} if os.path.exists(SPLASH_FONT_PATH) else {}
 
     class _BMImage(Image):
         """Image-widget for battlemap: konverterer trykk til canvas-px.
@@ -2143,26 +2148,25 @@ try:
                 self.splash, wood_path, bg_path,
                 overlay_alpha=SPLASH_BG_OVERLAY_ALPHA, base_color=BG)
             splash_text = BoxLayout(orientation='vertical',
-                                    size_hint=(1, 1),
-                                    pos_hint={'x': 0, 'y': 0})
-            # Sentrert innhold
-            splash_text.add_widget(Widget())  # fyll topp
+                                    spacing=dp(4),
+                                    size_hint=(1, None),
+                                    height=dp(170),
+                                    pos_hint={'center_x': 0.5, 'center_y': SPLASH_TEXT_CENTER_Y})
             t1 = Label(text="CAMPAIGN", font_size=sp(42), color=GOLD,
-                       bold=True, size_hint_y=None, height=dp(60),
-                       halign='center')
+                        bold=True, size_hint_y=None, height=dp(60),
+                        halign='center', **SPLASH_FONT_KW)
             t1.bind(size=t1.setter('text_size'))
             splash_text.add_widget(t1)
             t2 = Label(text="FORGE", font_size=sp(42), color=GDIM,
-                       bold=True, size_hint_y=None, height=dp(60),
-                       halign='center')
+                        bold=True, size_hint_y=None, height=dp(60),
+                        halign='center', **SPLASH_FONT_KW)
             t2.bind(size=t2.setter('text_size'))
             splash_text.add_widget(t2)
             sub = Label(text="Dungeon Master's Companion", font_size=sp(13),
                         color=DIM, size_hint_y=None, height=dp(30),
-                        halign='center')
+                        halign='center', **SPLASH_FONT_KW)
             sub.bind(size=sub.setter('text_size'))
             splash_text.add_widget(sub)
-            splash_text.add_widget(Widget())  # fyll bunn
             self.splash.add_widget(splash_text)
             wrapper.add_widget(self.splash)
 
