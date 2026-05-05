@@ -4422,6 +4422,8 @@ try:
             self._bm_measure_start = None                # [col,row]
             self._bm_last_info = ""
             self._bm_cast_counter = 0
+            self._bm_render_rev = 0
+            self._bm_display_png = BATTLE_PNG
 
         def _battle_cell_size(self):
             """Beregn px/rute basert paa kolonner og canvas-bredde."""
@@ -4488,7 +4490,7 @@ try:
 
             map_box = RBox(bg_color=BLK, radius=dp(8))
             self._bm_img = _BMImage(
-                source=BATTLE_PNG,
+                source=getattr(self, '_bm_display_png', BATTLE_PNG),
                 allow_stretch=True,
                 keep_ratio=True,
                 nocache=True,  # force reload ved endring
@@ -4542,6 +4544,9 @@ try:
             """Rerender + force reload av Kivy-bildet."""
             self._battle_render()
             if hasattr(self, '_bm_img') and self._bm_img:
+                src = getattr(self, '_bm_display_png', BATTLE_PNG)
+                if self._bm_img.source != src:
+                    self._bm_img.source = src
                 self._bm_img.reload()
 
         def _battle_mode_switch(self, mode):
@@ -4675,7 +4680,11 @@ try:
                 h = rows * cell
 
                 # Base: bakgrunn eller svart
-                if self._bm_bg and os.path.exists(self._bm_bg):
+                stale_bg = bool(self._bm_bg and not os.path.exists(self._bm_bg))
+                if stale_bg:
+                    log(f"Battlemap bg missing, clearing stale path: {self._bm_bg}")
+                    self._bm_bg = None
+                if self._bm_bg:
                     try:
                         bg = PILImage.open(self._bm_bg).convert('RGB')
                         bg = bg.resize((w, h))
@@ -4760,6 +4769,22 @@ try:
 
                 # Lagre
                 img.save(BATTLE_PNG, 'PNG')
+                old_display = getattr(self, '_bm_display_png', None)
+                self._bm_render_rev += 1
+                display_path = os.path.join(
+                    BASE_DIR,
+                    f"battlemap_current_ui_{self._bm_render_rev}.png")
+                img.save(display_path, 'PNG')
+                self._bm_display_png = display_path
+                if stale_bg:
+                    self._battle_save()
+                if old_display and old_display not in (BATTLE_PNG, display_path):
+                    try:
+                        os.remove(old_display)
+                    except FileNotFoundError:
+                        pass
+                    except Exception as e:
+                        log(f"Battlemap cleanup error: {e}")
             except Exception as e:
                 log(f"Battlemap render error: {e}")
                 log(traceback.format_exc())
