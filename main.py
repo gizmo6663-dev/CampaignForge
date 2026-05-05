@@ -2211,9 +2211,11 @@ try:
         # ---------- BILDER ----------
         def _mk_img(self):
             p = BoxLayout(orientation='vertical', spacing=dp(6))
-            preview_box = PreviewFrame(size_hint_y=0.4, padding=dp(10))
+            preview_box = PreviewFrame(size_hint_y=0.4, padding=dp(10),
+                                       has_content=bool(self.sel_img))
             self.preview = Image(allow_stretch=True, keep_ratio=True,
                                  color=[1, 1, 1, 0] if not self.sel_img else [1, 1, 1, 1])
+            self.preview_box = preview_box
             if self.sel_img:
                 self.preview.source = self.sel_img
             preview_box.add_widget(self.preview)
@@ -2302,6 +2304,8 @@ try:
 
         def _sel_img(self, path):
             self.sel_img = path
+            if hasattr(self, 'preview_box'):
+                self.preview_box.has_content = True
             self.img_lbl.text = os.path.basename(path)
             self.img_lbl.color = GOLD
             Animation.cancel_all(self.preview, 'opacity')
