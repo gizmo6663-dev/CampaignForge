@@ -2084,8 +2084,7 @@ try:
                 ('img',   'Bilder'),
                 ('lyd',   'Lyd'),
                 ('tool',  'Karakter'),
-                ('rules', 'Regler'),
-                ('cast',  'Cast'),
+                ('util',  'Verktøy'),
             ]
             for key, txt in tab_defs:
                 active = key == 'img'
@@ -2188,7 +2187,7 @@ try:
             builders = {
                 'img': self._mk_img, 'lyd': self._mk_lyd,
                 'tool': self._mk_tool,
-                'rules': self._mk_rules, 'cast': self._mk_cast,
+                'util': self._mk_util,
             }
             if k in builders:
                 self.content.add_widget(builders[k]())
@@ -2664,6 +2663,8 @@ try:
             # Standard: vis karakter-lista
             if not hasattr(self, '_tool_sub'):
                 self._tool_sub = 'chars'
+            elif self._tool_sub not in ('chars', 'init'):
+                self._tool_sub = 'chars'
 
             p = BoxLayout(orientation='vertical', spacing=dp(6))
 
@@ -2695,7 +2696,6 @@ try:
 
             sub_bar.add_widget(_mk_tool_sub('chars', 'Karakterer'))
             sub_bar.add_widget(_mk_tool_sub('init', 'Initiativ'))
-            sub_bar.add_widget(_mk_tool_sub('map', 'Kart'))
             p.add_widget(sub_bar)
 
             # Handlings-rad (kun for karakter-lista)
@@ -2734,11 +2734,80 @@ try:
                     mklbl("Initiativ-tracker", color=GOLD,
                           size=14, bold=True))
                 self._mk_init_tracker()
-            else:  # map
-                self._tool_action_bar.add_widget(
+
+        def _mk_util(self):
+            """Verktoey-fane med sub-tabs: battlemap, regler og cast."""
+            if not hasattr(self, '_util_sub'):
+                self._util_sub = 'map'
+            elif self._util_sub not in ('map', 'rules', 'cast'):
+                self._util_sub = 'map'
+
+            p = BoxLayout(orientation='vertical', spacing=dp(6))
+
+            sub_bar = RBox(size_hint_y=None, height=dp(42),
+                           spacing=dp(4), padding=[dp(6), dp(4)],
+                           bg_color=BTN, radius=dp(10))
+
+            def _mk_util_sub(key, label):
+                act = self._util_sub == key
+                b = RTab(
+                    text=label, group='util_sub',
+                    state='down' if act else 'normal',
+                    bg_color=BTNH if act else BTN,
+                    color=GOLD if act else DIM,
+                    font_size=sp(11), bold=True)
+
+                def _on_state(btn, st):
+                    if st == 'down':
+                        btn.bg_color = BTNH
+                        btn.color = GOLD
+                    else:
+                        btn.bg_color = BTN
+                        btn.color = DIM
+                b.bind(state=_on_state)
+                b.bind(on_release=lambda btn, k=key: self._util_switch(k))
+                return b
+
+            sub_bar.add_widget(_mk_util_sub('map', 'Battlemap'))
+            sub_bar.add_widget(_mk_util_sub('rules', 'Regler'))
+            sub_bar.add_widget(_mk_util_sub('cast', 'Cast'))
+            p.add_widget(sub_bar)
+
+            self._util_action_bar = BoxLayout(
+                size_hint_y=None, height=dp(42),
+                spacing=dp(6), padding=[dp(6), 0])
+            p.add_widget(self._util_action_bar)
+
+            self.tool_area = BoxLayout()
+            p.add_widget(self.tool_area)
+
+            self._util_render_sub()
+            return p
+
+        def _util_switch(self, which):
+            """Bytt mellom sub-fanene i Verktoey."""
+            self._util_sub = which
+            self._util_render_sub()
+
+        def _util_render_sub(self):
+            """Rendre riktig Verktoey-sub-visning."""
+            self._util_action_bar.clear_widgets()
+            self.tool_area.clear_widgets()
+            if self._util_sub == 'map':
+                self._util_action_bar.add_widget(
                     mklbl("Battlemap", color=GOLD,
                           size=14, bold=True))
                 self._mk_battle_map()
+            elif self._util_sub == 'rules':
+                self._util_action_bar.add_widget(
+                    mklbl("Regler", color=GOLD,
+                          size=14, bold=True))
+                self.tool_area.add_widget(self._mk_rules())
+            else:
+                self._util_action_bar.add_widget(
+                    mklbl("Cast", color=GOLD,
+                          size=14, bold=True))
+                self.tool_area.add_widget(self._mk_cast())
 
         # ---------- D&D 5E KARAKTERER ----------
         @staticmethod

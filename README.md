@@ -25,7 +25,7 @@ Versjon: **0.1** · Språk: Norsk · System: D&D 5e (2024)
 
 ## Funksjoner
 
-Appen er delt i fem hovedfaner. Karakter-fanen har sub-faner for å holde komplekse funksjoner organisert:
+Appen er delt i fire hovedfaner. Karakter- og Verktøy-fanene har sub-faner for å holde komplekse funksjoner organisert:
 
 ### 🖼️ Bilder
 - Galleri med mappenavigering for å organisere bilder per kampanje eller sesjon
@@ -64,7 +64,10 @@ Sub-faner for karakterarbeid og kamp-støtte:
 - Bla gjennom runder og turer med aktiv-deltaker-indikator
 - HP-oppdatering direkte fra trackeren
 
-**Kart** — battlemap-komposisjon
+### 🧰 Verktøy
+Samlet verktøyfane med sub-fanene **Battlemap**, **Regler** og **Cast**:
+
+**Battlemap** — battlemap-komposisjon
 - Komponér battlemap fra bakgrunnsbilde + token-overlegg
 - 16:9 canvas (1280×720) optimalisert for TV-casting
 - 5 ft per rute (D&D 5e-standard)
@@ -72,12 +75,12 @@ Sub-faner for karakterarbeid og kamp-støtte:
 - Bruker Pillow (PIL) for bildebehandling — deaktiveres gracefully hvis PIL ikke er tilgjengelig
 - Lagrer konfigurasjon i `battlemap.json` og genererer `battlemap_current.png`
 
-### 📖 Regler
+**Regler**
 - Sammenleggbar mappestruktur med D&D 5e-referanser
 - Overlay-visning for regel-innhold — ingen nettilgang nødvendig
 - Raskt oppslag midt i spilløkta
 
-### 📺 Cast
+**Cast**
 - Oppdager Chromecast-enheter på lokalnett via mDNS
 - Caster bilder og battlemaps direkte til TV
 - Castet battlemap oppdateres fortløpende når kartet endres
