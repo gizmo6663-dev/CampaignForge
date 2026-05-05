@@ -4683,6 +4683,7 @@ try:
         def _battle_refresh_img(self):
             """Rerender + force reload av Kivy-bildet."""
             self._battle_render()
+            self._battle_save()
             if hasattr(self, '_bm_img') and self._bm_img:
                 src = getattr(self, '_bm_display_png', BATTLE_PNG)
                 if self._bm_img.source != src:
@@ -4850,14 +4851,17 @@ try:
                 cell = self._battle_cell_size()
                 cols = self._bm_grid_cols
                 rows = self._battle_grid_rows()
-                w = cols * cell
-                h = rows * cell
+                w = CANVAS_W
+                h = CANVAS_H
+                grid_w = cols * cell
+                grid_h = rows * cell
 
                 # Base: bakgrunn eller svart
                 stale_bg = self._bm_bg and not os.path.exists(self._bm_bg)
                 if stale_bg:
                     log(f"Battlemap bg missing, clearing stale path: {self._bm_bg}")
                     self._bm_bg = None
+                    self._bm_bg_label = None
                 if self._bm_bg:
                     try:
                         with PILImage.open(self._bm_bg) as bg_src:
@@ -4881,10 +4885,10 @@ try:
                     grid_col = (255, 217, 115, 100)   # dempet gull
                     for c in range(cols + 1):
                         x = c * cell
-                        draw.line([(x, 0), (x, h)], fill=grid_col, width=1)
+                        draw.line([(x, 0), (x, grid_h)], fill=grid_col, width=1)
                     for r in range(rows + 1):
                         y = r * cell
-                        draw.line([(0, y), (w, y)], fill=grid_col, width=1)
+                        draw.line([(0, y), (grid_w, y)], fill=grid_col, width=1)
 
                 # MAAL-LINJE
                 if (self._bm_mode == 'measure'
