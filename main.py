@@ -40,7 +40,10 @@ try:
             ImageFont as PILFont,
             ImageOps as PILImageOps,
         )
-        PIL_RESAMPLING = getattr(PILImage, 'Resampling', PILImage)
+        PIL_LANCZOS = getattr(
+            getattr(PILImage, 'Resampling', PILImage),
+            'LANCZOS',
+            getattr(PILImage, 'LANCZOS', 1))
         PIL_OK = True
         log("PIL imported OK")
     except ImportError:
@@ -4564,9 +4567,10 @@ try:
             try:
                 with PILImage.open(source_path) as bg_src:
                     bg_img = PILImageOps.exif_transpose(bg_src).convert('RGB')
-                    bg_img = bg_img.resize(
-                        (CANVAS_W, CANVAS_H),
-                        resample=PIL_RESAMPLING.LANCZOS)
+                    if bg_img.size != (CANVAS_W, CANVAS_H):
+                        bg_img = bg_img.resize(
+                            (CANVAS_W, CANVAS_H),
+                            resample=PIL_LANCZOS)
                     bg_img.save(BATTLE_BG_PNG, 'PNG')
                 self._bm_bg = BATTLE_BG_PNG
                 self._bm_bg_label = os.path.basename(source_path)
@@ -4855,11 +4859,11 @@ try:
                 if self._bm_bg:
                     try:
                         with PILImage.open(self._bm_bg) as bg_src:
-                            bg = PILImageOps.exif_transpose(bg_src).convert('RGB')
+                            bg = bg_src.convert('RGB')
                             if bg.size != (w, h):
                                 bg = bg.resize(
                                     (w, h),
-                                    resample=PIL_RESAMPLING.LANCZOS)
+                                    resample=PIL_LANCZOS)
                             img = bg
                     except Exception as e:
                         log(f"Battlemap bg load error: {e}")
