@@ -4906,15 +4906,23 @@ try:
                 return (217, 89, 64)        # roed
 
         def _battle_render(self):
-            """Komponer PNG av kartet med PIL."""
+            """Komponer to PNG-er av kartet med PIL:
+
+            BATTLE_PNG (cast til TV):
+                Taake er HELT SVART og ugjennomsiktig, slik at spillerne
+                ikke ser hva som ligger under.
+
+            _bm_display_png (vises i appen):
+                Taake er semi-transparent saa DM ser kartet under.
+                Lagres til DATA_DIR (privat skrivbar mappe), med
+                revisjons-suffix for at Kivy skal reloade bildet.
+            """
             if not PIL_OK:
                 return
             try:
                 cell = self._battle_cell_size()
                 cols = self._bm_grid_cols
                 rows = self._battle_grid_rows()
-                w = CANVAS_W
-                h = CANVAS_H
                 grid_w = cols * cell
                 grid_h = rows * cell
 
@@ -4933,29 +4941,39 @@ try:
                                     (grid_w, grid_h),
                                     resample=PIL_LANCZOS)
                             bg.load()
-                            img = bg
+                            base_img = bg
                     except Exception as e:
                         log(f"Battlemap bg load error: {e}")
-                        img = PILImage.new('RGB', (grid_w, grid_h), (45, 55, 50))
+                        base_img = PILImage.new(
+                            'RGB', (grid_w, grid_h), (45, 55, 50))
                 else:
-                    img = PILImage.new('RGB', (grid_w, grid_h), (45, 55, 50))
+                    base_img = PILImage.new(
+                        'RGB', (grid_w, grid_h), (45, 55, 50))
 
                 # Bruk lysstyrke-justering hvis satt
                 brightness = self._bm_bg_brightness
                 if brightness != 1.0:
-                    img = PILImageEnhance.Brightness(img).enhance(brightness)
+                    base_img = PILImageEnhance.Brightness(
+                        base_img).enhance(brightness)
 
-                draw = PILDraw.Draw(img, 'RGBA')
+                # ============================================================
+                # FELLES TEGNING (grid + maal-linje + tokens)
+                # Tegnes paa base_img én gang. Etterpaa lager vi to kopier
+                # som faar hver sin variant av taake.
+                # ============================================================
+                draw = PILDraw.Draw(base_img, 'RGBA')
 
                 # GRID
                 if self._bm_show_grid:
                     grid_col = (255, 217, 115, 100)   # dempet gull
                     for c in range(cols + 1):
                         x = c * cell
-                        draw.line([(x, 0), (x, grid_h)], fill=grid_col, width=1)
+                        draw.line([(x, 0), (x, grid_h)],
+                                  fill=grid_col, width=1)
                     for r in range(rows + 1):
                         y = r * cell
-                        draw.line([(0, y), (grid_w, y)], fill=grid_col, width=1)
+                        draw.line([(0, y), (grid_w, y)],
+                                  fill=grid_col, width=1)
 
                 # MAAL-LINJE
                 if (self._bm_mode == 'measure'
@@ -4980,7 +4998,6 @@ try:
                     tw = cell * sz
                     color = self._battle_color_for_type(
                         t.get('type', 'F'))
-                    # Sirkel
                     pad = max(2, cell // 10)
                     draw.ellipse(
                         [(px + pad, py + pad),
@@ -4988,13 +5005,11 @@ try:
                         fill=color + (230,),
                         outline=(0, 0, 0, 255),
                         width=2)
-                    # Seleksjon-ring
                     if i == self._bm_sel_token:
                         draw.ellipse(
                             [(px + 1, py + 1),
                              (px + tw - 1, py + tw - 1)],
                             outline=(255, 217, 115, 255), width=4)
-                    # Navn (initialer)
                     nm = t.get('name', '?')
                     initials = ''.join(
                         [w[0] for w in nm.split()[:2] if w])[:2].upper()
@@ -5003,28 +5018,48 @@ try:
                             font = PILFont.load_default()
                             tx = px + tw // 2
                             ty = py + tw // 2
-                            # Anslaa tekstst enkelt
                             draw.text((tx - 6, ty - 6), initials,
                                       fill=(0, 0, 0, 255), font=font)
                         except Exception:
                             pass
 
-                # TAAKE legges sist for å skjule alt under.
-                fog_col = (0, 0, 0, 150)
-                for fc in self._bm_fog:
-                    fx, fy = fc[0] * cell, fc[1] * cell
-                    draw.rectangle(
-                        [(fx, fy), (fx + cell, fy + cell)],
-                        fill=fog_col)
+                # ============================================================
+                # CAST-VERSJON (BATTLE_PNG): UGJENNOMSIKTIG SVART TAAKE
+                # Spillerne skal ikke se hva som ligger under taaken.
+                # ============================================================
+                cast_img = base_img.copy()
+                if self._bm_fog:
+                    cast_draw = PILDraw.Draw(cast_img, 'RGBA')
+                    # Alpha 255 = helt ugjennomsiktig svart
+                    for fc in self._bm_fog:
+                        fx, fy = fc[0] * cell, fc[1] * cell
+                        cast_draw.rectangle(
+                            [(fx, fy), (fx + cell, fy + cell)],
+                            fill=(0, 0, 0, 255))
+                cast_img.save(BATTLE_PNG, 'PNG')
 
-                # Lagre
-                img.save(BATTLE_PNG, 'PNG')
+                # ============================================================
+                # APP-VERSJON (_bm_display_png): SEMI-TRANSPARENT TAAKE
+                # DM ser kartet gjennom taaken for aa kunne planlegge.
+                # ============================================================
+                if self._bm_fog:
+                    app_draw = PILDraw.Draw(base_img, 'RGBA')
+                    # Alpha 150 = ca 60% gjennomsiktig (som foer)
+                    for fc in self._bm_fog:
+                        fx, fy = fc[0] * cell, fc[1] * cell
+                        app_draw.rectangle(
+                            [(fx, fy), (fx + cell, fy + cell)],
+                            fill=(0, 0, 0, 150))
+
+                # Lagre app-versjon med revisjons-suffix til DATA_DIR.
+                # Bruker DATA_DIR (privat skrivbar mappe) i stedet for
+                # BASE_DIR – sistnevnte er ikke skrivbar paa Android 13+.
                 old_display = getattr(self, '_bm_display_png', None)
                 self._bm_render_rev += 1
                 display_path = os.path.join(
-                    BASE_DIR,
+                    DATA_DIR,
                     f"battlemap_current_ui_{self._bm_render_rev}.png")
-                img.save(display_path, 'PNG')
+                base_img.save(display_path, 'PNG')
                 self._bm_display_png = display_path
                 if stale_bg:
                     self._battle_save()
@@ -5032,7 +5067,6 @@ try:
                     try:
                         os.remove(old_display)
                     except FileNotFoundError:
-                        # Filen kan allerede vaere ryddet opp eller fjernet.
                         pass
                     except Exception as e:
                         log(f"Battlemap cleanup error: {e}")
