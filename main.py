@@ -78,6 +78,8 @@ try:
     FT_PER_SQUARE = 5   # D&D 5e standard
     MAIN_BG_OVERLAY_ALPHA = 0.35
     SPLASH_BG_OVERLAY_ALPHA = 0.42
+    SPLASH_TEXT_CENTER_Y = 0.73
+    SPLASH_FONT_FILE = "DragonHunter-9Ynxj.otf"
 
     class _BMImage(Image):
         """Image-widget for battlemap: konverterer trykk til canvas-px.
@@ -2142,13 +2144,13 @@ try:
             self._add_theme_background_layers(
                 self.splash, wood_path, bg_path,
                 overlay_alpha=SPLASH_BG_OVERLAY_ALPHA, base_color=BG)
-            splash_font = os.path.join(APP_DIR, "DragonHunter-9Ynxj.otf")
+            splash_font = os.path.join(APP_DIR, SPLASH_FONT_FILE)
             splash_font_kw = {'font_name': splash_font} if os.path.exists(splash_font) else {}
             splash_text = BoxLayout(orientation='vertical',
                                     spacing=dp(4),
                                     size_hint=(1, None),
                                     height=dp(170),
-                                    pos_hint={'center_x': 0.5, 'center_y': 0.73})
+                                    pos_hint={'center_x': 0.5, 'center_y': SPLASH_TEXT_CENTER_Y})
             t1 = Label(text="CAMPAIGN", font_size=sp(42), color=GOLD,
                         bold=True, size_hint_y=None, height=dp(60),
                         halign='center', **splash_font_kw)
