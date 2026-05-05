@@ -4866,7 +4866,8 @@ try:
                                 bg = bg.resize(
                                     (w, h),
                                     resample=PIL_LANCZOS)
-                            img = bg.copy()
+                            bg.load()
+                            img = bg
                     except Exception as e:
                         log(f"Battlemap bg load error: {e}")
                         img = PILImage.new('RGB', (w, h), (20, 30, 25))
