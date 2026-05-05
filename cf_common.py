@@ -37,9 +37,18 @@ from kivy.graphics.texture import Texture
 #               Alle JSON-filer, generert PNG og logg legges hit.
 
 if platform == 'android':
-    DATA_DIR = os.environ.get(
+    # ANDROID_PRIVATE er satt av p4a; bruk det først.
+    # På noen enheter er det /data/user/0/<pkg>/files, på andre
+    # /data/data/<pkg>/files. realpath() løser symlinker så
+    # alle senere stier matcher faktisk fysisk path (kritisk for
+    # HTTP-serveren som bruker startswith/relpath på root).
+    _raw_data = os.environ.get(
         'ANDROID_PRIVATE',
         '/data/data/org.rpg.campaignforge/files')
+    try:
+        DATA_DIR = os.path.realpath(_raw_data)
+    except Exception:
+        DATA_DIR = _raw_data
     USER_DIR = "/sdcard/Documents/CampaignForge"
 else:
     # Desktop/testing: alt i hjemmemappen

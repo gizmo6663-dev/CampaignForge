@@ -1766,7 +1766,10 @@ try:
     # === SERVER / CAST / PLAYERS ===
     class QuietHandler(SimpleHTTPRequestHandler):
         """HTTP-handler som søker både i DATA_DIR (battlemap-PNG, app-data)
-        og BASE_DIR (brukerens bilder, musikk, kart)."""
+        og BASE_DIR (brukerens bilder, musikk, kart).
+
+        Bruker realpath konsekvent for å unngå path-mismatch der
+        Android har symlinker (/data/data <-> /data/user/0)."""
         def __init__(self, *args, **kwargs):
             kwargs.pop('directory', None)
             super().__init__(*args, directory=BASE_DIR, **kwargs)
@@ -1777,12 +1780,14 @@ try:
         def translate_path(self, path):
             clean = path.split('?', 1)[0].split('#', 1)[0].lstrip('/')
             for root in (DATA_DIR, BASE_DIR):
-                cand = os.path.normpath(os.path.join(root, clean))
+                cand = os.path.realpath(os.path.join(root, clean))
                 real_root = os.path.realpath(root)
                 if (cand.startswith(real_root)
                         and os.path.exists(cand)):
+                    log(f"HTTP serve: {clean} -> {cand}")
                     return cand
-            # Fallback – gir 404
+            log(f"HTTP 404: {clean} (DATA_DIR={DATA_DIR}, "
+                f"BASE_DIR={BASE_DIR})")
             return os.path.join(BASE_DIR, clean)
 
     class MediaServer:
@@ -1795,8 +1800,9 @@ try:
                 self._h = HTTPServer(('0.0.0.0', HTTP_PORT), QuietHandler)
                 threading.Thread(target=self._h.serve_forever,
                                  daemon=True).start()
-            except:
-                pass
+                log(f"HTTP server started on port {HTTP_PORT}")
+            except Exception as e:
+                log(f"HTTP server start error: {e}")
         def stop(self):
             if self._h:
                 self._h.shutdown()
@@ -1812,17 +1818,24 @@ try:
             except:
                 return "127.0.0.1"
         def url(self, fp):
-            # Bygg URL relativt til riktig rot. DATA_DIR sjekkes først
-            # siden battlemap-PNG ligger der. Fallback til BASE_DIR.
+            """Bygg en HTTP-URL TV-en kan hente fila fra.
+
+            Bruker realpath på begge sider så symlink-mismatch
+            mellom /data/data og /data/user/0 ikke gir 404."""
+            real_fp = os.path.realpath(fp)
             for root in (DATA_DIR, BASE_DIR):
-                try:
-                    rel = os.path.relpath(fp, root)
+                real_root = os.path.realpath(root)
+                if real_fp.startswith(real_root):
+                    rel = os.path.relpath(real_fp, real_root)
                     if not rel.startswith('..'):
-                        return f"http://{self.ip()}:{HTTP_PORT}/{rel}"
-                except ValueError:
-                    pass
-            return (f"http://{self.ip()}:{HTTP_PORT}/"
-                    f"{os.path.basename(fp)}")
+                        u = (f"http://{self.ip()}:{HTTP_PORT}/"
+                             f"{rel.replace(os.sep, '/')}")
+                        return u
+            # Siste fallback – bruk filnavn
+            u = (f"http://{self.ip()}:{HTTP_PORT}/"
+                 f"{os.path.basename(fp)}")
+            log(f"URL fallback (basename only): {u} for {fp}")
+            return u
 
     class CastMgr:
         def __init__(self):
@@ -4737,13 +4750,26 @@ try:
         def _battle_cast_current(self, success_msg=None, error_msg=None):
             """Send gjeldende battlemap-PNG til TV."""
             self._bm_cast_counter += 1
+            # Verifiser at PNG-fila faktisk eksisterer på disk
+            if not os.path.exists(BATTLE_PNG):
+                log(f"Cast: PNG mangler paa disk: {BATTLE_PNG}")
+                self._bm_last_info = "PNG ikke lagret enda."
+                if error_msg:
+                    self._battle_update_info(error_msg)
+                return
             url = self.server.url(BATTLE_PNG)
             url = f"{url}?t={self._bm_cast_counter}"
+            log(f"Cast battlemap: URL={url}, PNG_size="
+                f"{os.path.getsize(BATTLE_PNG)} bytes")
+            log(f"Cast mc state: mc={self.cast.mc is not None}, "
+                f"cc={self.cast.cc is not None}")
 
             def _c():
                 try:
+                    log("Cast: kaller play_media...")
                     self.cast.mc.play_media(url, 'image/png')
                     self.cast.mc.block_until_active()
+                    log("Cast: play_media OK")
                     if success_msg:
                         Clock.schedule_once(
                             lambda dt, msg=success_msg:
@@ -5255,17 +5281,21 @@ try:
             """Cast gjeldende PNG til TV (cache-bust med query-streng).
             Returnerer til kart-UI etter cast så info-label er synlig
             for brukeren (i menyen er info-label ikke i widget-treet)."""
+            log("=== _battle_cast kalt ===")
+            log(f"  CAST_AVAILABLE={CAST_AVAILABLE}, "
+                f"cast.mc={self.cast.mc is not None}, "
+                f"cast.cc={self.cast.cc is not None}")
             if not CAST_AVAILABLE or not self.cast.mc:
                 self._bm_cast_live = False
                 self._bm_last_info = ("Ingen Cast-enhet tilkoblet. "
                                       "Gaa til Cast-fanen.")
                 self._mk_battle_map()
                 return
-            # Sikre at PNG er oppdatert
+            # Sikre at PNG er oppdatert paa disk FOR vi bygger om UI
             self._battle_render()
             self._bm_cast_live = True
-            # Tilbake til kartet først, slik at success/error-melding
-            # vises i en synlig info-label.
+            # Tilbake til kartet, slik at info-label er synlig naar
+            # cast-callback kommer tilbake.
             self._mk_battle_map()
             self._battle_cast_current(
                 success_msg="Sendt til TV.",
