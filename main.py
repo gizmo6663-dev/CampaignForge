@@ -34,7 +34,12 @@ try:
 
     # PIL for battlemap compositing
     try:
-        from PIL import Image as PILImage, ImageDraw as PILDraw, ImageFont as PILFont
+        from PIL import (
+            Image as PILImage,
+            ImageDraw as PILDraw,
+            ImageFont as PILFont,
+            ImageOps as PILImageOps,
+        )
         PIL_OK = True
         log("PIL imported OK")
     except ImportError:
@@ -4557,7 +4562,10 @@ try:
                 return False
             try:
                 with PILImage.open(source_path) as bg_src:
-                    bg_img = bg_src.convert('RGB')
+                    bg_img = PILImageOps.exif_transpose(bg_src).convert('RGB')
+                    bg_img = bg_img.resize(
+                        (CANVAS_W, CANVAS_H),
+                        resample=getattr(PILImage, 'Resampling', PILImage).LANCZOS)
                     bg_img.save(BATTLE_BG_PNG, 'PNG')
                 self._bm_bg = BATTLE_BG_PNG
                 self._bm_bg_label = os.path.basename(source_path)
@@ -4845,9 +4853,14 @@ try:
                     self._bm_bg = None
                 if self._bm_bg:
                     try:
-                        bg = PILImage.open(self._bm_bg).convert('RGB')
-                        bg = bg.resize((w, h))
-                        img = bg
+                        with PILImage.open(self._bm_bg) as bg_src:
+                            bg = PILImageOps.exif_transpose(bg_src).convert('RGB')
+                            if bg.size != (w, h):
+                                bg = bg.resize(
+                                    (w, h),
+                                    resample=getattr(
+                                        PILImage, 'Resampling', PILImage).LANCZOS)
+                            img = bg
                     except Exception as e:
                         log(f"Battlemap bg load error: {e}")
                         img = PILImage.new('RGB', (w, h), (20, 30, 25))
