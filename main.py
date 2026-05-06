@@ -2443,11 +2443,10 @@ try:
                 self._gallery_animating = False
                 return
 
-            try:
+            if self.content:
                 self.content.do_layout()
+            if getattr(self, '_img_root', None):
                 self._img_root.do_layout()
-            except Exception:
-                pass
 
             target_preview_height = self.preview_box.height
             target_gallery_height = self._gallery_wrap.height
@@ -2457,11 +2456,10 @@ try:
             self._gallery_wrap.size_hint_y = None
             self._gallery_wrap.height = old_gallery_height
 
-            try:
+            if self.content:
                 self.content.do_layout()
+            if getattr(self, '_img_root', None):
                 self._img_root.do_layout()
-            except Exception:
-                pass
 
             Animation.cancel_all(self.preview_box, 'height')
             Animation.cancel_all(self._gallery_wrap, 'height')
