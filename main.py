@@ -2328,7 +2328,9 @@ try:
             row.add_widget(next_b)
 
             body.add_widget(row)
-            body.add_widget(Widget())
+            # Fyller resten av panelet slik at tre-boksen kan vokse nedover
+            # uten at knappene strekkes under animasjonen.
+            body.add_widget(Widget(size_hint_y=1.0))
             return body
 
         def _apply_gallery_collapsed_shell(self, gallery_wrap):
