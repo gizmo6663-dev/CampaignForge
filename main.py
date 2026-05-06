@@ -2473,10 +2473,9 @@ try:
                     self._tab('img')
                     self._gallery_animating = False
 
-                Animation(
-                    height=dp(54), duration=0.22,
-                    transition='out_quad'
-                ).bind(on_complete=_close_done).start(gw)
+                _close_anim = Animation(height=dp(54), duration=0.22, transition='out_quad')
+                _close_anim.bind(on_complete=_close_done)
+                _close_anim.start(gw)
 
             else:
                 # --- AAPNE: utvid til tilgjengelig plass ---
@@ -2500,10 +2499,9 @@ try:
                     self._tab('img')
                     self._gallery_animating = False
 
-                Animation(
-                    height=target_h, duration=0.22,
-                    transition='out_quad'
-                ).bind(on_complete=_open_done).start(gw)
+                _open_anim = Animation(height=target_h, duration=0.22, transition='out_quad')
+                _open_anim.bind(on_complete=_open_done)
+                _open_anim.start(gw)
 
         def _gallery_image_paths(self):
             """Returnerer sortert liste av bildestier i naavaerende mappe."""
