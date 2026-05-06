@@ -2108,6 +2108,9 @@ try:
             self.ct = -1
             self.sel_img = None
             self.preview_box = None
+            # Galleri starter kollapset så emblemet er synlig.
+            # Brukeren kan utvide via Galleri-knappen.
+            self._gallery_open = False
             self.auto_cast = True
             self.cur_folder = IMG_DIR
             self.player = APlayer() if USE_JNIUS else FPlayer()
@@ -2288,8 +2291,11 @@ try:
         # ---------- BILDER ----------
         def _mk_img(self):
             p = BoxLayout(orientation='vertical', spacing=dp(6))
-            preview_box = PreviewFrame(size_hint_y=0.4, padding=dp(10),
-                                       has_content=bool(self.sel_img))
+            # Forhaandsvisning – stoerre naar galleri er kollapset
+            preview_box = PreviewFrame(
+                size_hint_y=(0.65 if not self._gallery_open else 0.4),
+                padding=dp(10),
+                has_content=bool(self.sel_img))
             self.preview = Image(allow_stretch=True, keep_ratio=True,
                                  color=[1, 1, 1, 0] if not self.sel_img else [1, 1, 1, 1])
             self.preview_box = preview_box
@@ -2306,36 +2312,129 @@ try:
             self.path_lbl = Label(text="", font_size=sp(10), color=DIM, size_hint_x=0.35)
             nav.add_widget(self.path_lbl)
             nav.add_widget(mkbtn("Opp", self.folder_up, small=True, size_hint_x=0.2))
-            self.ac_btn = mkbtn("AC:PA", self._toggle_ac, accent=True, small=True, size_hint_x=0.25)
+            self.ac_btn = mkbtn("AC:PA" if self.auto_cast else "AC:AV",
+                                self._toggle_ac, accent=True,
+                                small=True, size_hint_x=0.25)
             nav.add_widget(self.ac_btn)
             nav.add_widget(mkbtn("Oppdater", self._load_imgs, small=True, size_hint_x=0.2))
             p.add_widget(nav)
-            # Minigalleri – pakket i WoodPanel for samme visuelle vekt
-            # som stat-panelet i battlemap-fanen (dark-wood-tekstur og
-            # gull-kant). Forskjeller fra stat-panelet:
-            # - flip_texture=True: tre-teksturen er speilvendt vertikalt
-            #   slik at den ikke matcher bakgrunnen og blir flush.
-            # - tint_color med positiv (hvit) alpha: lysner panelet
-            #   slik at det ser tydelig adskilt fra bakgrunnen.
+
+            # GALLERI – sammenleggbar boks
+            # Kollapset: kompakt rad med "<<", "Galleri (N bilder)", ">>", "+"
+            #   Pilene blar gjennom bildene direkte (caster automatisk hvis AC:PA).
+            # Utvidet: full ScrollView + GridLayout + "x"-knapp for aa lukke.
             wood_src = (WOOD_OVERRIDE if os.path.exists(WOOD_OVERRIDE)
                         else WOOD_BUNDLED if os.path.exists(WOOD_BUNDLED)
                         else "")
-            gallery_wrap = WoodPanel(
-                size_hint_y=0.4,
-                padding=[dp(6), dp(6), dp(6), dp(6)],
-                wood_source=wood_src,
-                flip_texture=True,
-                tint_color=[1.0, 0.95, 0.85, 0.10])
-            scroll = ScrollView()
-            self.img_grid = GridLayout(cols=3, spacing=dp(6), padding=dp(6), size_hint_y=None)
-            self.img_grid.bind(minimum_height=self.img_grid.setter('height'))
-            scroll.add_widget(self.img_grid)
-            gallery_wrap.add_widget(scroll)
+            if self._gallery_open:
+                gallery_wrap = WoodPanel(
+                    orientation='vertical', spacing=dp(4),
+                    size_hint_y=0.4,
+                    padding=[dp(6), dp(6), dp(6), dp(6)],
+                    wood_source=wood_src,
+                    tex_offset_x=0.30,
+                    tint_color=[1.0, 0.78, 0.45, 0.14])
+                # Header-rad inne i utvidet galleri: tittel + lukke-knapp
+                gh = BoxLayout(size_hint_y=None, height=dp(28),
+                               spacing=dp(4))
+                gh.add_widget(mklbl("Galleri", color=GOLD, size=12,
+                                    bold=True))
+                close_btn = mkbtn(
+                    "x", self._toggle_gallery,
+                    danger=True, small=True, size_hint_x=None)
+                close_btn.width = dp(40)
+                gh.add_widget(close_btn)
+                gallery_wrap.add_widget(gh)
+                # Selve grid-et
+                scroll = ScrollView()
+                self.img_grid = GridLayout(
+                    cols=3, spacing=dp(6), padding=dp(6),
+                    size_hint_y=None)
+                self.img_grid.bind(
+                    minimum_height=self.img_grid.setter('height'))
+                scroll.add_widget(self.img_grid)
+                gallery_wrap.add_widget(scroll)
+            else:
+                # Kollapset: kompakt rad
+                gallery_wrap = WoodPanel(
+                    orientation='horizontal', spacing=dp(6),
+                    size_hint_y=None, height=dp(54),
+                    padding=[dp(8), dp(6), dp(8), dp(6)],
+                    wood_source=wood_src,
+                    tex_offset_x=0.30,
+                    tint_color=[1.0, 0.78, 0.45, 0.14])
+                # Forrige-bilde-knapp
+                prev_b = mkbtn(
+                    "<", self._prev_img,
+                    small=True, size_hint_x=None)
+                prev_b.width = dp(46)
+                gallery_wrap.add_widget(prev_b)
+                # "Galleri"-knapp midt i som aapner full visning
+                gallery_btn = mkbtn(
+                    "Galleri", self._toggle_gallery,
+                    accent=True, small=True)
+                gallery_wrap.add_widget(gallery_btn)
+                # Neste-bilde-knapp
+                next_b = mkbtn(
+                    ">", self._next_img,
+                    small=True, size_hint_x=None)
+                next_b.width = dp(46)
+                gallery_wrap.add_widget(next_b)
+                # Tomt grid – bygges/brukes av _load_imgs for aa cache
+                # bilde-stiene (selv om grid-en ikke vises)
+                self.img_grid = GridLayout(
+                    cols=3, spacing=dp(6), padding=dp(6),
+                    size_hint_y=None)
+                self.img_grid.bind(
+                    minimum_height=self.img_grid.setter('height'))
             p.add_widget(gallery_wrap)
             # Liten glippe under boksen så den ikke ligger oppå mini-playeren
             p.add_widget(Widget(size_hint_y=None, height=dp(8)))
             self._load_imgs()
             return p
+
+        def _toggle_gallery(self, *a):
+            """Aapne/lukke det utvidede galleriet."""
+            self._gallery_open = not self._gallery_open
+            # Bygg Bilder-fanen paa nytt med ny tilstand
+            self.tool_area.clear_widgets()
+            self.tool_area.add_widget(self._mk_img())
+
+        def _gallery_image_paths(self):
+            """Returnerer sortert liste av bildestier i naavaerende mappe."""
+            f = self.cur_folder
+            try:
+                if not os.path.exists(f):
+                    return []
+                items = sorted(os.listdir(f))
+                return [os.path.join(f, x) for x in items
+                        if x.lower().endswith(IMG_EXT)]
+            except Exception:
+                return []
+
+        def _prev_img(self, *a):
+            """Bla til forrige bilde i mappen (uten aa aapne galleriet)."""
+            paths = self._gallery_image_paths()
+            if not paths:
+                return
+            if self.sel_img and self.sel_img in paths:
+                idx = paths.index(self.sel_img)
+                idx = (idx - 1) % len(paths)
+            else:
+                idx = len(paths) - 1
+            self._sel_img(paths[idx])
+
+        def _next_img(self, *a):
+            """Bla til neste bilde i mappen (uten aa aapne galleriet)."""
+            paths = self._gallery_image_paths()
+            if not paths:
+                return
+            if self.sel_img and self.sel_img in paths:
+                idx = paths.index(self.sel_img)
+                idx = (idx + 1) % len(paths)
+            else:
+                idx = 0
+            self._sel_img(paths[idx])
 
         def _load_imgs(self):
             if not hasattr(self, 'img_grid'):

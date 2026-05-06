@@ -24,6 +24,7 @@ from kivy.utils import platform
 from kivy.metrics import dp, sp
 from kivy.properties import ListProperty, NumericProperty, BooleanProperty, ObjectProperty, StringProperty
 from kivy.lang import Builder
+from kivy.clock import Clock
 from kivy.graphics.texture import Texture
 
 # === STIER ===
@@ -538,8 +539,9 @@ Builder.load_string('''
             size: self.size
             radius: [self.radius]
         # Tre-tekstur fra dark-wood.png – dekker hele panelet.
-        # tex_coords speilvender teksturen vertikalt hvis flip_texture er True
-        # slik at den ikke matcher en bakgrunn med samme bilde.
+        # tex_coords forskyver teksturen vannrett basert på
+        # tex_offset_x (0.0–1.0). Verdier > 0 "ruller" teksturen
+        # sideveis så plankene står på andre steder enn bakgrunnen.
         Color:
             rgba: 1, 1, 1, 1
         RoundedRectangle:
@@ -547,7 +549,7 @@ Builder.load_string('''
             pos: self.pos
             size: self.size
             radius: [self.radius]
-            tex_coords: (1, 1, 0, 1, 0, 0, 1, 0) if self.flip_texture else (0, 0, 1, 0, 1, 1, 0, 1)
+            tex_coords: (self.tex_offset_x, 0, 1 + self.tex_offset_x, 0, 1 + self.tex_offset_x, 1, self.tex_offset_x, 1)
         # Tint over teksturen — kan være mørklegging eller lysning.
         Color:
             rgba: self.tint_color
@@ -716,28 +718,43 @@ class WoodPanel(BoxLayout):
     lysne — for eksempel når et panel skal være tydelig lysere
     enn omgivelsene (som minigalleriet i Bilder-fanen).
 
-    `flip_texture` speilvender teksturen vertikalt slik at den
-    ikke matcher en bakgrunn med samme tre-tekstur — gir et synlig
-    skille uten å bytte bilde-fil."""
+    `tex_offset_x` (0.0–1.0) forskyver tre-teksturen vannrett slik
+    at panelet ikke flukter med bakgrunnen som har samme bilde."""
     border_color = ListProperty(GBORDER)
     border_width = NumericProperty(2.0)
     radius       = NumericProperty(dp(12))
-    # Sti til tre-tekstur. Kan settes per instans, men har en
-    # fornuftig default som peker til den bundlede filen.
     wood_source  = StringProperty(WOOD_BUNDLED if os.path.exists(WOOD_BUNDLED) else "")
-    # Fallback-fyll hvis tekstur ikke finnes
     bg_color     = ListProperty([0.16, 0.11, 0.07, 0.95])
-    # Overlay over teksturen. Default: svak mørklegging (svart 30%)
-    # for å skille panelet fra bakgrunnen. Sett positiv RGB for å
-    # lysne i stedet (f.eks. [1,1,1,0.10] for "lysere enn rundt").
     tint_color   = ListProperty([0.0, 0.0, 0.0, 0.30])
-    # Bytt navn fra dim_color → tint_color, men behold dim_color
-    # som alias for bakoverkompatibilitet
     dim_color    = ListProperty([0.0, 0.0, 0.0, 0.30])
-    # Speilvend teksturen vertikalt slik at den ikke matcher
-    # bakgrunnen ved samme offset.
-    flip_texture = BooleanProperty(False)
+    tex_offset_x = NumericProperty(0.0)
     shadow_color = ListProperty(SHAD)
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        # Sett tekstur til wrap=repeat slik at tex_coords > 1.0 ruller
+        # over og bildet repeteres i stedet for å klippe. Må gjøres
+        # etter at canvas er bygget. schedule_once for å unngå race
+        # med kv-instanseringen.
+        Clock.schedule_once(self._enable_tex_wrap, 0)
+        self.bind(wood_source=lambda *a:
+                  Clock.schedule_once(self._enable_tex_wrap, 0))
+
+    def _enable_tex_wrap(self, *a):
+        try:
+            # Finn RoundedRectangle med teksturen i canvas.before.
+            # Den andre RoundedRectangle (etter fallback-fyllet) er
+            # tekstur-rektangelet.
+            from kivy.graphics import RoundedRectangle as RR
+            count = 0
+            for instr in self.canvas.before.children:
+                if isinstance(instr, RR) and instr.texture:
+                    count += 1
+                    if count == 2:
+                        instr.texture.wrap = 'repeat'
+                        break
+        except Exception:
+            pass
 
 class PreviewFrame(BoxLayout):
     bg_color = ListProperty([0.02, 0.02, 0.02, 1])
