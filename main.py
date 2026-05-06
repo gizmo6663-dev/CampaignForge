@@ -2193,7 +2193,7 @@ try:
             # Behold et tomrom midt i topplinja for kamera-cutout.
             tabs.add_widget(Widget(size_hint_x=None, width=dp(52)))
             for key, txt in right_tab_defs:
-                active = key == 'img'
+                active = False
                 b = RTab(text=txt, group='tabs',
                          state='down' if active else 'normal',
                          bg_color=BTNH if active else BTN,
