@@ -2310,11 +2310,23 @@ try:
             nav.add_widget(self.ac_btn)
             nav.add_widget(mkbtn("Oppdater", self._load_imgs, small=True, size_hint_x=0.2))
             p.add_widget(nav)
-            scroll = ScrollView(size_hint_y=0.4)
+            # Minigalleri – pakket i WoodPanel for samme visuelle vekt
+            # som stat-panelet i battlemap-fanen (dark-wood-tekstur og
+            # gull-kant). Bruker override-bilde fra Documents/CampaignForge/
+            # hvis det finnes, ellers den bundlede.
+            wood_src = (WOOD_OVERRIDE if os.path.exists(WOOD_OVERRIDE)
+                        else WOOD_BUNDLED if os.path.exists(WOOD_BUNDLED)
+                        else "")
+            gallery_wrap = WoodPanel(
+                size_hint_y=0.4,
+                padding=[dp(6), dp(6), dp(6), dp(6)],
+                wood_source=wood_src)
+            scroll = ScrollView()
             self.img_grid = GridLayout(cols=3, spacing=dp(6), padding=dp(6), size_hint_y=None)
             self.img_grid.bind(minimum_height=self.img_grid.setter('height'))
             scroll.add_widget(self.img_grid)
-            p.add_widget(scroll)
+            gallery_wrap.add_widget(scroll)
+            p.add_widget(gallery_wrap)
             self._load_imgs()
             return p
 
