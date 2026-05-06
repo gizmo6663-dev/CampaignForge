@@ -2312,21 +2312,28 @@ try:
             p.add_widget(nav)
             # Minigalleri – pakket i WoodPanel for samme visuelle vekt
             # som stat-panelet i battlemap-fanen (dark-wood-tekstur og
-            # gull-kant). Bruker override-bilde fra Documents/CampaignForge/
-            # hvis det finnes, ellers den bundlede.
+            # gull-kant). Forskjeller fra stat-panelet:
+            # - flip_texture=True: tre-teksturen er speilvendt vertikalt
+            #   slik at den ikke matcher bakgrunnen og blir flush.
+            # - tint_color med positiv (hvit) alpha: lysner panelet
+            #   slik at det ser tydelig adskilt fra bakgrunnen.
             wood_src = (WOOD_OVERRIDE if os.path.exists(WOOD_OVERRIDE)
                         else WOOD_BUNDLED if os.path.exists(WOOD_BUNDLED)
                         else "")
             gallery_wrap = WoodPanel(
                 size_hint_y=0.4,
                 padding=[dp(6), dp(6), dp(6), dp(6)],
-                wood_source=wood_src)
+                wood_source=wood_src,
+                flip_texture=True,
+                tint_color=[1.0, 0.95, 0.85, 0.10])
             scroll = ScrollView()
             self.img_grid = GridLayout(cols=3, spacing=dp(6), padding=dp(6), size_hint_y=None)
             self.img_grid.bind(minimum_height=self.img_grid.setter('height'))
             scroll.add_widget(self.img_grid)
             gallery_wrap.add_widget(scroll)
             p.add_widget(gallery_wrap)
+            # Liten glippe under boksen så den ikke ligger oppå mini-playeren
+            p.add_widget(Widget(size_hint_y=None, height=dp(8)))
             self._load_imgs()
             return p
 

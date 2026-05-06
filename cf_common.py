@@ -537,7 +537,9 @@ Builder.load_string('''
             pos: self.pos
             size: self.size
             radius: [self.radius]
-        # Tre-tekstur fra dark-wood.png – dekker hele panelet
+        # Tre-tekstur fra dark-wood.png – dekker hele panelet.
+        # tex_coords speilvender teksturen vertikalt hvis flip_texture er True
+        # slik at den ikke matcher en bakgrunn med samme bilde.
         Color:
             rgba: 1, 1, 1, 1
         RoundedRectangle:
@@ -545,10 +547,10 @@ Builder.load_string('''
             pos: self.pos
             size: self.size
             radius: [self.radius]
-        # Lett mørklegging over teksturen så panelet skiller seg
-        # subtilt fra hovedbakgrunnen
+            tex_coords: (1, 1, 0, 1, 0, 0, 1, 0) if self.flip_texture else (0, 0, 1, 0, 1, 1, 0, 1)
+        # Tint over teksturen — kan være mørklegging eller lysning.
         Color:
-            rgba: self.dim_color
+            rgba: self.tint_color
         RoundedRectangle:
             pos: self.pos
             size: self.size
@@ -706,7 +708,17 @@ class WoodPanel(BoxLayout):
     Bruker den bundlede dark-wood.png som faktisk tre-tekstur
     (matcher splash) — krever at `wood_source` settes før widgeten
     bygges. Hvis kilden ikke finnes, faller den tilbake til ren
-    brun fyll."""
+    brun fyll.
+
+    `tint_color` legges over teksturen som overlay. Default er en
+    svak mørklegging slik at panelet skiller seg subtilt fra
+    bakgrunnen. Kan også settes til positiv (hvit) alpha for å
+    lysne — for eksempel når et panel skal være tydelig lysere
+    enn omgivelsene (som minigalleriet i Bilder-fanen).
+
+    `flip_texture` speilvender teksturen vertikalt slik at den
+    ikke matcher en bakgrunn med samme tre-tekstur — gir et synlig
+    skille uten å bytte bilde-fil."""
     border_color = ListProperty(GBORDER)
     border_width = NumericProperty(2.0)
     radius       = NumericProperty(dp(12))
@@ -715,9 +727,16 @@ class WoodPanel(BoxLayout):
     wood_source  = StringProperty(WOOD_BUNDLED if os.path.exists(WOOD_BUNDLED) else "")
     # Fallback-fyll hvis tekstur ikke finnes
     bg_color     = ListProperty([0.16, 0.11, 0.07, 0.95])
-    # Subtil mørklegging over teksturen så panelet er litt mørkere
-    # enn selve hovedbakgrunnen (gjør at det skiller seg ut).
+    # Overlay over teksturen. Default: svak mørklegging (svart 30%)
+    # for å skille panelet fra bakgrunnen. Sett positiv RGB for å
+    # lysne i stedet (f.eks. [1,1,1,0.10] for "lysere enn rundt").
+    tint_color   = ListProperty([0.0, 0.0, 0.0, 0.30])
+    # Bytt navn fra dim_color → tint_color, men behold dim_color
+    # som alias for bakoverkompatibilitet
     dim_color    = ListProperty([0.0, 0.0, 0.0, 0.30])
+    # Speilvend teksturen vertikalt slik at den ikke matcher
+    # bakgrunnen ved samme offset.
+    flip_texture = BooleanProperty(False)
     shadow_color = ListProperty(SHAD)
 
 class PreviewFrame(BoxLayout):
