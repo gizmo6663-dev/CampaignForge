@@ -2323,10 +2323,6 @@ try:
                 size_hint_x=None)
             self.ac_btn.width = dp(72)
 
-            # Naar galleriet er kollapset legges en strekkbar Widget
-            # mellom info-radene og galleri-boksen — den absorberer all
-            # overskytende vertikal plass og lar emblemet bak skinne
-            # gjennom som tom plass.
             # GALLERI – sammenleggbar boks
             # Kollapset: kompakt rad med "<", "Galleri", ">"
             #   Pilene blar gjennom bildene direkte (caster automatisk).
@@ -2409,6 +2405,8 @@ try:
                 # Liten glippe under boksen så den ikke ligger oppå mini-playeren
                 p.add_widget(Widget(size_hint_y=None, height=dp(8)))
             else:
+                # La minigalleriet ligge rett under preview, og la resten
+                # av taben utgjøre luft mot bakgrunnen.
                 p.add_widget(gallery_wrap)
                 p.add_widget(title_lbl)
                 p.add_widget(self.img_lbl)
@@ -2417,8 +2415,7 @@ try:
             return p
 
         def _toggle_gallery(self, *a):
-            """Aapne/lukke det utvidede galleriet med en kort resize-
-            animasjon i stedet for fade."""
+            """Aapne/lukke galleriet ved aa animere kun galleri-boksen."""
             # Forhindre dobbel-trykk under animasjon
             if getattr(self, '_gallery_animating', False):
                 return
