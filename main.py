@@ -2165,9 +2165,6 @@ try:
 
             main = BoxLayout(orientation='vertical', spacing=0,
                              size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
-            # Topp-buffer for kamera-utskjaering (punch-hole). 36 dp
-            # gir rikelig avstand paa de fleste moderne mobiler.
-            main.add_widget(Widget(size_hint_y=None, height=dp(36)))
 
             # FANER
             tabs = RBox(size_hint_y=None, height=dp(52), spacing=dp(4),
@@ -2191,6 +2188,9 @@ try:
                 b.bind(on_release=lambda x, k=key: self._tab(k))
                 tabs.add_widget(b)
                 self._tabs[key] = b
+                if key == 'lyd':
+                    # Behold et tomrom midt i topplinja for kamera-cutout.
+                    tabs.add_widget(Widget(size_hint_x=None, width=dp(52)))
             main.add_widget(tabs)
 
             # HOVEDINNHOLD
@@ -2293,22 +2293,10 @@ try:
         # ---------- BILDER ----------
         def _mk_img(self):
             p = BoxLayout(orientation='vertical', spacing=dp(6))
-            # Forhaandsvisning:
-            # - Kollapset galleri: fast moderat hoeyde (240dp). Stoerre
-            #   enn foer siden Opp/AC/Oppdater-knappene er flyttet inn
-            #   i det utvidede galleriet, men fortsatt liten nok til at
-            #   emblemet bak forblir synlig.
-            # - Utvidet galleri: fyll mer av skjermen siden emblemet
-            #   uansett er dekket av grid-en.
-            if self._gallery_open:
-                preview_box = PreviewFrame(
-                    size_hint_y=0.35, padding=dp(10),
-                    has_content=bool(self.sel_img))
-            else:
-                preview_box = PreviewFrame(
-                    size_hint_y=None, height=dp(240),
-                    padding=dp(10),
-                    has_content=bool(self.sel_img))
+            preview_box = PreviewFrame(
+                size_hint_y=None, height=dp(240),
+                padding=dp(10),
+                has_content=bool(self.sel_img))
             self.preview = Image(allow_stretch=True, keep_ratio=True,
                                  color=[1, 1, 1, 0] if not self.sel_img else [1, 1, 1, 1])
             self.preview_box = preview_box
@@ -2317,11 +2305,10 @@ try:
             preview_box.add_widget(self.preview)
             p.add_widget(preview_box)
             self._img_root = p
-            p.add_widget(Label(text="CAMPAIGN FORGE", font_size=sp(18), color=GDIM,
-                               bold=True, size_hint_y=None, height=dp(28)))
+            title_lbl = Label(text="CAMPAIGN FORGE", font_size=sp(18), color=GDIM,
+                              bold=True, size_hint_y=None, height=dp(28))
             self.img_lbl = Label(text="", font_size=sp(12), color=DIM,
                                  size_hint_y=None, height=dp(20))
-            p.add_widget(self.img_lbl)
             # path_lbl er kun synlig i utvidet galleri-header, men maa
             # alltid eksistere fordi _load_imgs setter .text paa den.
             self.path_lbl = Label(text="", font_size=sp(10), color=DIM,
@@ -2340,9 +2327,6 @@ try:
             # mellom info-radene og galleri-boksen — den absorberer all
             # overskytende vertikal plass og lar emblemet bak skinne
             # gjennom som tom plass.
-            if not self._gallery_open:
-                p.add_widget(Widget(size_hint_y=1.0))
-
             # GALLERI – sammenleggbar boks
             # Kollapset: kompakt rad med "<", "Galleri", ">"
             #   Pilene blar gjennom bildene direkte (caster automatisk).
@@ -2418,9 +2402,17 @@ try:
                 self.img_grid.bind(
                     minimum_height=self.img_grid.setter('height'))
             self._gallery_wrap = gallery_wrap
-            p.add_widget(gallery_wrap)
-            # Liten glippe under boksen så den ikke ligger oppå mini-playeren
-            p.add_widget(Widget(size_hint_y=None, height=dp(8)))
+            if self._gallery_open:
+                p.add_widget(title_lbl)
+                p.add_widget(self.img_lbl)
+                p.add_widget(gallery_wrap)
+                # Liten glippe under boksen så den ikke ligger oppå mini-playeren
+                p.add_widget(Widget(size_hint_y=None, height=dp(8)))
+            else:
+                p.add_widget(gallery_wrap)
+                p.add_widget(title_lbl)
+                p.add_widget(self.img_lbl)
+                p.add_widget(Widget(size_hint_y=1.0))
             self._load_imgs()
             return p
 
@@ -2431,8 +2423,6 @@ try:
             if getattr(self, '_gallery_animating', False):
                 return
             self._gallery_animating = True
-            old_preview_height = (self.preview_box.height
-                                  if self.preview_box else dp(240))
             old_gallery = getattr(self, '_gallery_wrap', None)
             old_gallery_height = (old_gallery.height
                                   if old_gallery else dp(54))
@@ -2448,11 +2438,8 @@ try:
             if getattr(self, '_img_root', None):
                 self._img_root.do_layout()
 
-            target_preview_height = self.preview_box.height
             target_gallery_height = self._gallery_wrap.height
 
-            self.preview_box.size_hint_y = None
-            self.preview_box.height = old_preview_height
             self._gallery_wrap.size_hint_y = None
             self._gallery_wrap.height = old_gallery_height
 
@@ -2461,29 +2448,21 @@ try:
             if getattr(self, '_img_root', None):
                 self._img_root.do_layout()
 
-            Animation.cancel_all(self.preview_box, 'height')
             Animation.cancel_all(self._gallery_wrap, 'height')
 
-            resize_preview = Animation(
-                height=target_preview_height, duration=0.22,
-                transition='out_quad')
             resize_gallery = Animation(
                 height=target_gallery_height, duration=0.22,
                 transition='out_quad')
 
             def _done(*_):
                 if self._gallery_open:
-                    self.preview_box.size_hint_y = 0.35
                     self._gallery_wrap.size_hint_y = 0.55
                 else:
-                    self.preview_box.size_hint_y = None
-                    self.preview_box.height = dp(240)
                     self._gallery_wrap.size_hint_y = None
                     self._gallery_wrap.height = dp(54)
                 self._gallery_animating = False
 
-            resize_preview.bind(on_complete=_done)
-            resize_preview.start(self.preview_box)
+            resize_gallery.bind(on_complete=_done)
             resize_gallery.start(self._gallery_wrap)
 
         def _gallery_image_paths(self):
