@@ -88,7 +88,7 @@ try:
     CANVAS_W = 1280
     CANVAS_H = 720
     FT_PER_SQUARE = 5   # D&D 5e standard
-    MAIN_BG_OVERLAY_ALPHA = 0.35
+    MAIN_BG_OVERLAY_ALPHA = 0.20
     SPLASH_BG_OVERLAY_ALPHA = 0.42
     # Ligger litt høyere enn sentrum for å holde tittelen fri fra emblemet.
     SPLASH_TEXT_CENTER_Y = 0.73
@@ -4722,12 +4722,17 @@ try:
             # STAT-PANEL: viser HP/AC/Speed/spell-slots for den hvis tur
             # det er na, med +/- knapper for HP og spell-slots.
             # Pakket i WoodPanel for visuell vekt og konsistens med
-            # resten av appen (samme tre-tekstur og gull-kant som
-            # knappene).
+            # resten av appen (dark-wood.png-tekstur og gull-kant).
+            # Bruker override-bilde fra Documents/CampaignForge/ hvis det
+            # finnes, ellers den bundlede.
+            wood_src = (WOOD_OVERRIDE if os.path.exists(WOOD_OVERRIDE)
+                        else WOOD_BUNDLED if os.path.exists(WOOD_BUNDLED)
+                        else "")
             stat_wrap = WoodPanel(
                 orientation='vertical', spacing=dp(4),
                 padding=[dp(10), dp(8), dp(10), dp(8)],
-                size_hint_y=1.0)
+                size_hint_y=1.0,
+                wood_source=wood_src)
             self._bm_stat_box = BoxLayout(
                 orientation='vertical', spacing=dp(2),
                 size_hint_y=1.0)
