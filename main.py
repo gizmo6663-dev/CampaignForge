@@ -2165,7 +2165,9 @@ try:
 
             main = BoxLayout(orientation='vertical', spacing=0,
                              size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
-            main.add_widget(Widget(size_hint_y=None, height=dp(30)))
+            # Topp-buffer for kamera-utskjaering (punch-hole). 36 dp
+            # gir rikelig avstand paa de fleste moderne mobiler.
+            main.add_widget(Widget(size_hint_y=None, height=dp(36)))
 
             # FANER
             tabs = RBox(size_hint_y=None, height=dp(52), spacing=dp(4),
@@ -2292,18 +2294,19 @@ try:
         def _mk_img(self):
             p = BoxLayout(orientation='vertical', spacing=dp(6))
             # Forhaandsvisning:
-            # - Kollapset galleri: fast lav hoeyde (~180dp) saa emblemet
-            #   bak forblir synlig. Bildet er bare en "current cast"-
-            #   indikator — ikke det visuelle hovedfokuset.
+            # - Kollapset galleri: fast moderat hoeyde (240dp). Stoerre
+            #   enn foer siden Opp/AC/Oppdater-knappene er flyttet inn
+            #   i det utvidede galleriet, men fortsatt liten nok til at
+            #   emblemet bak forblir synlig.
             # - Utvidet galleri: fyll mer av skjermen siden emblemet
             #   uansett er dekket av grid-en.
             if self._gallery_open:
                 preview_box = PreviewFrame(
-                    size_hint_y=0.4, padding=dp(10),
+                    size_hint_y=0.35, padding=dp(10),
                     has_content=bool(self.sel_img))
             else:
                 preview_box = PreviewFrame(
-                    size_hint_y=None, height=dp(180),
+                    size_hint_y=None, height=dp(240),
                     padding=dp(10),
                     has_content=bool(self.sel_img))
             self.preview = Image(allow_stretch=True, keep_ratio=True,
@@ -2318,48 +2321,57 @@ try:
             self.img_lbl = Label(text="", font_size=sp(12), color=DIM,
                                  size_hint_y=None, height=dp(20))
             p.add_widget(self.img_lbl)
-            nav = BoxLayout(size_hint_y=None, height=dp(40), spacing=dp(6), padding=[dp(6), 0])
-            self.path_lbl = Label(text="", font_size=sp(10), color=DIM, size_hint_x=0.35)
-            nav.add_widget(self.path_lbl)
-            nav.add_widget(mkbtn("Opp", self.folder_up, small=True, size_hint_x=0.2))
-            self.ac_btn = mkbtn("AC:PA" if self.auto_cast else "AC:AV",
-                                self._toggle_ac, accent=True,
-                                small=True, size_hint_x=0.25)
-            nav.add_widget(self.ac_btn)
-            nav.add_widget(mkbtn("Oppdater", self._load_imgs, small=True, size_hint_x=0.2))
-            p.add_widget(nav)
+            # path_lbl er kun synlig i utvidet galleri-header, men maa
+            # alltid eksistere fordi _load_imgs setter .text paa den.
+            self.path_lbl = Label(text="", font_size=sp(10), color=DIM,
+                                  size_hint_x=0.30,
+                                  halign='left', valign='middle')
+            self.path_lbl.bind(size=lambda w, v:
+                               setattr(w, 'text_size', v))
+            # ac_btn samme – maa eksistere selv om kun synlig i utvidet
+            self.ac_btn = mkbtn(
+                "AC:PA" if self.auto_cast else "AC:AV",
+                self._toggle_ac, accent=True, small=True,
+                size_hint_x=None)
+            self.ac_btn.width = dp(72)
 
             # Naar galleriet er kollapset legges en strekkbar Widget
-            # mellom nav-raden og galleri-boksen — den absorberer all
+            # mellom info-radene og galleri-boksen — den absorberer all
             # overskytende vertikal plass og lar emblemet bak skinne
             # gjennom som tom plass.
             if not self._gallery_open:
                 p.add_widget(Widget(size_hint_y=1.0))
 
             # GALLERI – sammenleggbar boks
-            # Kollapset: kompakt rad med "<<", "Galleri (N bilder)", ">>", "+"
-            #   Pilene blar gjennom bildene direkte (caster automatisk hvis AC:PA).
-            # Utvidet: full ScrollView + GridLayout + "x"-knapp for aa lukke.
+            # Kollapset: kompakt rad med "<", "Galleri", ">"
+            #   Pilene blar gjennom bildene direkte (caster automatisk).
+            # Utvidet: header med Opp/path/AC/Oppdater/lukke + ScrollView + grid
             wood_src = (WOOD_OVERRIDE if os.path.exists(WOOD_OVERRIDE)
                         else WOOD_BUNDLED if os.path.exists(WOOD_BUNDLED)
                         else "")
             if self._gallery_open:
                 gallery_wrap = WoodPanel(
                     orientation='vertical', spacing=dp(4),
-                    size_hint_y=0.4,
+                    size_hint_y=0.55,
                     padding=[dp(6), dp(6), dp(6), dp(6)],
                     wood_source=wood_src,
                     tex_offset_x=0.30,
                     tint_color=[1.0, 0.78, 0.45, 0.14])
-                # Header-rad inne i utvidet galleri: tittel + lukke-knapp
-                gh = BoxLayout(size_hint_y=None, height=dp(28),
+                # Header-rad: Opp + path + AC + Oppdater + lukke
+                gh = BoxLayout(size_hint_y=None, height=dp(40),
                                spacing=dp(4))
-                gh.add_widget(mklbl("Galleri", color=GOLD, size=12,
-                                    bold=True))
+                gh.add_widget(mkbtn(
+                    "Opp", self.folder_up, small=True,
+                    size_hint_x=None, width=dp(54)))
+                gh.add_widget(self.path_lbl)
+                gh.add_widget(self.ac_btn)
+                gh.add_widget(mkbtn(
+                    "Oppdater", self._load_imgs, small=True,
+                    size_hint_x=None, width=dp(80)))
                 close_btn = mkbtn(
                     "x", self._toggle_gallery,
-                    danger=True, small=True, size_hint_x=None)
-                close_btn.width = dp(40)
+                    danger=True, small=True,
+                    size_hint_x=None, width=dp(40))
                 gh.add_widget(close_btn)
                 gallery_wrap.add_widget(gh)
                 # Selve grid-et
@@ -2411,13 +2423,33 @@ try:
             return p
 
         def _toggle_gallery(self, *a):
-            """Aapne/lukke det utvidede galleriet."""
+            """Aapne/lukke det utvidede galleriet med en kort fade-
+            animasjon for jevnere overgang."""
+            # Forhindre dobbel-trykk under animasjon
+            if getattr(self, '_gallery_animating', False):
+                return
+            self._gallery_animating = True
+
             self._gallery_open = not self._gallery_open
-            # Bygg Bilder-fanen paa nytt med ny tilstand. Bruker _tab
-            # som rebygger hele content-pakken — _mk_img legger seg paa
-            # self.content, ikke self.tool_area (sistnevnte er kun for
-            # underfaner i Verktoey/Karakter).
-            self._tab('img')
+
+            def _do_swap(*_):
+                # Bygg fanen paa nytt med ny tilstand, og fade inn
+                self._tab('img')
+                # Reset opacity til 0 saa den kan fades inn fra bunn
+                self.content.opacity = 0
+                fade_in = Animation(opacity=1, duration=0.18,
+                                    transition='out_quad')
+
+                def _done(*_):
+                    self._gallery_animating = False
+                fade_in.bind(on_complete=_done)
+                fade_in.start(self.content)
+
+            # Fade ut, deretter rebuild + fade inn
+            fade_out = Animation(opacity=0, duration=0.12,
+                                 transition='in_quad')
+            fade_out.bind(on_complete=_do_swap)
+            fade_out.start(self.content)
 
         def _gallery_image_paths(self):
             """Returnerer sortert liste av bildestier i naavaerende mappe."""
