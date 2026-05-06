@@ -2291,11 +2291,21 @@ try:
         # ---------- BILDER ----------
         def _mk_img(self):
             p = BoxLayout(orientation='vertical', spacing=dp(6))
-            # Forhaandsvisning – stoerre naar galleri er kollapset
-            preview_box = PreviewFrame(
-                size_hint_y=(0.65 if not self._gallery_open else 0.4),
-                padding=dp(10),
-                has_content=bool(self.sel_img))
+            # Forhaandsvisning:
+            # - Kollapset galleri: fast lav hoeyde (~180dp) saa emblemet
+            #   bak forblir synlig. Bildet er bare en "current cast"-
+            #   indikator — ikke det visuelle hovedfokuset.
+            # - Utvidet galleri: fyll mer av skjermen siden emblemet
+            #   uansett er dekket av grid-en.
+            if self._gallery_open:
+                preview_box = PreviewFrame(
+                    size_hint_y=0.4, padding=dp(10),
+                    has_content=bool(self.sel_img))
+            else:
+                preview_box = PreviewFrame(
+                    size_hint_y=None, height=dp(180),
+                    padding=dp(10),
+                    has_content=bool(self.sel_img))
             self.preview = Image(allow_stretch=True, keep_ratio=True,
                                  color=[1, 1, 1, 0] if not self.sel_img else [1, 1, 1, 1])
             self.preview_box = preview_box
@@ -2318,6 +2328,13 @@ try:
             nav.add_widget(self.ac_btn)
             nav.add_widget(mkbtn("Oppdater", self._load_imgs, small=True, size_hint_x=0.2))
             p.add_widget(nav)
+
+            # Naar galleriet er kollapset legges en strekkbar Widget
+            # mellom nav-raden og galleri-boksen — den absorberer all
+            # overskytende vertikal plass og lar emblemet bak skinne
+            # gjennom som tom plass.
+            if not self._gallery_open:
+                p.add_widget(Widget(size_hint_y=1.0))
 
             # GALLERI – sammenleggbar boks
             # Kollapset: kompakt rad med "<<", "Galleri (N bilder)", ">>", "+"
@@ -2396,9 +2413,11 @@ try:
         def _toggle_gallery(self, *a):
             """Aapne/lukke det utvidede galleriet."""
             self._gallery_open = not self._gallery_open
-            # Bygg Bilder-fanen paa nytt med ny tilstand
-            self.tool_area.clear_widgets()
-            self.tool_area.add_widget(self._mk_img())
+            # Bygg Bilder-fanen paa nytt med ny tilstand. Bruker _tab
+            # som rebygger hele content-pakken — _mk_img legger seg paa
+            # self.content, ikke self.tool_area (sistnevnte er kun for
+            # underfaner i Verktoey/Karakter).
+            self._tab('img')
 
         def _gallery_image_paths(self):
             """Returnerer sortert liste av bildestier i naavaerende mappe."""
