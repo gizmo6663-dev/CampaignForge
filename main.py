@@ -2303,6 +2303,45 @@ try:
                 self.content.add_widget(builders[k]())
 
         # ---------- BILDER ----------
+        def _gallery_collapsed_height(self):
+            return dp(54)
+
+        def _gallery_collapsed_content(self):
+            body = BoxLayout(orientation='vertical', spacing=0)
+            row = BoxLayout(size_hint_y=None, height=dp(42), spacing=dp(6))
+
+            prev_b = mkbtn(
+                "<", self._prev_img,
+                small=True, size_hint_x=None)
+            prev_b.width = dp(46)
+            row.add_widget(prev_b)
+
+            gallery_btn = mkbtn(
+                "Galleri", self._toggle_gallery,
+                accent=True, small=True)
+            row.add_widget(gallery_btn)
+
+            next_b = mkbtn(
+                ">", self._next_img,
+                small=True, size_hint_x=None)
+            next_b.width = dp(46)
+            row.add_widget(next_b)
+
+            body.add_widget(row)
+            # Fyller resten av panelet slik at tre-boksen kan vokse nedover
+            # uten at knappene strekkes under animasjonen.
+            body.add_widget(Widget(size_hint_y=1.0))
+            return body
+
+        def _apply_gallery_collapsed_shell(self, gallery_wrap):
+            gallery_wrap.clear_widgets()
+            gallery_wrap.orientation = 'vertical'
+            gallery_wrap.spacing = 0
+            gallery_wrap.padding = [dp(8), dp(6), dp(8), dp(6)]
+            gallery_wrap.tex_offset_x = 0.36
+            gallery_wrap.tint_color = [1.0, 0.78, 0.45, 0.14]
+            gallery_wrap.add_widget(self._gallery_collapsed_content())
+
         def _mk_img(self):
             p = BoxLayout(orientation='vertical', spacing=dp(6))
             preview_box = PreviewFrame(
@@ -2348,7 +2387,7 @@ try:
                     size_hint_y=0.55,
                     padding=[dp(6), dp(6), dp(6), dp(6)],
                     wood_source=wood_src,
-                    tex_offset_x=0.30,
+                    tex_offset_x=0.36,
                     tint_color=[1.0, 0.78, 0.45, 0.14])
                 # Header-rad: Opp + path + AC + Oppdater + lukke
                 gh = BoxLayout(size_hint_y=None, height=dp(40),
@@ -2379,29 +2418,13 @@ try:
             else:
                 # Kollapset: kompakt rad
                 gallery_wrap = WoodPanel(
-                    orientation='horizontal', spacing=dp(6),
-                    size_hint_y=None, height=dp(54),
+                    orientation='vertical', spacing=0,
+                    size_hint_y=None, height=self._gallery_collapsed_height(),
                     padding=[dp(8), dp(6), dp(8), dp(6)],
                     wood_source=wood_src,
-                    tex_offset_x=0.30,
+                    tex_offset_x=0.36,
                     tint_color=[1.0, 0.78, 0.45, 0.14])
-                # Forrige-bilde-knapp
-                prev_b = mkbtn(
-                    "<", self._prev_img,
-                    small=True, size_hint_x=None)
-                prev_b.width = dp(46)
-                gallery_wrap.add_widget(prev_b)
-                # "Galleri"-knapp midt i som aapner full visning
-                gallery_btn = mkbtn(
-                    "Galleri", self._toggle_gallery,
-                    accent=True, small=True)
-                gallery_wrap.add_widget(gallery_btn)
-                # Neste-bilde-knapp
-                next_b = mkbtn(
-                    ">", self._next_img,
-                    small=True, size_hint_x=None)
-                next_b.width = dp(46)
-                gallery_wrap.add_widget(next_b)
+                gallery_wrap.add_widget(self._gallery_collapsed_content())
                 # Tomt grid – bygges/brukes av _load_imgs for aa cache
                 # bilde-stiene (selv om grid-en ikke vises)
                 self.img_grid = GridLayout(
@@ -2467,13 +2490,17 @@ try:
 
             if self._gallery_open:
                 # --- LUKKE: collapse til knappehoyde ---
+                self._apply_gallery_collapsed_shell(gw)
+
                 def _close_done(*_):
                     gw.unbind(height=_keep_top)
                     self._gallery_open = False
                     self._tab('img')
                     self._gallery_animating = False
 
-                _close_anim = Animation(height=dp(54), duration=0.22, transition='out_quad')
+                _close_anim = Animation(
+                    height=self._gallery_collapsed_height(),
+                    duration=0.22, transition='out_quad')
                 _close_anim.bind(on_complete=_close_done)
                 _close_anim.start(gw)
 
