@@ -22,7 +22,7 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.widget import Widget
 from kivy.utils import platform
 from kivy.metrics import dp, sp
-from kivy.properties import ListProperty, NumericProperty, BooleanProperty, ObjectProperty
+from kivy.properties import ListProperty, NumericProperty, BooleanProperty, ObjectProperty, StringProperty
 from kivy.lang import Builder
 from kivy.graphics.texture import Texture
 
@@ -137,7 +137,7 @@ WOOD_OVERRIDE = os.path.join(USER_DIR, "dark-wood.png")
 # Bakgrunner er brune (matcher splash). Knapper og faner er grønne
 # (matcher emblemet og beholder den smaragd-aksenten Robin liker).
 BG   = [0.07, 0.05, 0.04, 1]      # mørk svart-brun (hovedbakgrunn)
-BG2  = [0.13, 0.09, 0.06, 0.85]   # mørk brun, lett translucent (paneler)
+BG2  = [0.13, 0.09, 0.06, 0.55]   # mørk brun, mer translucent (lar tre/emblem skinne gjennom)
 INPUT= [0.10, 0.07, 0.05, 1]      # tekstfelt-bakgrunn, mørk brun
 BTN  = [0.16, 0.24, 0.17, 1]      # mosegroenn (knapper, idle) — som foer
 BTNH = [0.28, 0.42, 0.26, 1]      # lysere groenn (knapper, aktiv) — som foer
@@ -529,20 +529,30 @@ Builder.load_string('''
 
 <WoodPanel>:
     canvas.before:
-        # Brun fyll – matcher hovedbakgrunn men litt lysere
+        # Fallback-fyll under teksturen (brun, så det ser riktig ut
+        # selv hvis dark-wood.png ikke finnes på enheten)
         Color:
             rgba: self.bg_color
         RoundedRectangle:
             pos: self.pos
             size: self.size
             radius: [self.radius]
-        # Subtil indre høylys-stripe i topp (gir "treverk"-feeling)
+        # Tre-tekstur fra dark-wood.png – dekker hele panelet
         Color:
-            rgba: self.highlight_color
+            rgba: 1, 1, 1, 1
         RoundedRectangle:
-            pos: self.x + dp(6), self.top - dp(8)
-            size: self.width - dp(12), dp(2)
-            radius: [dp(1)]
+            source: self.wood_source if self.wood_source else ''
+            pos: self.pos
+            size: self.size
+            radius: [self.radius]
+        # Lett mørklegging over teksturen så panelet skiller seg
+        # subtilt fra hovedbakgrunnen
+        Color:
+            rgba: self.dim_color
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [self.radius]
         # Gull-kant – samme som knappene
         Color:
             rgba: self.border_color
@@ -691,19 +701,23 @@ class RBox(BoxLayout):
     radius   = NumericProperty(dp(8))
 
 class WoodPanel(BoxLayout):
-    """Container med brun bakgrunn og gull-kant.
+    """Container med dark-wood.png-tekstur og gull-kant.
 
-    Bruker en mørk brun fyll (matcher splash og hoved-bakgrunn) med
-    gull-kant rundt — slik at knapper/faner (grønne) skiller seg
-    visuelt fra paneler (brune)."""
+    Bruker den bundlede dark-wood.png som faktisk tre-tekstur
+    (matcher splash) — krever at `wood_source` settes før widgeten
+    bygges. Hvis kilden ikke finnes, faller den tilbake til ren
+    brun fyll."""
     border_color = ListProperty(GBORDER)
     border_width = NumericProperty(2.0)
     radius       = NumericProperty(dp(12))
-    # Bakgrunn: mørk brun. Litt lysere enn BG for å skille panelet fra
-    # selve appbakgrunnen.
+    # Sti til tre-tekstur. Kan settes per instans, men har en
+    # fornuftig default som peker til den bundlede filen.
+    wood_source  = StringProperty(WOOD_BUNDLED if os.path.exists(WOOD_BUNDLED) else "")
+    # Fallback-fyll hvis tekstur ikke finnes
     bg_color     = ListProperty([0.16, 0.11, 0.07, 0.95])
-    # Subtil indre høylys-stripe i toppen for "treverk-følelse"
-    highlight_color = ListProperty([1.0, 0.92, 0.72, 0.05])
+    # Subtil mørklegging over teksturen så panelet er litt mørkere
+    # enn selve hovedbakgrunnen (gjør at det skiller seg ut).
+    dim_color    = ListProperty([0.0, 0.0, 0.0, 0.30])
     shadow_color = ListProperty(SHAD)
 
 class PreviewFrame(BoxLayout):
