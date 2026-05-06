@@ -2171,13 +2171,15 @@ try:
                         padding=[dp(8), dp(4)], bg_color=BTN)
             self._tabs = {}
             # Faner med ASCII-safe ikon-prefiks for visuell variasjon
-            tab_defs = [
+            left_tab_defs = [
                 ('img',   'Bilder'),
                 ('lyd',   'Lyd'),
+            ]
+            right_tab_defs = [
                 ('tool',  'Karakter'),
                 ('util',  'Verktøy'),
             ]
-            for key, txt in tab_defs:
+            for key, txt in left_tab_defs:
                 active = key == 'img'
                 b = RTab(text=txt, group='tabs',
                          state='down' if active else 'normal',
@@ -2188,9 +2190,19 @@ try:
                 b.bind(on_release=lambda x, k=key: self._tab(k))
                 tabs.add_widget(b)
                 self._tabs[key] = b
-                if key == 'lyd':
-                    # Behold et tomrom midt i topplinja for kamera-cutout.
-                    tabs.add_widget(Widget(size_hint_x=None, width=dp(52)))
+            # Behold et tomrom midt i topplinja for kamera-cutout.
+            tabs.add_widget(Widget(size_hint_x=None, width=dp(52)))
+            for key, txt in right_tab_defs:
+                active = key == 'img'
+                b = RTab(text=txt, group='tabs',
+                         state='down' if active else 'normal',
+                         bg_color=BTNH if active else BTN,
+                         color=GOLD if active else DIM,
+                         font_size=sp(FONT_SMALL))
+                b.bind(state=self._tab_color)
+                b.bind(on_release=lambda x, k=key: self._tab(k))
+                tabs.add_widget(b)
+                self._tabs[key] = b
             main.add_widget(tabs)
 
             # HOVEDINNHOLD
