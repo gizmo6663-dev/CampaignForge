@@ -2338,9 +2338,23 @@ try:
             gallery_wrap.orientation = 'vertical'
             gallery_wrap.spacing = 0
             gallery_wrap.padding = [dp(8), dp(6), dp(8), dp(6)]
-            gallery_wrap.tex_offset_x = 0.36
+            gallery_wrap.tex_offset_x = 0.0
             gallery_wrap.tint_color = [1.0, 0.78, 0.45, 0.14]
             gallery_wrap.add_widget(self._gallery_collapsed_content())
+
+        def _gallery_open_target_height(self):
+            # gallery_wrap er eneste proportional child, saa den faar
+            # all gjenstaaende plass:
+            #   preview_box(240) + title_lbl(28) + img_lbl(20)
+            #   + bunn-spacer(8) + 4 mellomrom * dp(6) = 320 dp fast.
+            _preview_h  = dp(240)
+            _title_h    = dp(28)
+            _img_lbl_h  = dp(20)
+            _spacer_h   = dp(8)
+            _n_spacings = 4
+            fixed = (_preview_h + _title_h + _img_lbl_h + _spacer_h
+                     + dp(6) * _n_spacings)
+            return max(self.content.height - fixed, dp(80))
 
         def _mk_img(self):
             p = BoxLayout(orientation='vertical', spacing=dp(6))
@@ -2387,7 +2401,7 @@ try:
                     size_hint_y=0.55,
                     padding=[dp(6), dp(6), dp(6), dp(6)],
                     wood_source=wood_src,
-                    tex_offset_x=0.36,
+                    tex_offset_x=0.0,
                     tint_color=[1.0, 0.78, 0.45, 0.14])
                 # Header-rad: Opp + path + AC + Oppdater + lukke
                 gh = BoxLayout(size_hint_y=None, height=dp(40),
@@ -2422,7 +2436,7 @@ try:
                     size_hint_y=None, height=self._gallery_collapsed_height(),
                     padding=[dp(8), dp(6), dp(8), dp(6)],
                     wood_source=wood_src,
-                    tex_offset_x=0.36,
+                    tex_offset_x=0.0,
                     tint_color=[1.0, 0.78, 0.45, 0.14])
                 gallery_wrap.add_widget(self._gallery_collapsed_content())
                 # Tomt grid – bygges/brukes av _load_imgs for aa cache
@@ -2476,23 +2490,59 @@ try:
                 return
 
             Animation.cancel_all(gw, 'height')
-            # Fjern size_hint slik at vi kan sette height direkte
-            gw.size_hint_y = None
-
-            # Fest toppen av gallery_wrap under hele animasjonen slik at
-            # widgeten vokser nedover i stedet for oppover.
-            gallery_top = gw.top
-
-            def _keep_top(instance, value):
-                instance.y = gallery_top - value
-
-            gw.bind(height=_keep_top)
 
             if self._gallery_open:
-                # --- LUKKE: collapse til knappehoyde ---
+                # --- LUKKE: animer aapen boks som overlay saa resten av UI-en
+                # ikke "ruller" mens galleriet kollapser oppover.
+                root = getattr(self, '_img_root', None) or self.content
+                while root.parent and not isinstance(root.parent, FloatLayout):
+                    root = root.parent
+                overlay_parent = root.parent if isinstance(root.parent, FloatLayout) else root
+
+                if overlay_parent:
+                    old_w, old_h = gw.size
+                    win_x, win_y = gw.to_window(0, 0)
+                    overlay_x, overlay_y = overlay_parent.to_widget(
+                        win_x, win_y, relative=True)
+                    overlay_top = overlay_y + old_h
+                    collapsed_h = self._gallery_collapsed_height()
+
+                    if gw.parent:
+                        gw.parent.remove_widget(gw)
+                    gw.size_hint = (None, None)
+                    gw.size = (old_w, old_h)
+                    gw.pos = (overlay_x, overlay_y)
+                    overlay_parent.add_widget(gw)
+
+                    self._gallery_open = False
+                    self._tab('img')
+
+                    _close_anim = Animation(
+                        height=collapsed_h,
+                        y=overlay_top - collapsed_h,
+                        duration=0.22,
+                        transition='out_quad')
+
+                    def _close_done(*_):
+                        if gw.parent is overlay_parent:
+                            overlay_parent.remove_widget(gw)
+                        self._gallery_animating = False
+
+                    _close_anim.bind(on_complete=_close_done)
+                    _close_anim.start(gw)
+                    return
+
+                # Fallback hvis overlay-parent ikke finnes.
+                gw.size_hint_y = None
+                gallery_top = gw.top
+
+                def _keep_top(instance, value):
+                    instance.y = gallery_top - value
+
+                gw.bind(height=_keep_top)
                 self._apply_gallery_collapsed_shell(gw)
 
-                def _close_done(*_):
+                def _close_done_fallback(*_):
                     gw.unbind(height=_keep_top)
                     self._gallery_open = False
                     self._tab('img')
@@ -2501,24 +2551,20 @@ try:
                 _close_anim = Animation(
                     height=self._gallery_collapsed_height(),
                     duration=0.22, transition='out_quad')
-                _close_anim.bind(on_complete=_close_done)
+                _close_anim.bind(on_complete=_close_done_fallback)
                 _close_anim.start(gw)
 
             else:
                 # --- AAPNE: utvid til tilgjengelig plass ---
                 # Beregn maalhoyde: content.height minus alle faste widgets.
-                # gallery_wrap er eneste proportional child, saa den faar
-                # all gjenstaaende plass:
-                #   preview_box(240) + title_lbl(28) + img_lbl(20)
-                #   + bunn-spacer(8) + 4 mellomrom * dp(6) = 320 dp fast.
-                _preview_h    = dp(240)
-                _title_h      = dp(28)
-                _img_lbl_h    = dp(20)
-                _spacer_h     = dp(8)
-                _n_spacings   = 4
-                fixed = (_preview_h + _title_h + _img_lbl_h + _spacer_h
-                         + dp(6) * _n_spacings)
-                target_h = max(self.content.height - fixed, dp(80))
+                gw.size_hint_y = None
+                gallery_top = gw.top
+
+                def _keep_top(instance, value):
+                    instance.y = gallery_top - value
+
+                gw.bind(height=_keep_top)
+                target_h = self._gallery_open_target_height()
 
                 def _open_done(*_):
                     gw.unbind(height=_keep_top)
