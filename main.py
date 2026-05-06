@@ -2316,6 +2316,7 @@ try:
                 self.preview.source = self.sel_img
             preview_box.add_widget(self.preview)
             p.add_widget(preview_box)
+            self._img_root = p
             p.add_widget(Label(text="CAMPAIGN FORGE", font_size=sp(18), color=GDIM,
                                bold=True, size_hint_y=None, height=dp(28)))
             self.img_lbl = Label(text="", font_size=sp(12), color=DIM,
@@ -2416,6 +2417,7 @@ try:
                     size_hint_y=None)
                 self.img_grid.bind(
                     minimum_height=self.img_grid.setter('height'))
+            self._gallery_wrap = gallery_wrap
             p.add_widget(gallery_wrap)
             # Liten glippe under boksen så den ikke ligger oppå mini-playeren
             p.add_widget(Widget(size_hint_y=None, height=dp(8)))
@@ -2423,33 +2425,66 @@ try:
             return p
 
         def _toggle_gallery(self, *a):
-            """Aapne/lukke det utvidede galleriet med en kort fade-
-            animasjon for jevnere overgang."""
+            """Aapne/lukke det utvidede galleriet med en kort resize-
+            animasjon i stedet for fade."""
             # Forhindre dobbel-trykk under animasjon
             if getattr(self, '_gallery_animating', False):
                 return
             self._gallery_animating = True
+            old_preview_height = (self.preview_box.height
+                                  if self.preview_box else dp(240))
+            old_gallery = getattr(self, '_gallery_wrap', None)
+            old_gallery_height = (old_gallery.height
+                                  if old_gallery else dp(54))
 
             self._gallery_open = not self._gallery_open
+            self._tab('img')
+            if not self.preview_box or not getattr(self, '_gallery_wrap', None):
+                self._gallery_animating = False
+                return
 
-            def _do_swap(*_):
-                # Bygg fanen paa nytt med ny tilstand, og fade inn
-                self._tab('img')
-                # Reset opacity til 0 saa den kan fades inn fra bunn
-                self.content.opacity = 0
-                fade_in = Animation(opacity=1, duration=0.18,
-                                    transition='out_quad')
+            if self.content:
+                self.content.do_layout()
+            if getattr(self, '_img_root', None):
+                self._img_root.do_layout()
 
-                def _done(*_):
-                    self._gallery_animating = False
-                fade_in.bind(on_complete=_done)
-                fade_in.start(self.content)
+            target_preview_height = self.preview_box.height
+            target_gallery_height = self._gallery_wrap.height
 
-            # Fade ut, deretter rebuild + fade inn
-            fade_out = Animation(opacity=0, duration=0.12,
-                                 transition='in_quad')
-            fade_out.bind(on_complete=_do_swap)
-            fade_out.start(self.content)
+            self.preview_box.size_hint_y = None
+            self.preview_box.height = old_preview_height
+            self._gallery_wrap.size_hint_y = None
+            self._gallery_wrap.height = old_gallery_height
+
+            if self.content:
+                self.content.do_layout()
+            if getattr(self, '_img_root', None):
+                self._img_root.do_layout()
+
+            Animation.cancel_all(self.preview_box, 'height')
+            Animation.cancel_all(self._gallery_wrap, 'height')
+
+            resize_preview = Animation(
+                height=target_preview_height, duration=0.22,
+                transition='out_quad')
+            resize_gallery = Animation(
+                height=target_gallery_height, duration=0.22,
+                transition='out_quad')
+
+            def _done(*_):
+                if self._gallery_open:
+                    self.preview_box.size_hint_y = 0.35
+                    self._gallery_wrap.size_hint_y = 0.55
+                else:
+                    self.preview_box.size_hint_y = None
+                    self.preview_box.height = dp(240)
+                    self._gallery_wrap.size_hint_y = None
+                    self._gallery_wrap.height = dp(54)
+                self._gallery_animating = False
+
+            resize_preview.bind(on_complete=_done)
+            resize_preview.start(self.preview_box)
+            resize_gallery.start(self._gallery_wrap)
 
         def _gallery_image_paths(self):
             """Returnerer sortert liste av bildestier i naavaerende mappe."""
