@@ -2410,69 +2410,100 @@ try:
                 self.img_grid.bind(
                     minimum_height=self.img_grid.setter('height'))
             self._gallery_wrap = gallery_wrap
+            # Galleriet ligger alltid rett under preview-boksen i begge
+            # tilstander, slik at animasjonen starter fra samme Y-posisjon.
+            p.add_widget(gallery_wrap)
+            p.add_widget(title_lbl)
+            p.add_widget(self.img_lbl)
             if self._gallery_open:
-                p.add_widget(title_lbl)
-                p.add_widget(self.img_lbl)
-                p.add_widget(gallery_wrap)
                 # Liten glippe under boksen så den ikke ligger oppå mini-playeren
                 p.add_widget(Widget(size_hint_y=None, height=dp(8)))
             else:
-                # La minigalleriet ligge rett under preview, og la resten
-                # av taben utgjøre luft mot bakgrunnen.
-                p.add_widget(gallery_wrap)
-                p.add_widget(title_lbl)
-                p.add_widget(self.img_lbl)
+                # La resten av taben utgjøre luft mot bakgrunnen.
                 p.add_widget(Widget(size_hint_y=1.0))
             self._load_imgs()
             return p
 
         def _toggle_gallery(self, *a):
-            """Aapne/lukke galleriet ved aa animere kun galleri-boksen."""
+            """Aapne/lukke galleriet ved aa animere kun galleri-boksen.
+
+            Galleri-wrapperen er alltid plassert rett under preview-boksen i
+            begge tilstander, saa vi kan animere den paa stedet uten aa
+            gjenoppbygge hele UIen foerst.  Etter animasjonen rebuildes UIen
+            med korrekt innhold (aapen/lukket).
+
+            Kivy-gotcha: naar `height` endres paa et barn i en BoxLayout vil
+            widgeten vokse OPPOVER (y holdes fast, top = y + height oeker) i
+            ett bilderute-intervall foer layout-triggeren kjoerer.  Vi binder
+            en synkron _keep_top-callback paa height-propertyen slik at y
+            alltid justeres slik at toppen forblir fast – galleriet vokser
+            NEDOVER som forventet.
+            """
             # Forhindre dobbel-trykk under animasjon
             if getattr(self, '_gallery_animating', False):
                 return
             self._gallery_animating = True
-            old_gallery = getattr(self, '_gallery_wrap', None)
-            old_gallery_height = (old_gallery.height
-                                  if old_gallery else dp(54))
 
-            self._gallery_open = not self._gallery_open
-            self._tab('img')
-            if not self.preview_box or not getattr(self, '_gallery_wrap', None):
+            gw = getattr(self, '_gallery_wrap', None)
+            if not gw or not self.content:
+                # Ingen eksisterende galleri-wrapper – bare bytt tilstand
+                self._gallery_open = not self._gallery_open
+                self._tab('img')
                 self._gallery_animating = False
                 return
 
-            if self.content:
-                self.content.do_layout()
-            if getattr(self, '_img_root', None):
-                self._img_root.do_layout()
+            Animation.cancel_all(gw, 'height')
+            # Fjern size_hint slik at vi kan sette height direkte
+            gw.size_hint_y = None
 
-            target_gallery_height = self._gallery_wrap.height
+            # Fest toppen av gallery_wrap under hele animasjonen slik at
+            # widgeten vokser nedover i stedet for oppover.
+            gallery_top = gw.top
 
-            self._gallery_wrap.size_hint_y = None
-            self._gallery_wrap.height = old_gallery_height
+            def _keep_top(instance, value):
+                instance.y = gallery_top - value
 
-            if self.content:
-                self.content.do_layout()
-            if getattr(self, '_img_root', None):
-                self._img_root.do_layout()
+            gw.bind(height=_keep_top)
 
-            Animation.cancel_all(self._gallery_wrap, 'height')
+            if self._gallery_open:
+                # --- LUKKE: collapse til knappehoyde ---
+                def _close_done(*_):
+                    gw.unbind(height=_keep_top)
+                    self._gallery_open = False
+                    self._tab('img')
+                    self._gallery_animating = False
 
-            resize_gallery = Animation(
-                height=target_gallery_height, duration=0.22,
-                transition='out_quad')
+                Animation(
+                    height=dp(54), duration=0.22,
+                    transition='out_quad'
+                ).bind(on_complete=_close_done).start(gw)
 
-            def _done(*_):
-                if self._gallery_open:
-                    self._gallery_wrap.size_hint_y = 0.55
-                else:
-                    self._gallery_wrap.size_hint_y = None
-                    self._gallery_wrap.height = dp(54)
-                self._gallery_animating = False
+            else:
+                # --- AAPNE: utvid til tilgjengelig plass ---
+                # Beregn maalhoyde: content.height minus alle faste widgets.
+                # gallery_wrap er eneste proportional child, saa den faar
+                # all gjenstaaende plass:
+                #   preview_box(240) + title_lbl(28) + img_lbl(20)
+                #   + bunn-spacer(8) + 4 mellomrom * dp(6) = 320 dp fast.
+                _preview_h    = dp(240)
+                _title_h      = dp(28)
+                _img_lbl_h    = dp(20)
+                _spacer_h     = dp(8)
+                _n_spacings   = 4
+                fixed = (_preview_h + _title_h + _img_lbl_h + _spacer_h
+                         + dp(6) * _n_spacings)
+                target_h = max(self.content.height - fixed, dp(80))
 
-            resize_gallery.bind(on_complete=_done)
-            resize_gallery.start(self._gallery_wrap)
+                def _open_done(*_):
+                    gw.unbind(height=_keep_top)
+                    self._gallery_open = True
+                    self._tab('img')
+                    self._gallery_animating = False
+
+                Animation(
+                    height=target_h, duration=0.22,
+                    transition='out_quad'
+                ).bind(on_complete=_open_done).start(gw)
 
         def _gallery_image_paths(self):
             """Returnerer sortert liste av bildestier i naavaerende mappe."""
