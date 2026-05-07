@@ -2301,6 +2301,8 @@ try:
 
         @staticmethod
         def _order_direction(old_key, new_key, order):
+            if old_key is None or new_key is None:
+                return 0
             if old_key == new_key:
                 return 0
             try:
@@ -2313,8 +2315,6 @@ try:
         def _slide_content(self, container, new_widget, direction):
             old_wrap = container.children[0] if container.children else None
             distance = container.width or Window.width or 1
-            if direction not in (-1, 1):
-                direction = 1
 
             new_wrap = FloatLayout(size_hint=(1, 1), pos=(direction * distance, 0))
             new_widget.size_hint = (1, 1)
@@ -2324,6 +2324,10 @@ try:
 
             if old_wrap is None:
                 new_wrap.x = 0
+                return
+            if direction not in (-1, 1):
+                new_wrap.x = 0
+                container.remove_widget(old_wrap)
                 return
 
             out_anim = Animation(x=-direction * distance, duration=0.20, t='out_quad')
@@ -2338,6 +2342,11 @@ try:
             in_anim.start(new_wrap)
 
         def _build_tool_area_content(self, build_fn):
+            """Build content with existing tool-area builders without mutating live UI.
+
+            build_fn may either return a widget or populate self.tool_area directly.
+            This helper stages output in a temporary area and returns the resulting widget.
+            """
             real_area = self.tool_area
             stage_area = FloatLayout(size_hint=(1, 1))
             self.tool_area = stage_area
@@ -2358,6 +2367,8 @@ try:
                 'util': self._mk_util,
             }
             if k in builders:
+                if getattr(self, '_cur_tab', None) == k and self.content.children:
+                    return
                 direction = self._order_direction(
                     getattr(self, '_cur_tab', k), k, self._TAB_ORDER)
                 self._cur_tab = k
@@ -3104,6 +3115,8 @@ try:
 
         def _tool_switch(self, which):
             """Bytt mellom karakterer og initiativ."""
+            if getattr(self, '_tool_sub', None) == which:
+                return
             prev = getattr(self, '_tool_sub', which)
             self._tool_slide_dir = self._order_direction(prev, which, self._TOOL_ORDER)
             self._tool_sub = which
@@ -3184,6 +3197,8 @@ try:
 
         def _util_switch(self, which):
             """Bytt mellom sub-fanene i Verktoey."""
+            if getattr(self, '_util_sub', None) == which:
+                return
             prev = getattr(self, '_util_sub', which)
             self._util_slide_dir = self._order_direction(prev, which, self._UTIL_ORDER)
             self._util_sub = which
