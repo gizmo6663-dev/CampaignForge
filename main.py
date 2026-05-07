@@ -2372,18 +2372,13 @@ try:
             gallery_wrap.add_widget(scroll)
 
         def _gallery_open_target_height(self):
-            # gallery_wrap er eneste proportional child, saa den faar
-            # all gjenstaaende plass:
-            #   preview_box(240) + title_lbl(28) + img_lbl(20)
-            #   + bunn-spacer(8) + 4 mellomrom * dp(6) = 320 dp fast.
-            _preview_h  = dp(240)
-            _title_h    = dp(28)
-            _img_lbl_h  = dp(20)
-            _spacer_h   = dp(8)
-            _n_spacings = 4
-            fixed = (_preview_h + _title_h + _img_lbl_h + _spacer_h
-                     + dp(6) * _n_spacings)
-            return max(self.content.height - fixed, dp(80))
+            fa = getattr(self, '_float_area', None)
+            if fa and fa.height > dp(100):
+                return max(fa.height - dp(4), dp(80))
+            # Fallback before float_area has been laid out
+            _preview_h = dp(240)
+            _spacing   = dp(6) * 2        # two spacings in the outer BoxLayout
+            return max(self.content.height - _preview_h - _spacing - dp(4), dp(80))
 
         def _mk_img(self):
             p = BoxLayout(orientation='vertical', spacing=dp(6))
@@ -2399,112 +2394,104 @@ try:
             preview_box.add_widget(self.preview)
             p.add_widget(preview_box)
             self._img_root = p
-            title_lbl = Label(text="CAMPAIGN FORGE", font_size=sp(18), color=GDIM,
-                              bold=True, size_hint_y=None, height=dp(28),
-                              **SPLASH_FONT_KW)
-            self.img_lbl = Label(text="", font_size=sp(12), color=DIM,
-                                 size_hint_y=None, height=dp(20))
-            # path_lbl er kun synlig i utvidet galleri-header, men maa
-            # alltid eksistere fordi _load_imgs setter .text paa den.
+
+            # Shared header widgets (need to exist even when gallery is collapsed)
             self.path_lbl = Label(text="", font_size=sp(10), color=DIM,
-                                  size_hint_x=0.30,
-                                  halign='left', valign='middle')
-            self.path_lbl.bind(size=lambda w, v:
-                               setattr(w, 'text_size', v))
-            # ac_btn samme – maa eksistere selv om kun synlig i utvidet
+                                  size_hint_x=0.30, halign='left', valign='middle')
+            self.path_lbl.bind(size=lambda w, v: setattr(w, 'text_size', v))
             self.ac_btn = mkbtn(
                 "AC:PA" if self.auto_cast else "AC:AV",
                 self._toggle_ac, accent=True, small=True,
                 size_hint_x=None)
             self.ac_btn.width = dp(72)
 
-            # GALLERI – sammenleggbar boks
-            # Kollapset: kompakt rad med "<", "Galleri", ">"
-            #   Pilene blar gjennom bildene direkte (caster automatisk).
-            # Utvidet: header med Opp/path/AC/Oppdater/lukke + ScrollView + grid
+            # ----------------------------------------------------------------
+            # FloatLayout: text is anchored to the background; gallery floats
+            # on top and slides open/shut without displacing anything below it.
+            # ----------------------------------------------------------------
+            float_area = FloatLayout(size_hint=(1, 1))
+            self._float_area = float_area
+
+            # Title + image label – always at a fixed position at the bottom
+            title_lbl = Label(
+                text="CAMPAIGN FORGE", font_size=sp(18), color=GDIM,
+                bold=True, size_hint=(1, None), height=dp(28),
+                halign='center', **SPLASH_FONT_KW)
+            title_lbl.bind(size=title_lbl.setter('text_size'))
+            self.img_lbl = Label(
+                text="", font_size=sp(12), color=DIM,
+                size_hint=(1, None), height=dp(20),
+                halign='center')
+            self.img_lbl.bind(size=self.img_lbl.setter('text_size'))
+
+            text_box = BoxLayout(
+                orientation='vertical', spacing=dp(4),
+                size_hint=(1, None), height=dp(52),
+                pos_hint={'x': 0, 'y': 0})
+            text_box.add_widget(title_lbl)
+            text_box.add_widget(self.img_lbl)
+            float_area.add_widget(text_box)   # added first → drawn behind gallery
+
+            # Gallery grid (always created; filled by _load_imgs)
+            self.img_grid = GridLayout(
+                cols=3, spacing=dp(6), padding=dp(6), size_hint_y=None)
+            self.img_grid.bind(minimum_height=self.img_grid.setter('height'))
+
             wood_src = (WOOD_OVERRIDE if os.path.exists(WOOD_OVERRIDE)
                         else WOOD_BUNDLED if os.path.exists(WOOD_BUNDLED)
                         else "")
+
             if self._gallery_open:
                 gallery_wrap = WoodPanel(
                     orientation='vertical', spacing=dp(4),
-                    size_hint_y=0.55,
+                    size_hint=(1, None),
+                    pos_hint={'x': 0, 'top': 1},
+                    height=self._gallery_open_target_height(),
                     padding=[dp(6), dp(6), dp(6), dp(6)],
                     wood_source=wood_src,
                     tex_offset_x=0.0,
                     tint_color=[1.0, 0.78, 0.45, 0.14])
-                self.img_grid = GridLayout(
-                    cols=3, spacing=dp(6), padding=dp(6),
-                    size_hint_y=None)
-                self.img_grid.bind(
-                    minimum_height=self.img_grid.setter('height'))
                 self._apply_gallery_open_shell(gallery_wrap)
             else:
-                # Kollapset: kompakt rad
                 gallery_wrap = WoodPanel(
                     orientation='vertical', spacing=0,
-                    size_hint_y=None, height=self._gallery_collapsed_height(),
+                    size_hint=(1, None),
+                    pos_hint={'x': 0, 'top': 1},
+                    height=self._gallery_collapsed_height(),
                     padding=[dp(8), dp(6), dp(8), dp(6)],
                     wood_source=wood_src,
                     tex_offset_x=0.0,
                     tint_color=[1.0, 0.78, 0.45, 0.14])
                 self._apply_gallery_collapsed_shell(gallery_wrap)
-                # Tomt grid – bygges/brukes av _load_imgs for aa cache
-                # bilde-stiene (selv om grid-en ikke vises)
-                self.img_grid = GridLayout(
-                    cols=3, spacing=dp(6), padding=dp(6),
-                    size_hint_y=None)
-                self.img_grid.bind(
-                    minimum_height=self.img_grid.setter('height'))
+
+            float_area.add_widget(gallery_wrap)   # added second → drawn on top of text
             self._gallery_wrap = gallery_wrap
-            # Galleriet ligger alltid rett under preview-boksen i begge
-            # tilstander, slik at animasjonen starter fra samme Y-posisjon.
-            p.add_widget(gallery_wrap)
-            p.add_widget(title_lbl)
-            p.add_widget(self.img_lbl)
-            if self._gallery_open:
-                # Liten glippe under boksen så den ikke ligger oppå mini-playeren
-                p.add_widget(Widget(size_hint_y=None, height=dp(8)))
-            else:
-                # La resten av taben utgjøre luft mot bakgrunnen.
-                p.add_widget(Widget(size_hint_y=1.0))
+            p.add_widget(float_area)
+
             self._load_imgs()
             return p
 
         def _toggle_gallery(self, *a):
-            """Aapne/lukke galleriet ved aa animere kun galleri-boksen.
-
-            Galleri-wrapperen blir i samme layout under hele animasjonen, slik
-            at tittel og status-linje holder seg visuelt festet rett under
-            boksen mens hoyden endres. Innholdet byttes foer/etter animasjonen
-            etter behov, og til slutt rebuildes fanen for riktig sluttlayout.
-            """
-            # Forhindre dobbel-trykk under animasjon
+            """Open/close the gallery by animating gallery_wrap height only.
+            Title and status labels are anchored behind the gallery in a
+            FloatLayout, so they never move during the animation."""
             if getattr(self, '_gallery_animating', False):
                 return
             self._gallery_animating = True
 
             gw = getattr(self, '_gallery_wrap', None)
-            if not gw or not self.content:
-                # Ingen eksisterende galleri-wrapper – bare bytt tilstand
+            fa = getattr(self, '_float_area', None)
+            if not gw or not fa:
                 self._gallery_open = not self._gallery_open
                 self._tab('img')
                 self._gallery_animating = False
                 return
 
             Animation.cancel_all(gw, 'height')
-            parent = gw.parent
-
-            def _relayout(*_):
-                if parent:
-                    parent.do_layout()
 
             if self._gallery_open:
-                gw.size_hint_y = None
-                gw.bind(height=_relayout)
-
+                # ── CLOSE: shrink down to the collapsed bar ──────────────────
                 def _close_done(*_):
-                    gw.unbind(height=_relayout)
                     self._gallery_open = False
                     self._tab('img')
                     self._gallery_animating = False
@@ -2516,16 +2503,12 @@ try:
                 _close_anim.start(gw)
 
             else:
-                # --- AAPNE: utvid til tilgjengelig plass ---
-                # Beregn maalhoyde: content.height minus alle faste widgets.
-                gw.size_hint_y = None
+                # ── OPEN: populate content, then expand to available height ──
                 self._apply_gallery_open_shell(gw)
                 self._load_imgs()
-                gw.bind(height=_relayout)
                 target_h = self._gallery_open_target_height()
 
                 def _open_done(*_):
-                    gw.unbind(height=_relayout)
                     self._gallery_open = True
                     self._tab('img')
                     self._gallery_animating = False
