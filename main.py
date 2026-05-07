@@ -2026,6 +2026,10 @@ try:
 
     # ============================================================
     class CampaignForgeApp(App, ScenariosMixin):
+        _TAB_ORDER = ['img', 'lyd', 'tool', 'util']
+        _TOOL_ORDER = ['chars', 'init']
+        _UTIL_ORDER = ['map', 'rules', 'cast']
+
         def _resolve_theme_backgrounds(self):
             wood_path = None
             if os.path.exists(WOOD_OVERRIDE):
@@ -2206,8 +2210,10 @@ try:
             main.add_widget(tabs)
 
             # HOVEDINNHOLD
-            self.content = RBox(bg_color=BG2)
-            main.add_widget(self.content)
+            content_shell = RBox(bg_color=BG2)
+            self.content = FloatLayout(size_hint=(1, 1))
+            content_shell.add_widget(self.content)
+            main.add_widget(content_shell)
 
             # MINI-PLAYER
             mp = RBox(size_hint_y=None, height=dp(48), spacing=dp(6),
@@ -2259,6 +2265,7 @@ try:
             self.splash.add_widget(splash_text)
             wrapper.add_widget(self.splash)
 
+            self._cur_tab = 'img'
             self._tab('img')
             log("UI built OK")
             Clock.schedule_once(lambda dt: request_android_permissions(), 0.5)
@@ -2292,15 +2299,80 @@ try:
             self._load_tracks()
             self.status.text = f"IP: {MediaServer.ip()}  |  Cast: {'Ja' if CAST_AVAILABLE else 'Nei'}"
 
+        @staticmethod
+        def _order_direction(old_key, new_key, order):
+            if old_key is None or new_key is None:
+                return 0
+            if old_key == new_key:
+                return 0
+            try:
+                old_i = order.index(old_key)
+                new_i = order.index(new_key)
+            except ValueError:
+                return 1
+            return 1 if new_i > old_i else -1
+
+        def _slide_content(self, container, new_widget, direction):
+            old_wrap = container.children[0] if container.children else None
+            distance = container.width or Window.width or 1
+
+            new_wrap = FloatLayout(size_hint=(1, 1), pos=(direction * distance, 0))
+            new_widget.size_hint = (1, 1)
+            new_widget.pos = (0, 0)
+            new_wrap.add_widget(new_widget)
+            container.add_widget(new_wrap)
+
+            if old_wrap is None:
+                new_wrap.x = 0
+                return
+            if direction not in (-1, 1):
+                new_wrap.x = 0
+                container.remove_widget(old_wrap)
+                return
+
+            out_anim = Animation(x=-direction * distance, duration=0.20, t='out_quad')
+            in_anim = Animation(x=0, duration=0.20, t='out_quad')
+
+            def _remove_old(*_):
+                if old_wrap.parent is container:
+                    container.remove_widget(old_wrap)
+
+            out_anim.bind(on_complete=_remove_old)
+            out_anim.start(old_wrap)
+            in_anim.start(new_wrap)
+
+        def _build_tool_area_content(self, build_fn):
+            """Build content with existing tool-area builders without mutating live UI.
+
+            build_fn may either return a widget or populate self.tool_area directly.
+            This helper stages output in a temporary area and returns the resulting widget.
+            """
+            real_area = self.tool_area
+            stage_area = FloatLayout(size_hint=(1, 1))
+            self.tool_area = stage_area
+            try:
+                built = build_fn()
+            finally:
+                self.tool_area = real_area
+            if isinstance(built, Widget):
+                return built
+            if stage_area.children:
+                return stage_area.children[0]
+            return Widget(size_hint=(1, 1))
+
         def _tab(self, k):
-            self.content.clear_widgets()
             builders = {
                 'img': self._mk_img, 'lyd': self._mk_lyd,
                 'tool': self._mk_tool,
                 'util': self._mk_util,
             }
             if k in builders:
-                self.content.add_widget(builders[k]())
+                if getattr(self, '_cur_tab', None) == k and self.content.children:
+                    return
+                direction = self._order_direction(
+                    getattr(self, '_cur_tab', k), k, self._TAB_ORDER)
+                self._cur_tab = k
+                self._slide_content(self.content, builders[k](), direction)
 
         # ---------- BILDER ----------
         def _gallery_collapsed_height(self):
@@ -3035,7 +3107,7 @@ try:
                 spacing=dp(6), padding=[dp(6), 0])
             p.add_widget(self._tool_action_bar)
 
-            self.tool_area = BoxLayout()
+            self.tool_area = FloatLayout()
             p.add_widget(self.tool_area)
 
             self._tool_render_sub()
@@ -3043,6 +3115,10 @@ try:
 
         def _tool_switch(self, which):
             """Bytt mellom karakterer og initiativ."""
+            if getattr(self, '_tool_sub', None) == which:
+                return
+            prev = getattr(self, '_tool_sub', which)
+            self._tool_slide_dir = self._order_direction(prev, which, self._TOOL_ORDER)
             self._tool_sub = which
             self._tool_render_sub()
 
@@ -3059,12 +3135,16 @@ try:
                           small=True, size_hint_x=0.35))
                 self._tool_action_bar.add_widget(
                     mklbl("Karakterer", color=GOLD, size=14, bold=True))
-                self._show_list()
+                new_widget = self._build_tool_area_content(self._show_list)
+                self._slide_content(self.tool_area, new_widget,
+                                    getattr(self, '_tool_slide_dir', 1))
             elif self._tool_sub == 'init':
                 self._tool_action_bar.add_widget(
                     mklbl("Initiativ-tracker", color=GOLD,
                           size=14, bold=True))
-                self._mk_init_tracker()
+                new_widget = self._build_tool_area_content(self._mk_init_tracker)
+                self._slide_content(self.tool_area, new_widget,
+                                    getattr(self, '_tool_slide_dir', 1))
 
         def _mk_util(self):
             """Verktoey-fane med sub-tabs: battlemap, regler og cast."""
@@ -3109,7 +3189,7 @@ try:
                 spacing=dp(6), padding=[dp(6), 0])
             p.add_widget(self._util_action_bar)
 
-            self.tool_area = BoxLayout()
+            self.tool_area = FloatLayout()
             p.add_widget(self.tool_area)
 
             self._util_render_sub()
@@ -3117,28 +3197,35 @@ try:
 
         def _util_switch(self, which):
             """Bytt mellom sub-fanene i Verktoey."""
+            if getattr(self, '_util_sub', None) == which:
+                return
+            prev = getattr(self, '_util_sub', which)
+            self._util_slide_dir = self._order_direction(prev, which, self._UTIL_ORDER)
             self._util_sub = which
             self._util_render_sub()
 
         def _util_render_sub(self):
             """Rendre riktig Verktoey-sub-visning."""
             self._util_action_bar.clear_widgets()
-            self.tool_area.clear_widgets()
             if self._util_sub == 'map':
                 self._util_action_bar.add_widget(
                     mklbl("Battlemap", color=GOLD,
                           size=14, bold=True))
-                self._mk_battle_map()
+                new_widget = self._build_tool_area_content(self._mk_battle_map)
+                self._slide_content(self.tool_area, new_widget,
+                                    getattr(self, '_util_slide_dir', 1))
             elif self._util_sub == 'rules':
                 self._util_action_bar.add_widget(
                     mklbl("Regler", color=GOLD,
                           size=14, bold=True))
-                self.tool_area.add_widget(self._mk_rules())
+                self._slide_content(self.tool_area, self._mk_rules(),
+                                    getattr(self, '_util_slide_dir', 1))
             else:
                 self._util_action_bar.add_widget(
                     mklbl("Cast", color=GOLD,
                           size=14, bold=True))
-                self.tool_area.add_widget(self._mk_cast())
+                self._slide_content(self.tool_area, self._mk_cast(),
+                                    getattr(self, '_util_slide_dir', 1))
 
         # ---------- D&D 5E KARAKTERER ----------
         @staticmethod
