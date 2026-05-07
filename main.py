@@ -468,6 +468,8 @@ try:
             return 1 if new_i > old_i else -1
 
         def _tab(self, k):
+            if getattr(self, '_cur_tab', None) == k and self.content.children:
+                return
             self.content.clear_widgets()
             builders = {
                 'img': self._mk_img,
@@ -476,6 +478,7 @@ try:
                 'util': self._mk_util,
             }
             if k in builders:
+                self._cur_tab = k
                 self.content.add_widget(builders[k]())
 
         def _gallery_collapsed_height(self): return dp(54)
