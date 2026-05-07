@@ -498,7 +498,7 @@ try:
                 pending = getattr(self, '_pending_tab', None)
                 self._pending_tab = None
                 if pending and pending != getattr(self, '_cur_tab', None):
-                    Clock.schedule_once(lambda dt=None, key=pending: self._tab(key), 0)
+                    Clock.schedule_once(lambda dt, key=pending: self._tab(key), 0)
             out_anim.bind(on_complete=_finish)
             out_anim.start(old_wrap)
             in_anim.start(new_wrap)
@@ -513,7 +513,7 @@ try:
                 page.add_widget(root)
                 return page
             if isinstance(root, Widget):
-                log(f"Warning: tab {tab_key} attempted to reuse an attached widget; placeholder created to avoid reparent crash")
+                log(f"Warning: tab {tab_key} attempted to reuse an attached widget; placeholder created to avoid reparent crash. Ensure tab builders return a fresh unattached root widget.")
             page.add_widget(Widget(size_hint=(1, 1)))
             return page
 
