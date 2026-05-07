@@ -2291,6 +2291,7 @@ try:
         def _show_help(self):
             parent = getattr(self, '_wrapper', None) or self.root
             if not parent:
+                log("Help overlay: parent not ready, cannot show help yet")
                 return
 
             existing = getattr(self, '_help_overlay', None)
