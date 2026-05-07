@@ -2342,6 +2342,35 @@ try:
             gallery_wrap.tint_color = [1.0, 0.78, 0.45, 0.14]
             gallery_wrap.add_widget(self._gallery_collapsed_content())
 
+        def _apply_gallery_open_shell(self, gallery_wrap):
+            gallery_wrap.clear_widgets()
+            gallery_wrap.orientation = 'vertical'
+            gallery_wrap.spacing = dp(4)
+            gallery_wrap.padding = [dp(6), dp(6), dp(6), dp(6)]
+            gallery_wrap.tex_offset_x = 0.0
+            gallery_wrap.tint_color = [1.0, 0.78, 0.45, 0.14]
+
+            gh = BoxLayout(size_hint_y=None, height=dp(40), spacing=dp(4))
+            gh.add_widget(mkbtn(
+                "Opp", self.folder_up, small=True,
+                size_hint_x=None, width=dp(54)))
+            gh.add_widget(self.path_lbl)
+            gh.add_widget(self.ac_btn)
+            gh.add_widget(mkbtn(
+                "Oppdater", self._load_imgs, small=True,
+                size_hint_x=None, width=dp(80)))
+            gh.add_widget(mkbtn(
+                "x", self._toggle_gallery,
+                danger=True, small=True,
+                size_hint_x=None, width=dp(40)))
+            gallery_wrap.add_widget(gh)
+
+            scroll = ScrollView()
+            if self.img_grid.parent:
+                self.img_grid.parent.remove_widget(self.img_grid)
+            scroll.add_widget(self.img_grid)
+            gallery_wrap.add_widget(scroll)
+
         def _gallery_open_target_height(self):
             # gallery_wrap er eneste proportional child, saa den faar
             # all gjenstaaende plass:
@@ -2371,7 +2400,8 @@ try:
             p.add_widget(preview_box)
             self._img_root = p
             title_lbl = Label(text="CAMPAIGN FORGE", font_size=sp(18), color=GDIM,
-                              bold=True, size_hint_y=None, height=dp(28))
+                              bold=True, size_hint_y=None, height=dp(28),
+                              **SPLASH_FONT_KW)
             self.img_lbl = Label(text="", font_size=sp(12), color=DIM,
                                  size_hint_y=None, height=dp(20))
             # path_lbl er kun synlig i utvidet galleri-header, men maa
@@ -2403,32 +2433,12 @@ try:
                     wood_source=wood_src,
                     tex_offset_x=0.0,
                     tint_color=[1.0, 0.78, 0.45, 0.14])
-                # Header-rad: Opp + path + AC + Oppdater + lukke
-                gh = BoxLayout(size_hint_y=None, height=dp(40),
-                               spacing=dp(4))
-                gh.add_widget(mkbtn(
-                    "Opp", self.folder_up, small=True,
-                    size_hint_x=None, width=dp(54)))
-                gh.add_widget(self.path_lbl)
-                gh.add_widget(self.ac_btn)
-                gh.add_widget(mkbtn(
-                    "Oppdater", self._load_imgs, small=True,
-                    size_hint_x=None, width=dp(80)))
-                close_btn = mkbtn(
-                    "x", self._toggle_gallery,
-                    danger=True, small=True,
-                    size_hint_x=None, width=dp(40))
-                gh.add_widget(close_btn)
-                gallery_wrap.add_widget(gh)
-                # Selve grid-et
-                scroll = ScrollView()
                 self.img_grid = GridLayout(
                     cols=3, spacing=dp(6), padding=dp(6),
                     size_hint_y=None)
                 self.img_grid.bind(
                     minimum_height=self.img_grid.setter('height'))
-                scroll.add_widget(self.img_grid)
-                gallery_wrap.add_widget(scroll)
+                self._apply_gallery_open_shell(gallery_wrap)
             else:
                 # Kollapset: kompakt rad
                 gallery_wrap = WoodPanel(
@@ -2490,60 +2500,18 @@ try:
                 return
 
             Animation.cancel_all(gw, 'height')
+            parent = gw.parent
+
+            def _relayout(*_):
+                if parent:
+                    parent.do_layout()
 
             if self._gallery_open:
-                # --- LUKKE: animer aapen boks som overlay saa resten av UI-en
-                # ikke "ruller" mens galleriet kollapser oppover.
-                root = getattr(self, '_img_root', None) or self.content
-                while root.parent and not isinstance(root.parent, FloatLayout):
-                    root = root.parent
-                overlay_parent = root.parent if isinstance(root.parent, FloatLayout) else root
-
-                if overlay_parent:
-                    old_w, old_h = gw.size
-                    win_x, win_y = gw.to_window(0, 0)
-                    overlay_x, overlay_y = overlay_parent.to_widget(
-                        win_x, win_y, relative=True)
-                    overlay_top = overlay_y + old_h
-                    collapsed_h = self._gallery_collapsed_height()
-
-                    if gw.parent:
-                        gw.parent.remove_widget(gw)
-                    gw.size_hint = (None, None)
-                    gw.size = (old_w, old_h)
-                    gw.pos = (overlay_x, overlay_y)
-                    overlay_parent.add_widget(gw)
-
-                    self._gallery_open = False
-                    self._tab('img')
-
-                    _close_anim = Animation(
-                        height=collapsed_h,
-                        y=overlay_top - collapsed_h,
-                        duration=0.22,
-                        transition='out_quad')
-
-                    def _close_done(*_):
-                        if gw.parent is overlay_parent:
-                            overlay_parent.remove_widget(gw)
-                        self._gallery_animating = False
-
-                    _close_anim.bind(on_complete=_close_done)
-                    _close_anim.start(gw)
-                    return
-
-                # Fallback hvis overlay-parent ikke finnes.
                 gw.size_hint_y = None
-                gallery_top = gw.top
-
-                def _keep_top(instance, value):
-                    instance.y = gallery_top - value
-
-                gw.bind(height=_keep_top)
-                self._apply_gallery_collapsed_shell(gw)
+                gw.bind(height=_relayout)
 
                 def _close_done_fallback(*_):
-                    gw.unbind(height=_keep_top)
+                    gw.unbind(height=_relayout)
                     self._gallery_open = False
                     self._tab('img')
                     self._gallery_animating = False
@@ -2558,16 +2526,13 @@ try:
                 # --- AAPNE: utvid til tilgjengelig plass ---
                 # Beregn maalhoyde: content.height minus alle faste widgets.
                 gw.size_hint_y = None
-                gallery_top = gw.top
-
-                def _keep_top(instance, value):
-                    instance.y = gallery_top - value
-
-                gw.bind(height=_keep_top)
+                self._apply_gallery_open_shell(gw)
+                self._load_imgs()
+                gw.bind(height=_relayout)
                 target_h = self._gallery_open_target_height()
 
                 def _open_done(*_):
-                    gw.unbind(height=_keep_top)
+                    gw.unbind(height=_relayout)
                     self._gallery_open = True
                     self._tab('img')
                     self._gallery_animating = False
