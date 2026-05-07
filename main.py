@@ -2026,6 +2026,8 @@ try:
 
     # ============================================================
     class CampaignForgeApp(App, ScenariosMixin):
+        _TAB_ORDER = ['img', 'lyd', 'tool', 'util']
+
         def _resolve_theme_backgrounds(self):
             wood_path = None
             if os.path.exists(WOOD_OVERRIDE):
@@ -2292,15 +2294,40 @@ try:
             self._load_tracks()
             self.status.text = f"IP: {MediaServer.ip()}  |  Cast: {'Ja' if CAST_AVAILABLE else 'Nei'}"
 
-        def _tab(self, k):
+        @staticmethod
+        def _order_direction(old_key, new_key, order):
+            if old_key not in order or new_key not in order:
+                return 0
+            old_idx = order.index(old_key)
+            new_idx = order.index(new_key)
+            if new_idx > old_idx:
+                return 1
+            if new_idx < old_idx:
+                return -1
+            return 0
+
+        def _slide_tab(self, new_widget, direction):
+            if direction == 0:
+                self.content.clear_widgets()
+                self.content.add_widget(new_widget)
+                return
             self.content.clear_widgets()
+            new_widget.opacity = 0
+            self.content.add_widget(new_widget)
+            Animation(opacity=1, duration=0.18).start(new_widget)
+
+        def _tab(self, k):
             builders = {
                 'img': self._mk_img, 'lyd': self._mk_lyd,
                 'tool': self._mk_tool,
                 'util': self._mk_util,
             }
             if k in builders:
-                self.content.add_widget(builders[k]())
+                if getattr(self, '_cur_tab', None) == k and self.content.children:
+                    return
+                direction = self._order_direction(getattr(self, '_cur_tab', None), k, self._TAB_ORDER)
+                self._cur_tab = k
+                self._slide_tab(builders[k](), direction)
 
         # ---------- BILDER ----------
         def _gallery_collapsed_height(self):
