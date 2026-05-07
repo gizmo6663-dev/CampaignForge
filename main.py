@@ -299,6 +299,7 @@ try:
 
     class CampaignForgeApp(App, ScenariosMixin):
         _TAB_ORDER = ['img', 'lyd', 'tool', 'util']
+        _TAB_BUILDERS = {'img': '_mk_img', 'lyd': '_mk_lyd', 'tool': '_mk_tool', 'util': '_mk_util'}
         _TOOL_ORDER = ['chars', 'init']
         _UTIL_ORDER = ['map', 'rules', 'cast']
 
@@ -469,6 +470,7 @@ try:
             return 1 if new_i > old_i else -1
 
         def _slide_content(self, container, new_wrap, direction):
+            """Slide old top-level tab wrapper out while the new wrapper glides in."""
             old_wrap = getattr(self, '_active_tab_wrap', None)
             if old_wrap and old_wrap.parent is not container:
                 old_wrap = None
@@ -511,7 +513,7 @@ try:
                 page.add_widget(root)
                 return page
             if isinstance(root, Widget):
-                log(f"Tab build for {tab_key} ignored attached widget to avoid reparent crash")
+                log(f"Warning: tab {tab_key} attempted to reuse an attached widget; placeholder created to avoid reparent crash")
             page.add_widget(Widget(size_hint=(1, 1)))
             return page
 
@@ -519,8 +521,7 @@ try:
             if getattr(self, '_tab_animating', False):
                 self._pending_tab = k
                 return
-            builder_names = {'img': '_mk_img', 'lyd': '_mk_lyd', 'tool': '_mk_tool', 'util': '_mk_util'}
-            builder_name = builder_names.get(k)
+            builder_name = self._TAB_BUILDERS.get(k)
             if not builder_name:
                 return
             builder = getattr(self, builder_name, None)
