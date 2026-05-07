@@ -2027,6 +2027,7 @@ try:
     # ============================================================
     class CampaignForgeApp(App, ScenariosMixin):
         _TAB_ORDER = ['img', 'lyd', 'tool', 'util']
+        _TAB_FADE_DURATION = 0.18
 
         def _resolve_theme_backgrounds(self):
             wood_path = None
@@ -2296,6 +2297,7 @@ try:
 
         @staticmethod
         def _order_direction(old_key, new_key, order):
+            """Return tab movement direction: -1 (left), 1 (right), 0 (none/unknown)."""
             if old_key not in order or new_key not in order:
                 return 0
             old_idx = order.index(old_key)
@@ -2307,6 +2309,7 @@ try:
             return 0
 
         def _slide_tab(self, new_widget, direction):
+            """Render tab content with a safe fade transition when direction is non-zero."""
             if direction == 0:
                 self.content.clear_widgets()
                 self.content.add_widget(new_widget)
@@ -2314,7 +2317,7 @@ try:
             self.content.clear_widgets()
             new_widget.opacity = 0
             self.content.add_widget(new_widget)
-            Animation(opacity=1, duration=0.18).start(new_widget)
+            Animation(opacity=1, duration=self._TAB_FADE_DURATION).start(new_widget)
 
         def _tab(self, k):
             builders = {
