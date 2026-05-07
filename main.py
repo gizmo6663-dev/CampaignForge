@@ -298,8 +298,6 @@ try:
             if self.snd: self.snd.volume = v
 
     class CampaignForgeApp(App, ScenariosMixin):
-        _TAB_ORDER = ['img', 'lyd', 'tool', 'util']
-        _TAB_BUILDERS = {'img': '_mk_img', 'lyd': '_mk_lyd', 'tool': '_mk_tool', 'util': '_mk_util'}
         _TOOL_ORDER = ['chars', 'init']
         _UTIL_ORDER = ['map', 'rules', 'cast']
 
@@ -469,70 +467,16 @@ try:
                 return 1
             return 1 if new_i > old_i else -1
 
-        def _slide_content(self, container, new_wrap, direction):
-            """Slide old top-level tab wrapper out while the new wrapper glides in."""
-            old_wrap = getattr(self, '_active_tab_wrap', None)
-            if old_wrap and old_wrap.parent is not container:
-                old_wrap = None
-            distance = container.width or Window.width or 1
-            new_wrap.pos = (direction * distance, 0)
-            container.add_widget(new_wrap)
-            self._active_tab_wrap = new_wrap
-            if old_wrap is None:
-                new_wrap.x = 0
-                self._tab_animating = False
-                return
-            if direction not in (-1, 1):
-                new_wrap.x = 0
-                if old_wrap.parent is container:
-                    container.remove_widget(old_wrap)
-                self._tab_animating = False
-                return
-            self._tab_animating = True
-            out_anim = Animation(x=-direction * distance, duration=0.20, t='out_quad')
-            in_anim = Animation(x=0, duration=0.20, t='out_quad')
-            def _finish(*_):
-                if old_wrap.parent is container:
-                    container.remove_widget(old_wrap)
-                self._tab_animating = False
-                pending = getattr(self, '_pending_tab', None)
-                self._pending_tab = None
-                if pending and pending != getattr(self, '_cur_tab', None):
-                    Clock.schedule_once(lambda dt, key=pending: self._tab(key), 0)
-            out_anim.bind(on_complete=_finish)
-            out_anim.start(old_wrap)
-            in_anim.start(new_wrap)
-
-        def _build_tab_content(self, build_fn, tab_key=None):
-            """Build a tab page in isolation so we never reparent live widgets."""
-            root = build_fn()
-            page = FloatLayout(size_hint=(1, 1))
-            if isinstance(root, Widget) and root.parent is None:
-                root.size_hint = (1, 1)
-                root.pos = (0, 0)
-                page.add_widget(root)
-                return page
-            if isinstance(root, Widget):
-                log(f"Warning: tab {tab_key} attempted to reuse an attached widget; placeholder created to avoid reparent crash. Ensure tab builders return a fresh unattached root widget.")
-            page.add_widget(Widget(size_hint=(1, 1)))
-            return page
-
         def _tab(self, k):
-            if getattr(self, '_tab_animating', False):
-                self._pending_tab = k
-                return
-            builder_name = self._TAB_BUILDERS.get(k)
-            if not builder_name:
-                return
-            builder = getattr(self, builder_name, None)
-            if not callable(builder):
-                return
-            if getattr(self, '_cur_tab', None) == k and self.content.children:
-                return
-            direction = self._order_direction(getattr(self, '_cur_tab', k), k, self._TAB_ORDER)
-            self._cur_tab = k
-            new_widget = self._build_tab_content(builder, tab_key=k)
-            self._slide_content(self.content, new_widget, direction)
+            self.content.clear_widgets()
+            builders = {
+                'img': self._mk_img,
+                'lyd': self._mk_lyd,
+                'tool': self._mk_tool,
+                'util': self._mk_util,
+            }
+            if k in builders:
+                self.content.add_widget(builders[k]())
 
         def _gallery_collapsed_height(self): return dp(54)
 
