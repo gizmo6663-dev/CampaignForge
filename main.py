@@ -793,8 +793,37 @@ try:
         def _tool_switch(self, which):
             if getattr(self, '_tool_sub', None) == which: return
             prev = getattr(self, '_tool_sub', which); self._tool_slide_dir = self._order_direction(prev, which, self._TOOL_ORDER); self._tool_sub = which; self._tool_render_sub()
-        def _tool_render_sub(self): pass
-        def _util_render_sub(self): pass
+        def _tool_render_sub(self):
+            if self._tool_sub == 'chars': self._show_list()
+            else: self._mk_init_tracker()
+
+        def _mk_util(self):
+            if not hasattr(self, '_util_sub'): self._util_sub = 'rules'
+            elif self._util_sub not in ('map', 'rules', 'cast'): self._util_sub = 'rules'
+            p = BoxLayout(orientation='vertical', spacing=dp(6))
+            sub_bar = RBox(size_hint_y=None, height=dp(42), spacing=dp(4), padding=[dp(6), dp(4)], bg_color=BTN, radius=dp(10))
+            def _mk_util_sub(key, label):
+                act = self._util_sub == key
+                b = RTab(text=label, group='util_sub', state='down' if act else 'normal', bg_color=BTNH if act else BTN, color=GOLD if act else DIM, font_size=sp(11), bold=True)
+                def _on_state(btn, st):
+                    if st == 'down': btn.bg_color = BTNH; btn.color = GOLD
+                    else: btn.bg_color = BTN; btn.color = DIM
+                b.bind(state=_on_state); b.bind(on_release=lambda btn, k=key: self._util_switch(k)); return b
+            sub_bar.add_widget(_mk_util_sub('map', 'Kart')); sub_bar.add_widget(_mk_util_sub('rules', 'Regler')); sub_bar.add_widget(_mk_util_sub('cast', 'Cast')); p.add_widget(sub_bar)
+            self.util_area = FloatLayout(); p.add_widget(self.util_area)
+            self._util_render_sub(); return p
+
+        def _util_switch(self, which):
+            if getattr(self, '_util_sub', None) == which: return
+            prev = getattr(self, '_util_sub', which); self._util_slide_dir = self._order_direction(prev, which, self._UTIL_ORDER); self._util_sub = which; self._util_render_sub()
+        def _util_render_sub(self):
+            self.util_area.clear_widgets()
+            if self._util_sub == 'rules':
+                self.util_area.add_widget(self._mk_rules())
+            elif self._util_sub == 'cast':
+                self.util_area.add_widget(self._mk_cast())
+            else:
+                box = BoxLayout(orientation='vertical', size_hint=(1, 1)); box.add_widget(mklbl("Kart (kommer snart)", color=DIM, size=12, h=50)); self.util_area.add_widget(box)
 
         def _show_list(self):
             self.tool_area.clear_widgets(); scroll = ScrollView(); g = GridLayout(cols=1, spacing=dp(6), padding=dp(6), size_hint_y=None); g.bind(minimum_height=g.setter('height'))
