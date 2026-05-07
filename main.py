@@ -2448,7 +2448,7 @@ try:
                     wood_source=wood_src,
                     tex_offset_x=0.0,
                     tint_color=[1.0, 0.78, 0.45, 0.14])
-                gallery_wrap.add_widget(self._gallery_collapsed_content())
+                self._apply_gallery_collapsed_shell(gallery_wrap)
                 # Tomt grid – bygges/brukes av _load_imgs for aa cache
                 # bilde-stiene (selv om grid-en ikke vises)
                 self.img_grid = GridLayout(
@@ -2474,17 +2474,10 @@ try:
         def _toggle_gallery(self, *a):
             """Aapne/lukke galleriet ved aa animere kun galleri-boksen.
 
-            Galleri-wrapperen er alltid plassert rett under preview-boksen i
-            begge tilstander, saa vi kan animere den paa stedet uten aa
-            gjenoppbygge hele UIen foerst.  Etter animasjonen rebuildes UIen
-            med korrekt innhold (aapen/lukket).
-
-            Kivy-gotcha: naar `height` endres paa et barn i en BoxLayout vil
-            widgeten vokse OPPOVER (y holdes fast, top = y + height oeker) i
-            ett bilderute-intervall foer layout-triggeren kjoerer.  Vi binder
-            en synkron _keep_top-callback paa height-propertyen slik at y
-            alltid justeres slik at toppen forblir fast – galleriet vokser
-            NEDOVER som forventet.
+            Galleri-wrapperen blir i samme layout under hele animasjonen, slik
+            at tittel og status-linje holder seg visuelt festet rett under
+            boksen mens hoyden endres. Innholdet byttes foer/etter animasjonen
+            etter behov, og til slutt rebuildes fanen for riktig sluttlayout.
             """
             # Forhindre dobbel-trykk under animasjon
             if getattr(self, '_gallery_animating', False):
@@ -2510,7 +2503,7 @@ try:
                 gw.size_hint_y = None
                 gw.bind(height=_relayout)
 
-                def _close_done_fallback(*_):
+                def _close_done(*_):
                     gw.unbind(height=_relayout)
                     self._gallery_open = False
                     self._tab('img')
@@ -2519,7 +2512,7 @@ try:
                 _close_anim = Animation(
                     height=self._gallery_collapsed_height(),
                     duration=0.22, transition='out_quad')
-                _close_anim.bind(on_complete=_close_done_fallback)
+                _close_anim.bind(on_complete=_close_done)
                 _close_anim.start(gw)
 
             else:
