@@ -2155,6 +2155,7 @@ try:
 
             # FloatLayout som rot – lar oss legge splash oppå
             wrapper = FloatLayout()
+            self._wrapper = wrapper
 
             # === BAKGRUNNSLAG (bakerst først, fremst sist) ===
             # 1) dark-wood.png – heldekkende tekstur som dekker hele skjermen.
@@ -2262,6 +2263,13 @@ try:
             self.splash.add_widget(splash_text)
             wrapper.add_widget(self.splash)
 
+            self.help_btn = mkbtn(
+                "Hjelp", self._show_help, danger=False, small=True,
+                size_hint=(None, None), pos_hint={'x': 0.01, 'y': 0.01})
+            self.help_btn.width = dp(72)
+            self.help_btn.height = dp(34)
+            wrapper.add_widget(self.help_btn)
+
             self._tab('img')
             log("UI built OK")
             Clock.schedule_once(lambda dt: request_android_permissions(), 0.5)
@@ -2279,6 +2287,83 @@ try:
                     self.splash = None
                 anim.bind(on_complete=_remove)
                 anim.start(self.splash)
+
+        def _show_help(self):
+            parent = getattr(self, '_wrapper', None) or self.root
+            if not parent:
+                return
+
+            existing = getattr(self, '_help_overlay', None)
+            if existing and existing.parent:
+                return
+
+            from kivy.graphics import Color as _C, Rectangle as _R
+
+            overlay = FloatLayout(size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
+            with overlay.canvas.before:
+                _C(0, 0, 0, 0.82)
+                bg_rect = _R(pos=overlay.pos, size=overlay.size)
+            overlay.bind(pos=lambda w, v: setattr(bg_rect, 'pos', w.pos),
+                         size=lambda w, v: setattr(bg_rect, 'size', w.size))
+
+            card = RBox(
+                orientation='vertical',
+                size_hint=(0.94, 0.88),
+                pos_hint={'center_x': 0.5, 'center_y': 0.5},
+                padding=[dp(12), dp(12)],
+                spacing=dp(8),
+                bg_color=BG,
+                radius=dp(14))
+
+            card.add_widget(mklbl("Hjelp", color=GOLD, size=FONT_H1, bold=True, h=30))
+            card.add_widget(mksep(6))
+
+            scroll = ScrollView(size_hint=(1, 1))
+            body = GridLayout(cols=1, size_hint_y=None, spacing=dp(8), padding=[dp(4), 0])
+            body.bind(minimum_height=body.setter('height'))
+
+            sections = [
+                ("Bilder",
+                 "Bla gjennom bilder på enheten. Trykk på et bilde for å vise det i forhåndsvisningen. Bruk «<» og «>» for å bla mellom bilder uten å åpne galleriet. Trykk «Galleri» for å åpne fullverdig filbrowser med mappestøtte."),
+                ("Auto-Cast (AC:PA / AC:AV)",
+                 "Når AC er PÅ, sendes valgt bilde automatisk til tilkoblet Chromecast-enhet. Skru av med AC:AV hvis du vil bla uten å caste."),
+                ("Lyd",
+                 "Fire kategorier: Musikk, Ambient, One-shot og Scenarier.\n\n• Musikk: spill av lokale lydfiler fra Dokumenter/CampaignForge/music/\n• Ambient: strøm atmosfærelyder fra nett\n• One-shot: spill av enkeltlyder (effekter, terningkast osv.)\n• Scenarier: forhåndsdefinerte lydpakker for kampanjer"),
+                ("Karakter",
+                 "To underseksjoner:\n\n• Karakterer: opprett og rediger D&D 5e-karakterark med evner, ferdigheter og HP\n• Initiativ: hold orden på kamptur-rekkefølge. Legg til karakterer og monstre, trykk «Rull» for automatisk initiativ-sortering"),
+                ("Verktøy",
+                 "Tre underseksjoner:\n\n• Kart: battlemap med tokenstøtte (kommer)\n• Regler: rask-referanse for D&D 5e regler\n• Cast: koble til og styr Chromecast-enheter"),
+                ("Mini-spiller (bunn)",
+                 "Viser nåværende musikk. «<<» og «>>» bytter spor. «Play»/«Pause» starter og stopper avspilling. Alltid synlig uavhengig av hvilken fane du er på."),
+                ("Filer og mapper",
+                 "Appen leser filer fra:\n• Bilder: Dokumenter/CampaignForge/images/\n• Musikk: Dokumenter/CampaignForge/music/\n• One-shots: Dokumenter/CampaignForge/oneshots/\n\nLag undermapper for å organisere innhold per scenario."),
+            ]
+
+            for title, text in sections:
+                body.add_widget(mklbl(title, color=GOLD, size=FONT_H2, bold=True, h=24))
+                body.add_widget(mklbl(text, color=TXT, size=FONT_BODY, wrap=True))
+                body.add_widget(mksep(8))
+
+            scroll.add_widget(body)
+            card.add_widget(scroll)
+
+            close_row = BoxLayout(size_hint_y=None, height=dp(42), spacing=dp(8))
+            close_row.add_widget(Widget())
+            close_row.add_widget(mkbtn("Lukk", self._close_help, danger=False,
+                                       small=True, size_hint=(None, None),
+                                       width=dp(88), height=dp(34)))
+            close_row.add_widget(Widget())
+            card.add_widget(close_row)
+
+            overlay.add_widget(card)
+            self._help_overlay = overlay
+            parent.add_widget(overlay)
+
+        def _close_help(self):
+            overlay = getattr(self, '_help_overlay', None)
+            if overlay and overlay.parent:
+                overlay.parent.remove_widget(overlay)
+            self._help_overlay = None
 
         def _tab_color(self, btn, state):
             if state == 'down':
