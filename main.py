@@ -819,6 +819,12 @@ try:
             self.cast.connect(n, cb=lambda ok: setattr(self.cast_lbl, 'text', "Tilkoblet!" if ok else "Feilet"))
         def _dc(self): self.cast.disconnect(); self.cast_lbl.text = "Frakoblet"
 
+        def _init_tracker_init(self):
+            """Initialise state for the initiative tracker (idempotent)."""
+            if not hasattr(self, '_init_phase'):
+                self._init_phase = 'setup'   # 'setup' or 'active'
+                self._init_list = []         # list of dict: {name, init, dex_mod, type, hp}
+
         def _mk_tool(self):
             self._init_tracker_init()
             if not hasattr(self, '_tool_sub'): self._tool_sub = 'chars'
