@@ -496,12 +496,12 @@ try:
                 pending = getattr(self, '_pending_tab', None)
                 self._pending_tab = None
                 if pending and pending != getattr(self, '_cur_tab', None):
-                    Clock.schedule_once(lambda dt, key=pending: self._tab(key), 0)
+                    Clock.schedule_once(lambda dt=None, key=pending: self._tab(key), 0)
             out_anim.bind(on_complete=_finish)
             out_anim.start(old_wrap)
             in_anim.start(new_wrap)
 
-        def _build_tab_content(self, build_fn):
+        def _build_tab_content(self, build_fn, tab_key=None):
             """Build a tab page in isolation so we never reparent live widgets."""
             root = build_fn()
             page = FloatLayout(size_hint=(1, 1))
@@ -511,7 +511,7 @@ try:
                 page.add_widget(root)
                 return page
             if isinstance(root, Widget):
-                log("Tab build ignored attached widget to avoid reparent crash")
+                log(f"Tab build for {tab_key} ignored attached widget to avoid reparent crash")
             page.add_widget(Widget(size_hint=(1, 1)))
             return page
 
@@ -520,14 +520,17 @@ try:
                 self._pending_tab = k
                 return
             builder_names = {'img': '_mk_img', 'lyd': '_mk_lyd', 'tool': '_mk_tool', 'util': '_mk_util'}
-            builder = getattr(self, builder_names.get(k, ''), None)
+            builder_name = builder_names.get(k)
+            if not builder_name:
+                return
+            builder = getattr(self, builder_name, None)
             if not callable(builder):
                 return
             if getattr(self, '_cur_tab', None) == k and self.content.children:
                 return
             direction = self._order_direction(getattr(self, '_cur_tab', k), k, self._TAB_ORDER)
             self._cur_tab = k
-            new_widget = self._build_tab_content(builder)
+            new_widget = self._build_tab_content(builder, tab_key=k)
             self._slide_content(self.content, new_widget, direction)
 
         def _gallery_collapsed_height(self): return dp(54)
