@@ -5694,7 +5694,7 @@ try:
                 self._bm_fog_last_row = row
                 cell_ref = [col, row]
                 action = self._bm_fog_action_pref
-                if action not in ('add', 'remove'):
+                if action is None:
                     action = 'remove' if cell_ref in self._bm_fog else 'add'
                 self._bm_fog_paint_action = action
                 if action == 'remove' and cell_ref in self._bm_fog:
