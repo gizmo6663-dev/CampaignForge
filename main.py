@@ -5096,19 +5096,16 @@ try:
             fog_row = BoxLayout(size_hint_y=None, height=dp(30),
                                 spacing=dp(4))
 
-            def _on_fog_action_state(btn, st):
+            def _on_fog_action_state(btn, st, pref):
                 if st == 'down':
                     btn.bg_color = BTNH
                     btn.color = GOLD
+                    self._bm_fog_action_pref = pref
                 else:
                     btn.bg_color = BTN
                     btn.color = DIM
-
-            def _on_fog_action_press(app, pref, btn):
-                if btn.state == 'down':
-                    app._bm_fog_action_pref = pref
-                elif app._bm_fog_action_pref == pref:
-                    app._bm_fog_action_pref = None
+                    if self._bm_fog_action_pref == pref:
+                        self._bm_fog_action_pref = None
 
             for pref, txt in [('add', '+ Taake'), ('remove', '- Taake')]:
                 active = (self._bm_fog_action_pref == pref)
@@ -5117,9 +5114,8 @@ try:
                             bg_color=BTNH if active else BTN,
                             color=GOLD if active else DIM,
                             font_size=sp(10), bold=True)
-                b.bind(state=_on_fog_action_state)
-                b.bind(on_release=lambda btn, p=pref, app=self:
-                       _on_fog_action_press(app, p, btn))
+                b.bind(state=lambda btn, st, p=pref:
+                       _on_fog_action_state(btn, st, p))
                 fog_row.add_widget(b)
             p.add_widget(fog_row)
 
