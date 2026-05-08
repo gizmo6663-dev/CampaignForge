@@ -5104,11 +5104,11 @@ try:
                     btn.bg_color = BTN
                     btn.color = DIM
 
-            def _on_fog_action_press(pref, btn):
+            def _on_fog_action_press(app, pref, btn):
                 if btn.state == 'down':
-                    self._bm_fog_action_pref = pref
-                elif self._bm_fog_action_pref == pref:
-                    self._bm_fog_action_pref = None
+                    app._bm_fog_action_pref = pref
+                elif app._bm_fog_action_pref == pref:
+                    app._bm_fog_action_pref = None
 
             for pref, txt in [('add', '+ Taake'), ('remove', '- Taake')]:
                 active = (self._bm_fog_action_pref == pref)
@@ -5118,8 +5118,8 @@ try:
                             color=GOLD if active else DIM,
                             font_size=sp(10), bold=True)
                 b.bind(state=_on_fog_action_state)
-                b.bind(on_release=lambda btn, p=pref:
-                       _on_fog_action_press(p, btn))
+                b.bind(on_release=lambda btn, p=pref, app=self:
+                       _on_fog_action_press(app, p, btn))
                 fog_row.add_widget(b)
             p.add_widget(fog_row)
 
@@ -5745,12 +5745,10 @@ try:
             row = int(cy // cell)
             if not (0 <= col < cols and 0 <= row < rows):
                 return
-            last_col = getattr(self, '_bm_fog_last_col', col)
-            last_row = getattr(self, '_bm_fog_last_row', row)
-            if last_col is None:
-                last_col = col
-            if last_row is None:
-                last_row = row
+            last_col = (self._bm_fog_last_col
+                        if self._bm_fog_last_col is not None else col)
+            last_row = (self._bm_fog_last_row
+                        if self._bm_fog_last_row is not None else row)
             changed = False
             for c, r in self._battle_interpolate_cells(last_col, last_row, col, row):
                 if not (0 <= c < cols and 0 <= r < rows):
