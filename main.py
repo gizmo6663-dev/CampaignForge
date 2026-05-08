@@ -2296,9 +2296,10 @@ try:
 
             self.help_btn = mkbtn(
                 "Hjelp", self._show_help, danger=False, small=True,
-                size_hint=(None, None), pos_hint={'x': 0.01, 'y': 0.01})
+                size_hint=(None, None), pos_hint={'x': 0.01})
             self.help_btn.width = dp(72)
             self.help_btn.height = dp(34)
+            self.help_btn.y = dp(27)
             wrapper.add_widget(self.help_btn)
 
             self._tab('img')
@@ -2501,7 +2502,11 @@ try:
             gh.add_widget(mkbtn(
                 "Opp", self.folder_up, small=True,
                 size_hint_x=None, width=dp(54)))
+            if self.path_lbl.parent:
+                self.path_lbl.parent.remove_widget(self.path_lbl)
             gh.add_widget(self.path_lbl)
+            if self.ac_btn.parent:
+                self.ac_btn.parent.remove_widget(self.ac_btn)
             gh.add_widget(self.ac_btn)
             gh.add_widget(mkbtn(
                 "Oppdater", self._load_imgs, small=True,
@@ -2640,7 +2645,7 @@ try:
                 # ── CLOSE: shrink down to the collapsed bar ──────────────────
                 def _close_done(*_):
                     self._gallery_open = False
-                    self._tab('img')
+                    self._apply_gallery_collapsed_shell(gw)
                     self._gallery_animating = False
 
                 _close_anim = Animation(
@@ -2657,7 +2662,6 @@ try:
 
                 def _open_done(*_):
                     self._gallery_open = True
-                    self._tab('img')
                     self._gallery_animating = False
 
                 _open_anim = Animation(height=target_h, duration=0.22, transition='out_quad')
