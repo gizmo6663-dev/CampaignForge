@@ -100,11 +100,32 @@ try:
         """Image-widget for battlemap: konverterer trykk til canvas-px.
 
         touch_cb kalles med (canvas_x, canvas_y) i CANVAS_W x CANVAS_H omraade.
+        move_cb kalles med (canvas_x, canvas_y) ved drag.
+        touch_up_cb kalles uten argumenter ved touch_up.
         Appen selv konverterer til grid-ruter.
         """
-        def __init__(self, touch_cb=None, **kw):
+        def __init__(self, touch_cb=None, move_cb=None, touch_up_cb=None,
+                     **kw):
             super().__init__(**kw)
             self._touch_cb = touch_cb
+            self._move_cb = move_cb
+            self._touch_up_cb = touch_up_cb
+
+        def _canvas_coords(self, touch):
+            """Konverter touch.pos til canvas-koordinater.
+            Returnerer (None, None) ved treff utenfor bildet."""
+            nw, nh = self.norm_image_size
+            if nw <= 0 or nh <= 0:
+                return None, None
+            off_x = self.x + (self.width - nw) / 2.0
+            off_y = self.y + (self.height - nh) / 2.0
+            ix = touch.x - off_x
+            iy = touch.y - off_y
+            if ix < 0 or iy < 0 or ix > nw or iy > nh:
+                return None, None
+            cx = ix * CANVAS_W / nw
+            cy = (nh - iy) * CANVAS_H / nh
+            return cx, cy
 
         def on_touch_down(self, touch):
             if not self.collide_point(*touch.pos):
@@ -114,31 +135,41 @@ try:
             if not self._touch_cb:
                 log("BMImage: ingen touch_cb satt!")
                 return False
-            nw, nh = self.norm_image_size
-            log(f"BMImage: touch IN. norm_size={nw}x{nh}, "
-                f"widget=({self.x},{self.y},{self.width}x{self.height})")
-            if nw <= 0 or nh <= 0:
-                log("BMImage: norm_image_size er 0 – bildet er kanskje "
-                    "ikke lastet ennå")
+            cx, cy = self._canvas_coords(touch)
+            if cx is None:
+                log("BMImage: touch utenfor bilde-omraade")
                 return False
-            # Bildet er sentrert i widgeten (keep_ratio=True)
-            off_x = self.x + (self.width - nw) / 2.0
-            off_y = self.y + (self.height - nh) / 2.0
-            ix = touch.x - off_x
-            iy = touch.y - off_y
-            if ix < 0 or iy < 0 or ix > nw or iy > nh:
-                log(f"BMImage: touch utenfor bilde-omraade "
-                    f"(ix={ix:.0f}, iy={iy:.0f})")
-                return False
-            # Skaler til CANVAS-koord, flip y (Kivy origo nede, PIL oppe)
-            cx = ix * CANVAS_W / nw
-            cy = (nh - iy) * CANVAS_H / nh
             log(f"BMImage: TOUCH OK -> canvas=({cx:.0f},{cy:.0f})")
+            touch.grab(self)
             try:
                 self._touch_cb(cx, cy)
             except Exception as e:
                 log(f"BMImage: touch_cb feilet: {e}")
                 log(traceback.format_exc())
+            return True
+
+        def on_touch_move(self, touch):
+            if touch.grab_current is not self:
+                return False
+            if not self._move_cb:
+                return True
+            cx, cy = self._canvas_coords(touch)
+            if cx is not None:
+                try:
+                    self._move_cb(cx, cy)
+                except Exception as e:
+                    log(f"BMImage: move_cb feilet: {e}")
+            return True
+
+        def on_touch_up(self, touch):
+            if touch.grab_current is not self:
+                return False
+            touch.ungrab(self)
+            if self._touch_up_cb:
+                try:
+                    self._touch_up_cb()
+                except Exception as e:
+                    log(f"BMImage: touch_up_cb feilet: {e}")
             return True
     # === D&D 5E 2024 KARAKTERFELT ===
     DND_ABILITIES = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']
@@ -4953,6 +4984,8 @@ try:
             self._bm_last_info = ""
             self._bm_cast_counter = 0
             self._bm_cast_live = False
+            self._bm_fog_paint_action = None   # 'add' eller 'remove' under en malingsgest
+            self._bm_fog_painted = set()       # (col,row)-tupler allerede behandlet denne gesten
             self._bm_render_rev = 0
             self._bm_display_png = BATTLE_PNG
             if (PIL_OK and self._bm_bg and self._bm_bg != BATTLE_BG_PNG
@@ -5066,7 +5099,9 @@ try:
                 allow_stretch=True,
                 keep_ratio=True,
                 nocache=True,  # force reload ved endring
-                touch_cb=self._battle_on_map_touch)
+                touch_cb=self._battle_on_map_touch,
+                move_cb=self._battle_on_map_move,
+                touch_up_cb=self._battle_on_map_touch_up)
             map_box.add_widget(self._bm_img)
             p.add_widget(map_box)
 
@@ -5530,6 +5565,18 @@ try:
                 self._bm_img.reload()
             self._battle_sync_cast_if_live()
 
+        def _battle_refresh_img_no_cast(self):
+            """Rerender + reload Kivy-bildet UTEN aa sende til TV.
+            Brukes under taake-maling saa DM ser endringene live,
+            men spillerne ser ingenting foer DM trykker 'Oppdater cast'."""
+            self._battle_render()
+            if hasattr(self, '_bm_img') and self._bm_img:
+                src = getattr(self, '_bm_display_png', BATTLE_PNG)
+                if self._bm_img.source != src:
+                    self._bm_img.source = src
+                self._bm_img.reload()
+            # _battle_sync_cast_if_live() kalles IKKE her
+
         def _battle_sync_cast_if_live(self):
             """Oppdaterer TV automatisk hvis battlemap allerede er castet."""
             if not getattr(self, '_bm_cast_live', False):
@@ -5603,9 +5650,53 @@ try:
             if self._bm_mode == 'move':
                 self._battle_handle_move_tap(col, row)
             elif self._bm_mode == 'fog':
-                self._battle_toggle_fog(col, row)
+                # Start ny malingsgest – bestem retning fra foerste rutes tilstand
+                self._bm_fog_painted = {(col, row)}
+                cell_ref = [col, row]
+                if cell_ref in self._bm_fog:
+                    self._bm_fog_paint_action = 'remove'
+                    self._bm_fog.remove(cell_ref)
+                else:
+                    self._bm_fog_paint_action = 'add'
+                    self._bm_fog.append(cell_ref)
+                self._battle_save()
+                self._battle_refresh_img_no_cast()
             else:
                 self._battle_handle_measure_tap(col, row)
+
+        def _battle_on_map_move(self, cx, cy):
+            """Behandle drag-bevegelse paa kartet. Kun aktiv i fog-modus."""
+            if self._bm_mode != 'fog':
+                return
+            if self._bm_fog_paint_action is None:
+                return
+            cell = self._battle_cell_size()
+            cols = self._bm_grid_cols
+            rows = self._battle_grid_rows()
+            col = int(cx // cell)
+            row = int(cy // cell)
+            if not (0 <= col < cols and 0 <= row < rows):
+                return
+            key = (col, row)
+            if key in self._bm_fog_painted:
+                return  # allerede behandlet i denne gesten
+            self._bm_fog_painted.add(key)
+            cell_ref = [col, row]
+            changed = False
+            if self._bm_fog_paint_action == 'add' and cell_ref not in self._bm_fog:
+                self._bm_fog.append(cell_ref)
+                changed = True
+            elif self._bm_fog_paint_action == 'remove' and cell_ref in self._bm_fog:
+                self._bm_fog.remove(cell_ref)
+                changed = True
+            if changed:
+                self._battle_save()
+                self._battle_refresh_img_no_cast()
+
+        def _battle_on_map_touch_up(self):
+            """Avslutt malingsgest – nullstill tilstand."""
+            self._bm_fog_paint_action = None
+            self._bm_fog_painted = set()
 
         def _battle_handle_move_tap(self, col, row):
             """Move-modus: valg av token eller flytting."""
@@ -6005,6 +6096,13 @@ try:
                 danger=True, small=True, size_hint_x=0.5))
             g.add_widget(fog_row)
 
+            cast_fog_row = BoxLayout(size_hint_y=None, height=dp(42),
+                                     spacing=dp(6))
+            cast_fog_row.add_widget(mkbtn(
+                "Oppdater cast 📺", self._battle_cast_fog_update,
+                small=True, size_hint_x=1.0))
+            g.add_widget(cast_fog_row)
+
             # SYNLIGHET RUNDT PC-er
             vis_r = self._bm_pc_vis_radius
             vis_lbl_txt = (f"PC-syn: {vis_r} ruter"
@@ -6095,6 +6193,14 @@ try:
             self._bm_fog = []
             self._battle_save()
             self._battle_refresh_img()
+            self._battle_show_menu()
+
+        def _battle_cast_fog_update(self):
+            """Send gjeldende taake-tilstand til TV manuelt.
+            Kalles av 'Oppdater cast'-knappen i menyen."""
+            self._battle_render()          # soerg for at BATTLE_PNG er oppdatert
+            self._battle_sync_cast_if_live()
+            self._battle_update_info("Cast oppdatert med ny taake.")
             self._battle_show_menu()
 
         def _battle_set_pc_vis(self, radius):
