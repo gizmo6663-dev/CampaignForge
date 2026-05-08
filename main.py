@@ -4985,7 +4985,10 @@ try:
             self._bm_cast_counter = 0
             self._bm_cast_live = False
             self._bm_fog_paint_action = None   # 'add' eller 'remove' under en malingsgest
+            self._bm_fog_action_pref = None    # foretrukket taake-aksjon
             self._bm_fog_painted = set()       # (col,row)-tupler allerede behandlet denne gesten
+            self._bm_fog_last_col = None
+            self._bm_fog_last_row = None
             self._bm_render_rev = 0
             self._bm_display_png = BATTLE_PNG
             if (PIL_OK and self._bm_bg and self._bm_bg != BATTLE_BG_PNG
@@ -5063,6 +5066,13 @@ try:
             # MODUS-RAD
             mode_row = BoxLayout(size_hint_y=None, height=dp(40),
                                  spacing=dp(4))
+            def _on_mode_state(btn, st):
+                if st == 'down':
+                    btn.bg_color = BTNH
+                    btn.color = GOLD
+                else:
+                    btn.bg_color = BTN
+                    btn.color = DIM
             for m_key, m_txt in [('move','Flytt'),('fog','Taake'),
                                  ('measure','Maal')]:
                 active = (self._bm_mode == m_key)
@@ -5071,6 +5081,7 @@ try:
                             bg_color=BTNH if active else BTN,
                             color=GOLD if active else DIM,
                             font_size=sp(11), bold=True)
+                b.bind(state=_on_mode_state)
                 b.bind(on_release=lambda x, k=m_key:
                        self._battle_mode_switch(k))
                 mode_row.add_widget(b)
@@ -5080,6 +5091,33 @@ try:
             menu_btn.bind(on_release=lambda b: self._battle_show_menu())
             mode_row.add_widget(menu_btn)
             p.add_widget(mode_row)
+
+            # TAAKE-AKSJON (alltid synlig)
+            fog_row = BoxLayout(size_hint_y=None, height=dp(30),
+                                spacing=dp(4))
+
+            def _on_fog_action_state(btn, st, pref):
+                if st == 'down':
+                    btn.bg_color = BTNH
+                    btn.color = GOLD
+                    self._bm_fog_action_pref = pref
+                else:
+                    btn.bg_color = BTN
+                    btn.color = DIM
+                    if self._bm_fog_action_pref == pref:
+                        self._bm_fog_action_pref = None
+
+            for pref, txt in [('add', '+ Taake'), ('remove', '- Taake')]:
+                active = (self._bm_fog_action_pref == pref)
+                b = RToggle(text=txt, group='bm_fog_action',
+                            state='down' if active else 'normal',
+                            bg_color=BTNH if active else BTN,
+                            color=GOLD if active else DIM,
+                            font_size=sp(10), bold=True)
+                b.bind(state=lambda btn, st, p=pref:
+                       _on_fog_action_state(btn, st, p))
+                fog_row.add_widget(b)
+            p.add_widget(fog_row)
 
             # KARTBILDE (generer og vis)
             self._battle_render()
@@ -5652,17 +5690,43 @@ try:
             elif self._bm_mode == 'fog':
                 # Start ny malingsgest – bestem retning fra foerste rutes tilstand
                 self._bm_fog_painted = {(col, row)}
+                self._bm_fog_last_col = col
+                self._bm_fog_last_row = row
                 cell_ref = [col, row]
-                if cell_ref in self._bm_fog:
-                    self._bm_fog_paint_action = 'remove'
+                action = self._bm_fog_action_pref
+                if action is None:
+                    action = 'remove' if cell_ref in self._bm_fog else 'add'
+                self._bm_fog_paint_action = action
+                if action == 'remove' and cell_ref in self._bm_fog:
                     self._bm_fog.remove(cell_ref)
-                else:
-                    self._bm_fog_paint_action = 'add'
+                elif action == 'add' and cell_ref not in self._bm_fog:
                     self._bm_fog.append(cell_ref)
                 self._battle_save()
                 self._battle_refresh_img_no_cast()
             else:
                 self._battle_handle_measure_tap(col, row)
+
+        def _battle_interpolate_cells(self, c0, r0, c1, r1):
+            """Bresenham – returnerer alle grid-celler mellom to punkter."""
+            cells = []
+            dc = abs(c1 - c0)
+            dr = abs(r1 - r0)
+            sc = 1 if c0 < c1 else -1
+            sr = 1 if r0 < r1 else -1
+            err = dc - dr
+            c, r = c0, r0
+            while True:
+                cells.append((c, r))
+                if c == c1 and r == r1:
+                    break
+                e2 = 2 * err
+                if e2 > -dr:
+                    err -= dr
+                    c += sc
+                if e2 < dc:
+                    err += dc
+                    r += sr
+            return cells
 
         def _battle_on_map_move(self, cx, cy):
             """Behandle drag-bevegelse paa kartet. Kun aktiv i fog-modus."""
@@ -5677,18 +5741,27 @@ try:
             row = int(cy // cell)
             if not (0 <= col < cols and 0 <= row < rows):
                 return
-            key = (col, row)
-            if key in self._bm_fog_painted:
-                return  # allerede behandlet i denne gesten
-            self._bm_fog_painted.add(key)
-            cell_ref = [col, row]
+            last_col = (self._bm_fog_last_col
+                        if self._bm_fog_last_col is not None else col)
+            last_row = (self._bm_fog_last_row
+                        if self._bm_fog_last_row is not None else row)
             changed = False
-            if self._bm_fog_paint_action == 'add' and cell_ref not in self._bm_fog:
-                self._bm_fog.append(cell_ref)
-                changed = True
-            elif self._bm_fog_paint_action == 'remove' and cell_ref in self._bm_fog:
-                self._bm_fog.remove(cell_ref)
-                changed = True
+            for c, r in self._battle_interpolate_cells(last_col, last_row, col, row):
+                if not (0 <= c < cols and 0 <= r < rows):
+                    continue
+                key = (c, r)
+                if key in self._bm_fog_painted:
+                    continue  # allerede behandlet i denne gesten
+                self._bm_fog_painted.add(key)
+                cell_ref = [c, r]
+                if self._bm_fog_paint_action == 'add' and cell_ref not in self._bm_fog:
+                    self._bm_fog.append(cell_ref)
+                    changed = True
+                elif self._bm_fog_paint_action == 'remove' and cell_ref in self._bm_fog:
+                    self._bm_fog.remove(cell_ref)
+                    changed = True
+            self._bm_fog_last_col = col
+            self._bm_fog_last_row = row
             if changed:
                 self._battle_save()
                 self._battle_refresh_img_no_cast()
@@ -5697,6 +5770,8 @@ try:
             """Avslutt malingsgest – nullstill tilstand."""
             self._bm_fog_paint_action = None
             self._bm_fog_painted = set()
+            self._bm_fog_last_col = None
+            self._bm_fog_last_row = None
 
         def _battle_handle_move_tap(self, col, row):
             """Move-modus: valg av token eller flytting."""
