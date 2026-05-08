@@ -426,7 +426,7 @@ Builder.load_string('''
             width: 1.0
         # --- Ytre mørk amber-ring (dybde/skygge) ---
         Color:
-            rgba: 0.40, 0.26, 0.06, 0.90
+            rgba: self.border_dark_color
         Line:
             rounded_rectangle: (self.x - dp(1), self.y - dp(1), self.width + dp(2), self.height + dp(2), self.radius + dp(1))
             width: 2.0
@@ -435,10 +435,10 @@ Builder.load_string('''
             rgba: self.border_color
         Line:
             rounded_rectangle: (self.x, self.y, self.width, self.height, self.radius)
-            width: 2.5
+            width: self.border_width
         # --- Indre glint-ring (hvit metallic highlight) ---
         Color:
-            rgba: 1.0, 0.97, 0.78, 0.55
+            rgba: self.border_glint_color
         Line:
             rounded_rectangle: (self.x + dp(1.5), self.y + dp(1.5), self.width - dp(3), self.height - dp(3), self.radius - dp(1))
             width: 1.0
@@ -481,7 +481,7 @@ Builder.load_string('''
             width: 1.0
         # --- Ytre mørk amber-ring (dybde/skygge) ---
         Color:
-            rgba: 0.40, 0.26, 0.06, 0.90
+            rgba: self.border_dark_color
         Line:
             rounded_rectangle: (self.x - dp(1), self.y - dp(1), self.width + dp(2), self.height + dp(2), self.radius + dp(1))
             width: 2.0
@@ -490,10 +490,10 @@ Builder.load_string('''
             rgba: self.border_color
         Line:
             rounded_rectangle: (self.x, self.y, self.width, self.height, self.radius)
-            width: 2.5
+            width: self.border_width
         # --- Indre glint-ring (hvit metallic highlight) ---
         Color:
-            rgba: 1.0, 0.97, 0.78, 0.55
+            rgba: self.border_glint_color
         Line:
             rounded_rectangle: (self.x + dp(1.5), self.y + dp(1.5), self.width - dp(3), self.height - dp(3), self.radius - dp(1))
             width: 1.0
@@ -531,7 +531,7 @@ Builder.load_string('''
             width: 1.0
         # --- Ytre mørk amber-ring (dybde/skygge) ---
         Color:
-            rgba: 0.40, 0.26, 0.06, 0.90
+            rgba: self.border_dark_color
         Line:
             rounded_rectangle: (self.x - dp(1), self.y - dp(1), self.width + dp(2), self.height + dp(2), self.radius + dp(1))
             width: 2.0
@@ -540,10 +540,10 @@ Builder.load_string('''
             rgba: self.border_color
         Line:
             rounded_rectangle: (self.x, self.y, self.width, self.height, self.radius)
-            width: 2.5
+            width: self.border_width
         # --- Indre glint-ring (hvit metallic highlight) ---
         Color:
-            rgba: 1.0, 0.97, 0.78, 0.55
+            rgba: self.border_glint_color
         Line:
             rounded_rectangle: (self.x + dp(1.5), self.y + dp(1.5), self.width - dp(3), self.height - dp(3), self.radius - dp(1))
             width: 1.0
@@ -598,10 +598,10 @@ Builder.load_string('''
             radius: [self.radius]
         # --- Ytre mørk amber-ring (dybde/skygge) ---
         Color:
-            rgba: 0.40, 0.26, 0.06, 0.90
+            rgba: self.border_dark_color
         Line:
             rounded_rectangle: (self.x - dp(1), self.y - dp(1), self.width + dp(2), self.height + dp(2), self.radius + dp(1))
-            width: self.border_width
+            width: 2.0
         # --- Hoved gull-ring (metallisk glans) ---
         Color:
             rgba: self.border_color
@@ -610,7 +610,7 @@ Builder.load_string('''
             width: self.border_width
         # --- Indre glint-ring (hvit metallic highlight) ---
         Color:
-            rgba: 1.0, 0.97, 0.78, 0.55
+            rgba: self.border_glint_color
         Line:
             rounded_rectangle: (self.x + dp(1.5), self.y + dp(1.5), self.width - dp(3), self.height - dp(3), self.radius - dp(1))
             width: max(1.0, self.border_width * 0.5)
@@ -671,6 +671,9 @@ class RBtn(Button):
     bg_color     = ListProperty(BTN)
     shadow_color = ListProperty(SHAD)
     border_color = ListProperty(GBORDER_BRIGHT)
+    border_dark_color = ListProperty(GBORDER_DARK)
+    border_glint_color = ListProperty(GBORDER_GLINT)
+    border_width = NumericProperty(2.5)
     radius       = NumericProperty(dp(14))
     _pressed     = BooleanProperty(False)
     shadow_tex   = ObjectProperty(None, allownone=True)
@@ -704,7 +707,9 @@ class RToggle(ToggleButton):
     bg_color     = ListProperty(BTN)
     shadow_color = ListProperty(SHAD)
     border_color = ListProperty(GBORDER_BRIGHT)
-    border_width = NumericProperty(3.0)
+    border_dark_color = ListProperty(GBORDER_DARK)
+    border_glint_color = ListProperty(GBORDER_GLINT)
+    border_width = NumericProperty(2.5)
     radius       = NumericProperty(dp(14))
     shadow_tex   = ObjectProperty(None, allownone=True)
     bg_tex_normal = ObjectProperty(None, allownone=True)
@@ -736,6 +741,9 @@ class RTab(ToggleButton):
     bg_color          = ListProperty(BTN)         # ikke brukt for fyll, men
                                                   # bevart for kompatibilitet
     border_color      = ListProperty(GBORDER)
+    border_dark_color = ListProperty(GBORDER_DARK)
+    border_glint_color = ListProperty(GBORDER_GLINT)
+    border_width      = NumericProperty(2.5)
     indicator_color   = ListProperty(GOLD)
     radius            = NumericProperty(dp(10))
     glow_tex          = ObjectProperty(None, allownone=True)
@@ -772,6 +780,8 @@ class WoodPanel(BoxLayout):
     `tex_offset_x` (0.0–1.0) forskyver tre-teksturen vannrett slik
     at panelet ikke flukter med bakgrunnen som har samme bilde."""
     border_color = ListProperty(GBORDER)
+    border_dark_color = ListProperty(GBORDER_DARK)
+    border_glint_color = ListProperty(GBORDER_GLINT)
     border_width = NumericProperty(2.0)
     radius       = NumericProperty(dp(12))
     wood_source  = StringProperty(WOOD_BUNDLED if os.path.exists(WOOD_BUNDLED) else "")
