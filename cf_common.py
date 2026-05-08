@@ -146,6 +146,9 @@ SHAD = [0.0, 0.0, 0.0, 0.40]      # ren svart-skygge (mer kontrast paa brun)
 GOLD = [0.86, 0.74, 0.42, 1]      # antikk gull (overskrifter, aktive)
 GDIM = [0.55, 0.42, 0.22, 0.70]   # dempet brun-gull; for sub-overskrifter
 GBORDER = [0.86, 0.74, 0.42, 1]   # solid gull for knapper og faner
+GBORDER_DARK   = [0.40, 0.26, 0.06, 0.90]  # mørk amber ytre skygge-ring
+GBORDER_BRIGHT = [1.0,  0.88, 0.42, 1.0]   # skinnende hoved-gull
+GBORDER_GLINT  = [1.0,  0.97, 0.78, 0.55]  # hvit metal-glint innerst
 TXT  = [0.92, 0.86, 0.72, 1]      # varm beige (kropps-tekst)
 DIM  = [0.62, 0.54, 0.42, 1]      # dempet beige (sekundaer-tekst)
 RED  = [0.82, 0.32, 0.22, 1]      # varm roed (advarsel/skade)
@@ -421,12 +424,24 @@ Builder.load_string('''
         Line:
             points: self.x + dp(4), self.y + dp(2), self.x + self.width - dp(4), self.y + dp(2)
             width: 1.0
-        # --- Ramme helt ute i kanten ---
+        # --- Ytre mørk amber-ring (dybde/skygge) ---
+        Color:
+            rgba: 0.40, 0.26, 0.06, 0.90
+        Line:
+            rounded_rectangle: (self.x - dp(1), self.y - dp(1), self.width + dp(2), self.height + dp(2), self.radius + dp(1))
+            width: 2.0
+        # --- Hoved gull-ring (metallisk glans) ---
         Color:
             rgba: self.border_color
         Line:
             rounded_rectangle: (self.x, self.y, self.width, self.height, self.radius)
-            width: 3.0
+            width: 2.5
+        # --- Indre glint-ring (hvit metallic highlight) ---
+        Color:
+            rgba: 1.0, 0.97, 0.78, 0.55
+        Line:
+            rounded_rectangle: (self.x + dp(1.5), self.y + dp(1.5), self.width - dp(3), self.height - dp(3), self.radius - dp(1))
+            width: 1.0
 
 <RToggle>:
     background_normal: ''
@@ -464,12 +479,24 @@ Builder.load_string('''
         Line:
             points: self.x + dp(4), self.y + dp(2), self.x + self.width - dp(4), self.y + dp(2)
             width: 1.0
-        # --- Ramme helt ute i kanten ---
+        # --- Ytre mørk amber-ring (dybde/skygge) ---
+        Color:
+            rgba: 0.40, 0.26, 0.06, 0.90
+        Line:
+            rounded_rectangle: (self.x - dp(1), self.y - dp(1), self.width + dp(2), self.height + dp(2), self.radius + dp(1))
+            width: 2.0
+        # --- Hoved gull-ring (metallisk glans) ---
         Color:
             rgba: self.border_color
         Line:
             rounded_rectangle: (self.x, self.y, self.width, self.height, self.radius)
-            width: self.border_width
+            width: 2.5
+        # --- Indre glint-ring (hvit metallic highlight) ---
+        Color:
+            rgba: 1.0, 0.97, 0.78, 0.55
+        Line:
+            rounded_rectangle: (self.x + dp(1.5), self.y + dp(1.5), self.width - dp(3), self.height - dp(3), self.radius - dp(1))
+            width: 1.0
 
 <RTab>:
     background_normal: ''
@@ -502,12 +529,24 @@ Builder.load_string('''
         Line:
             rounded_rectangle: (self.x + dp(2), self.y + dp(2), self.width - dp(4), self.height - dp(4), self.radius - dp(1))
             width: 1.0
-        # Border – helt ute i kanten, tydelig
+        # --- Ytre mørk amber-ring (dybde/skygge) ---
+        Color:
+            rgba: 0.40, 0.26, 0.06, 0.90
+        Line:
+            rounded_rectangle: (self.x - dp(1), self.y - dp(1), self.width + dp(2), self.height + dp(2), self.radius + dp(1))
+            width: 2.0
+        # --- Hoved gull-ring (metallisk glans) ---
         Color:
             rgba: self.border_color
         Line:
             rounded_rectangle: (self.x, self.y, self.width, self.height, self.radius)
-            width: 3.0
+            width: 2.5
+        # --- Indre glint-ring (hvit metallic highlight) ---
+        Color:
+            rgba: 1.0, 0.97, 0.78, 0.55
+        Line:
+            rounded_rectangle: (self.x + dp(1.5), self.y + dp(1.5), self.width - dp(3), self.height - dp(3), self.radius - dp(1))
+            width: 1.0
         # AKTIV-INDIKATOR: ekte glatt cosinus-gradient via tekstur.
         # Stripa er 3px høy, går nesten helt ut til kantene.
         # Teksturen er en horisontal gull-glød som peaker i senter.
@@ -557,12 +596,24 @@ Builder.load_string('''
             pos: self.pos
             size: self.size
             radius: [self.radius]
-        # Gull-kant – samme som knappene
+        # --- Ytre mørk amber-ring (dybde/skygge) ---
+        Color:
+            rgba: 0.40, 0.26, 0.06, 0.90
+        Line:
+            rounded_rectangle: (self.x - dp(1), self.y - dp(1), self.width + dp(2), self.height + dp(2), self.radius + dp(1))
+            width: self.border_width
+        # --- Hoved gull-ring (metallisk glans) ---
         Color:
             rgba: self.border_color
         Line:
             rounded_rectangle: (self.x, self.y, self.width, self.height, self.radius)
             width: self.border_width
+        # --- Indre glint-ring (hvit metallic highlight) ---
+        Color:
+            rgba: 1.0, 0.97, 0.78, 0.55
+        Line:
+            rounded_rectangle: (self.x + dp(1.5), self.y + dp(1.5), self.width - dp(3), self.height - dp(3), self.radius - dp(1))
+            width: max(1.0, self.border_width * 0.5)
 
 <PreviewFrame>:
     canvas.before:
@@ -619,7 +670,7 @@ Builder.load_string('''
 class RBtn(Button):
     bg_color     = ListProperty(BTN)
     shadow_color = ListProperty(SHAD)
-    border_color = ListProperty(GBORDER)
+    border_color = ListProperty(GBORDER_BRIGHT)
     radius       = NumericProperty(dp(14))
     _pressed     = BooleanProperty(False)
     shadow_tex   = ObjectProperty(None, allownone=True)
@@ -652,7 +703,7 @@ class RBtn(Button):
 class RToggle(ToggleButton):
     bg_color     = ListProperty(BTN)
     shadow_color = ListProperty(SHAD)
-    border_color = ListProperty(GBORDER)
+    border_color = ListProperty(GBORDER_BRIGHT)
     border_width = NumericProperty(3.0)
     radius       = NumericProperty(dp(14))
     shadow_tex   = ObjectProperty(None, allownone=True)
