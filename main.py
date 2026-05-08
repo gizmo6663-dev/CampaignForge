@@ -2380,7 +2380,7 @@ try:
                 ("Praktisk eksempel — en hel kamp-session",
                  "Start med bakgrunnslyd: Lyd → Musikk + Lyd → Ambient.\nBytt til Karakter → Initiativ, legg inn alle deltakere og rull initiativ.\nBytt til Verktøy → Battlemap: last kart, plasser tokens med «+ Fra initiativ», cast til TV.\nUnder kamp: bruk «Neste» i Battlemap for turrekkefølge, og «+1»/«-1»/«-5» HP i stat-panelet.\nMellom møter: gå tilbake til Bilder for å vise nytt sted (auto-castes ved aktiv AC).\nTrigge en one-shot i Lyd → One-shot for dramatisk effekt uten å stoppe musikken."),
                 ("Chromecast-oppsett",
-                 "Åpne Verktøy → Cast → «Søk etter enheter».\nVelg enhet i nedtrekkslisten og trykk «Koble til».\nNår tilkoblet vil Auto-Cast (Bilder) og cast-knapper i Battlemap sende innhold til TV.\nEnhet og app må være på samme Wi‑Fi-nettverk."),
+                 "Åpne Verktøy → Cast → «Søk etter enheter».\nVelg enhet i nedtrekkslisten og trykk «Koble til».\nNår tilkoblet vil Auto-Cast (Bilder) og cast-knapper i Battlemap sende innhold til TV.\nEnhet og app må være på samme Wi-Fi-nettverk."),
                 ("Filstruktur — oversikt",
                  "/sdcard/Documents/CampaignForge/\n  images/              ← bilder til Bilder-fanen\n  music/               ← musikk til Musikk-sub-fanen\n  oneshots/            ← lydeffekter til One-shot\n  maps/                ← bakgrunner til Battlemap\n  characters.json      ← lagrede karakterer/NPC-er\n  battlemap.json       ← lagret battlemap-oppsett\n  battlemap_current.png ← aktivt generert kart for casting\n  crash.log            ← feillogg ved problemer"),
             ]
