@@ -110,23 +110,28 @@ Samlet verktøyfane med sub-fanene **Battlemap**, **Regler** og **Cast**:
 
 <table>
   <tr>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260423_205629_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260423_205629_CampaignForge.jpg" /></details></td>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184401_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184401_CampaignForge.jpg" /></details></td>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184408_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184408_CampaignForge.jpg" /></details></td>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184414_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184414_CampaignForge.jpg" /></details></td>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184501_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184501_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260509_181637_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260509_181637_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260509_181644_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260509_181644_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260509_181649_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260509_181649_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260509_181656_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260509_181656_CampaignForge.jpg" /></details></td>
   </tr>
   <tr>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184506_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184506_CampaignForge.jpg" /></details></td>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184510_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184510_CampaignForge.jpg" /></details></td>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184517_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184517_CampaignForge.jpg" /></details></td>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184526_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184526_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260509_181659_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260509_181659_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260509_181706_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260509_181706_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260509_181716_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260509_181716_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260509_181721_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260509_181721_CampaignForge.jpg" /></details></td>
   </tr>
   <tr>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_190423_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_190423_CampaignForge.jpg" /></details></td>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_190432_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_190432_CampaignForge.jpg" /></details></td>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_190435_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_190435_CampaignForge.jpg" /></details></td>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_190440_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_190440_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260509_181732_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260509_181732_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260509_181742_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260509_181742_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260509_181749_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260509_181749_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260509_181753_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260509_181753_CampaignForge.jpg" /></details></td>
+  </tr>
+  <tr>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260509_181811_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260509_181811_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260509_181910_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260509_181910_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260509_181919_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260509_181919_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260509_181931_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260509_181931_CampaignForge.jpg" /></details></td>
   </tr>
 </table>
 
