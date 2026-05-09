@@ -3870,7 +3870,10 @@ try:
                     inactive_text_color=DIM,
                     font_size=sp(12), bold=True)
                 def _upd(inst, val):
-                    inst.text = 'X' if val == 'down' else ''
+                    on = val == 'down'
+                    inst.text = 'X' if on else ''
+                    inst.bg_color = inst.active_bg_color if on else inst.inactive_bg_color
+                    inst.color = inst.active_text_color if on else inst.inactive_text_color
                 t.bind(state=_upd)
                 if width is not None:
                     t.size_hint_x = None
