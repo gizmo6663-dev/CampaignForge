@@ -88,7 +88,7 @@ try:
     CANVAS_W = 1280
     CANVAS_H = 720
     FT_PER_SQUARE = 5   # D&D 5e standard
-    MAIN_BG_OVERLAY_ALPHA = 0.18
+    MAIN_BG_OVERLAY_ALPHA = 0
     SPLASH_BG_OVERLAY_ALPHA = 0
     # Ligger litt høyere enn sentrum for å holde tittelen fri fra emblemet.
     SPLASH_TEXT_CENTER_Y = 0.73
@@ -2116,7 +2116,7 @@ try:
                         allow_stretch=True,
                         keep_ratio=True,
                         opacity=0.85,
-                        color=[0.72, 0.72, 0.76, 1],
+                        color=[1, 1, 1, 1],
                         size_hint=(1, 0.63),
                         pos_hint={'x': 0, 'y': 0},
                     )
