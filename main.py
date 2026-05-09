@@ -88,8 +88,8 @@ try:
     CANVAS_W = 1280
     CANVAS_H = 720
     FT_PER_SQUARE = 5   # D&D 5e standard
-    MAIN_BG_OVERLAY_ALPHA = 0.20
-    SPLASH_BG_OVERLAY_ALPHA = 0.42
+    MAIN_BG_OVERLAY_ALPHA = 0
+    SPLASH_BG_OVERLAY_ALPHA = 0
     # Ligger litt høyere enn sentrum for å holde tittelen fri fra emblemet.
     SPLASH_TEXT_CENTER_Y = 0.73
     SPLASH_FONT_FILE = "DragonHunter-9Ynxj.otf"
@@ -2116,6 +2116,7 @@ try:
                         allow_stretch=True,
                         keep_ratio=True,
                         opacity=0.85,
+                        color=[0.72, 0.72, 0.76, 1],
                         size_hint=(1, 0.63),
                         pos_hint={'x': 0, 'y': 0},
                     )
@@ -2123,16 +2124,6 @@ try:
                     log("Emblem lastet OK")
                 except Exception as e:
                     log(f"Emblem-feil: {e}")
-
-            if overlay_alpha and (wood_path or bg_path):
-                dim = Widget(size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
-                with dim.canvas:
-                    from kivy.graphics import Color as _C, Rectangle as _R
-                    _C(0, 0, 0, overlay_alpha)
-                    dim_rect = _R(pos=dim.pos, size=dim.size)
-                dim.bind(pos=lambda w, v, r=dim_rect: setattr(r, 'pos', w.pos),
-                         size=lambda w, v, r=dim_rect: setattr(r, 'size', w.size))
-                parent.add_widget(dim)
 
         def build(self):
             log("=== BUILD (CampaignForge v0.1.0) ===")
