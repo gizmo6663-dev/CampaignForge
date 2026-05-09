@@ -88,7 +88,7 @@ try:
     CANVAS_W = 1280
     CANVAS_H = 720
     FT_PER_SQUARE = 5   # D&D 5e standard
-    MAIN_BG_OVERLAY_ALPHA = 0
+    MAIN_BG_OVERLAY_ALPHA = 0.18
     SPLASH_BG_OVERLAY_ALPHA = 0
     # Ligger litt høyere enn sentrum for å holde tittelen fri fra emblemet.
     SPLASH_TEXT_CENTER_Y = 0.73
@@ -2124,6 +2124,18 @@ try:
                     log("Emblem lastet OK")
                 except Exception as e:
                     log(f"Emblem-feil: {e}")
+
+            if overlay_alpha > 0:
+                overlay = Widget(size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
+                with overlay.canvas:
+                    from kivy.graphics import Color as _C, Rectangle as _R
+                    _C(1, 1, 1, overlay_alpha)
+                    overlay_rect = _R(pos=overlay.pos, size=overlay.size)
+                overlay.bind(
+                    pos=lambda w, v, r=overlay_rect: setattr(r, 'pos', w.pos),
+                    size=lambda w, v, r=overlay_rect: setattr(r, 'size', w.size),
+                )
+                parent.add_widget(overlay)
 
         def build(self):
             log("=== BUILD (CampaignForge v0.1.0) ===")
