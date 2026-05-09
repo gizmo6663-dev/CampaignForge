@@ -757,12 +757,12 @@ class RToggle(ToggleButton):
         if self._initial_bg_color is not None:
             if self._initial_state == 'down' and not self._has_active_bg_color:
                 self.active_bg_color = self._initial_bg_color
-            elif self._initial_state == 'normal' and not self._has_inactive_bg_color:
+            elif not self._has_inactive_bg_color:
                 self.inactive_bg_color = self._initial_bg_color
         if self._initial_text_color is not None:
             if self._initial_state == 'down' and not self._has_active_text_color:
                 self.active_text_color = self._initial_text_color
-            elif self._initial_state == 'normal' and not self._has_inactive_text_color:
+            elif not self._has_inactive_text_color:
                 self.inactive_text_color = self._initial_text_color
         self._style_ready = True
         self._sync_state_style()
