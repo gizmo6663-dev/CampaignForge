@@ -711,14 +711,36 @@ class RToggle(ToggleButton):
     border_glint_color = ListProperty(GBORDER_GLINT)
     border_width = NumericProperty(2.5)
     radius       = NumericProperty(dp(14))
+    active_bg_color = ListProperty(BTNH)
+    inactive_bg_color = ListProperty(BTN)
+    active_text_color = ListProperty(GOLD)
+    inactive_text_color = ListProperty(DIM)
     shadow_tex   = ObjectProperty(None, allownone=True)
     bg_tex_normal = ObjectProperty(None, allownone=True)
     bg_tex_active = ObjectProperty(None, allownone=True)
 
+    @staticmethod
+    def _as_color_list(value):
+        if value is None or isinstance(value, (str, bytes)):
+            return None
+        try:
+            return list(value)
+        except TypeError:
+            return None
+
     def __init__(self, **kw):
+        self._style_ready = False
+        self._initial_state = 'down' if kw.get('state') == 'down' else 'normal'
+        self._initial_bg_color = self._as_color_list(kw.get('bg_color')) if 'bg_color' in kw else None
+        self._initial_text_color = self._as_color_list(kw.get('color')) if 'color' in kw else None
+        self._has_active_bg_color = 'active_bg_color' in kw
+        self._has_inactive_bg_color = 'inactive_bg_color' in kw
+        self._has_active_text_color = 'active_text_color' in kw
+        self._has_inactive_text_color = 'inactive_text_color' in kw
         super().__init__(**kw)
         self.shadow_tex = get_drop_shadow_tex()
         self._refresh_bg_textures()
+        Clock.schedule_once(self._finish_style_init, 0)
 
     def _refresh_bg_textures(self):
         self.bg_tex_normal = get_button_bg_tex(self.bg_color, pressed=False)
@@ -726,6 +748,29 @@ class RToggle(ToggleButton):
 
     def on_bg_color(self, *_):
         self._refresh_bg_textures()
+
+    def on_state(self, *_):
+        if self._style_ready:
+            self._sync_state_style()
+
+    def _finish_style_init(self, *_):
+        if self._initial_bg_color is not None:
+            if self._initial_state == 'down' and not self._has_active_bg_color:
+                self.active_bg_color = self._initial_bg_color
+            elif self._initial_state == 'normal' and not self._has_inactive_bg_color:
+                self.inactive_bg_color = self._initial_bg_color
+        if self._initial_text_color is not None:
+            if self._initial_state == 'down' and not self._has_active_text_color:
+                self.active_text_color = self._initial_text_color
+            elif self._initial_state == 'normal' and not self._has_inactive_text_color:
+                self.inactive_text_color = self._initial_text_color
+        self._style_ready = True
+        self._sync_state_style()
+
+    def _sync_state_style(self):
+        active = self.state == 'down'
+        self.bg_color = self.active_bg_color if active else self.inactive_bg_color
+        self.color = self.active_text_color if active else self.inactive_text_color
 
 class RTab(ToggleButton):
     """Toggle-knapp for fane-bar – ekte gradient på bakgrunn og aktiv-stripe.

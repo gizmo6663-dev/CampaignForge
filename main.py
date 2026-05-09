@@ -3864,14 +3864,13 @@ try:
                 t = RToggle(
                     text='X' if state else '',
                     state='down' if state else 'normal',
-                    color=GOLD if state else DIM,
-                    bg_color=BTNH if state else INPUT,
+                    active_bg_color=BTNH,
+                    inactive_bg_color=INPUT,
+                    active_text_color=GOLD,
+                    inactive_text_color=DIM,
                     font_size=sp(12), bold=True)
                 def _upd(inst, val):
-                    on = (val == 'down')
-                    inst.text = 'X' if on else ''
-                    inst.color = GOLD if on else DIM
-                    inst.bg_color = BTNH if on else INPUT
+                    inst.text = 'X' if val == 'down' else ''
                 t.bind(state=_upd)
                 if width is not None:
                     t.size_hint_x = None
