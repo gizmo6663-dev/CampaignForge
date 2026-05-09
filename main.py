@@ -34,7 +34,19 @@ try:
 
     # PIL for battlemap compositing
     try:
-        from PIL import Image as PILImage, ImageDraw as PILDraw, ImageFont as PILFont
+        from PIL import (
+            Image as PILImage,
+            ImageDraw as PILDraw,
+            ImageFont as PILFont,
+            ImageOps as PILImageOps,
+            ImageEnhance as PILImageEnhance,
+        )
+        # Pillow eksponerer LANCZOS ulikt mellom versjoner.
+        PIL_LANCZOS_FALLBACK = 1
+        PIL_LANCZOS = getattr(
+            getattr(PILImage, 'Resampling', PILImage),
+            'LANCZOS',
+            getattr(PILImage, 'LANCZOS', PIL_LANCZOS_FALLBACK))
         PIL_OK = True
         log("PIL imported OK")
     except ImportError:
@@ -54,9 +66,9 @@ try:
     from cf_common import (
         log as _cf_log,  # cf_common har sin egen log; unngå navnekollisjon
         USE_JNIUS, MediaPlayer,
-        BASE_DIR, IMG_DIR, MUSIC_DIR, ONESHOT_DIR, MAPS_DIR,
+        BASE_DIR, DATA_DIR, IMG_DIR, MUSIC_DIR, ONESHOT_DIR, MAPS_DIR,
         CHAR_FILE, SCENARIO_FILE, LIBRARY_FILE,
-        BATTLE_FILE, BATTLE_PNG,
+        BATTLE_FILE, BATTLE_PNG, BATTLE_BG_PNG,
         APP_DIR, BG_IMAGE_BUNDLED, BG_IMAGE_OVERRIDE,
         WOOD_BUNDLED, WOOD_OVERRIDE,
         BG, BG2, INPUT, BTN, BTNH, SHAD, GOLD, GDIM, TXT, DIM,
@@ -64,7 +76,7 @@ try:
         LOOP_BG, LOOP_BG_ON, ONE_BG, ONE_BORDER,
         IMG_EXT, SND_EXT, HTTP_PORT,
         AMBIENT_SOUNDS, VOGLER_STAGES,
-        RBtn, RToggle, RTab, RBox, FramedBox,
+        RBtn, RToggle, RTab, RBox, PreviewFrame, FramedBox, WoodPanel,
         mkbtn, mklbl, mkvol, mksep, mkdiv,
         save_json, load_json, ensure_dirs,
         FONT_H1, FONT_H2, FONT_BODY, FONT_SMALL, FONT_DIM,
@@ -76,43 +88,88 @@ try:
     CANVAS_W = 1280
     CANVAS_H = 720
     FT_PER_SQUARE = 5   # D&D 5e standard
+    MAIN_BG_OVERLAY_ALPHA = 0.20
+    SPLASH_BG_OVERLAY_ALPHA = 0.42
+    # Ligger litt høyere enn sentrum for å holde tittelen fri fra emblemet.
+    SPLASH_TEXT_CENTER_Y = 0.73
+    SPLASH_FONT_FILE = "DragonHunter-9Ynxj.otf"
+    SPLASH_FONT_PATH = os.path.join(APP_DIR, SPLASH_FONT_FILE)
+    SPLASH_FONT_KW = {'font_name': SPLASH_FONT_PATH} if os.path.exists(SPLASH_FONT_PATH) else {}
 
     class _BMImage(Image):
         """Image-widget for battlemap: konverterer trykk til canvas-px.
 
         touch_cb kalles med (canvas_x, canvas_y) i CANVAS_W x CANVAS_H omraade.
+        move_cb kalles med (canvas_x, canvas_y) ved drag.
+        touch_up_cb kalles uten argumenter ved touch_up.
         Appen selv konverterer til grid-ruter.
         """
-        def __init__(self, touch_cb=None, canvas_size_cb=None, **kw):
+        def __init__(self, touch_cb=None, move_cb=None, touch_up_cb=None,
+                     **kw):
             super().__init__(**kw)
             self._touch_cb = touch_cb
-            self._canvas_size_cb = canvas_size_cb
+            self._move_cb = move_cb
+            self._touch_up_cb = touch_up_cb
 
-        def on_touch_down(self, touch):
-            if not self.collide_point(*touch.pos):
-                return False
-            if not self._touch_cb:
-                return False
+        def _canvas_coords(self, touch):
+            """Konverter touch.pos til canvas-koordinater.
+            Returnerer (None, None) ved treff utenfor bildet."""
             nw, nh = self.norm_image_size
             if nw <= 0 or nh <= 0:
-                return False
-            # Bildet er sentrert i widgeten (keep_ratio=True)
+                return None, None
             off_x = self.x + (self.width - nw) / 2.0
             off_y = self.y + (self.height - nh) / 2.0
             ix = touch.x - off_x
             iy = touch.y - off_y
             if ix < 0 or iy < 0 or ix > nw or iy > nh:
+                return None, None
+            cx = ix * CANVAS_W / nw
+            cy = (nh - iy) * CANVAS_H / nh
+            return cx, cy
+
+        def on_touch_down(self, touch):
+            if not self.collide_point(*touch.pos):
+                log(f"BMImage: touch {touch.pos} utenfor widget "
+                    f"({self.x},{self.y},{self.width}x{self.height})")
                 return False
-            if self._canvas_size_cb:
-                cw, ch = self._canvas_size_cb()
-            else:
-                cw, ch = CANVAS_W, CANVAS_H
-            if cw <= 0 or ch <= 0:
+            if not self._touch_cb:
+                log("BMImage: ingen touch_cb satt!")
                 return False
-            # Skaler til CANVAS-koord, flip y (Kivy origo nede, PIL oppe)
-            cx = ix * cw / nw
-            cy = (nh - iy) * ch / nh
-            self._touch_cb(cx, cy)
+            cx, cy = self._canvas_coords(touch)
+            if cx is None:
+                log("BMImage: touch utenfor bilde-omraade")
+                return False
+            log(f"BMImage: TOUCH OK -> canvas=({cx:.0f},{cy:.0f})")
+            touch.grab(self)
+            try:
+                self._touch_cb(cx, cy)
+            except Exception as e:
+                log(f"BMImage: touch_cb feilet: {e}")
+                log(traceback.format_exc())
+            return True
+
+        def on_touch_move(self, touch):
+            if touch.grab_current is not self:
+                return False
+            if not self._move_cb:
+                return True
+            cx, cy = self._canvas_coords(touch)
+            if cx is not None:
+                try:
+                    self._move_cb(cx, cy)
+                except Exception as e:
+                    log(f"BMImage: move_cb feilet: {e}")
+            return True
+
+        def on_touch_up(self, touch):
+            if touch.grab_current is not self:
+                return False
+            touch.ungrab(self)
+            if self._touch_up_cb:
+                try:
+                    self._touch_up_cb()
+                except Exception as e:
+                    log(f"BMImage: touch_up_cb feilet: {e}")
             return True
     # === D&D 5E 2024 KARAKTERFELT ===
     DND_ABILITIES = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']
@@ -1739,8 +1796,30 @@ try:
 
     # === SERVER / CAST / PLAYERS ===
     class QuietHandler(SimpleHTTPRequestHandler):
+        """HTTP-handler som søker både i DATA_DIR (battlemap-PNG, app-data)
+        og BASE_DIR (brukerens bilder, musikk, kart).
+
+        Bruker realpath konsekvent for å unngå path-mismatch der
+        Android har symlinker (/data/data <-> /data/user/0)."""
+        def __init__(self, *args, **kwargs):
+            kwargs.pop('directory', None)
+            super().__init__(*args, directory=BASE_DIR, **kwargs)
+
         def log_message(self, f, *a):
             pass
+
+        def translate_path(self, path):
+            clean = path.split('?', 1)[0].split('#', 1)[0].lstrip('/')
+            for root in (DATA_DIR, BASE_DIR):
+                cand = os.path.realpath(os.path.join(root, clean))
+                real_root = os.path.realpath(root)
+                if (cand.startswith(real_root)
+                        and os.path.exists(cand)):
+                    log(f"HTTP serve: {clean} -> {cand}")
+                    return cand
+            log(f"HTTP 404: {clean} (DATA_DIR={DATA_DIR}, "
+                f"BASE_DIR={BASE_DIR})")
+            return os.path.join(BASE_DIR, clean)
 
     class MediaServer:
         def __init__(self):
@@ -1749,11 +1828,12 @@ try:
             if self._h:
                 return
             try:
-                h = partial(QuietHandler, directory=BASE_DIR)
-                self._h = HTTPServer(('0.0.0.0', HTTP_PORT), h)
-                threading.Thread(target=self._h.serve_forever, daemon=True).start()
-            except:
-                pass
+                self._h = HTTPServer(('0.0.0.0', HTTP_PORT), QuietHandler)
+                threading.Thread(target=self._h.serve_forever,
+                                 daemon=True).start()
+                log(f"HTTP server started on port {HTTP_PORT}")
+            except Exception as e:
+                log(f"HTTP server start error: {e}")
         def stop(self):
             if self._h:
                 self._h.shutdown()
@@ -1769,7 +1849,24 @@ try:
             except:
                 return "127.0.0.1"
         def url(self, fp):
-            return f"http://{self.ip()}:{HTTP_PORT}/{os.path.relpath(fp, BASE_DIR)}"
+            """Bygg en HTTP-URL TV-en kan hente fila fra.
+
+            Bruker realpath på begge sider så symlink-mismatch
+            mellom /data/data og /data/user/0 ikke gir 404."""
+            real_fp = os.path.realpath(fp)
+            for root in (DATA_DIR, BASE_DIR):
+                real_root = os.path.realpath(root)
+                if real_fp.startswith(real_root):
+                    rel = os.path.relpath(real_fp, real_root)
+                    if not rel.startswith('..'):
+                        u = (f"http://{self.ip()}:{HTTP_PORT}/"
+                             f"{rel.replace(os.sep, '/')}")
+                        return u
+            # Siste fallback – bruk filnavn
+            u = (f"http://{self.ip()}:{HTTP_PORT}/"
+                 f"{os.path.basename(fp)}")
+            log(f"URL fallback (basename only): {u} for {fp}")
+            return u
 
     class CastMgr:
         def __init__(self):
@@ -1807,33 +1904,19 @@ try:
                 if cb:
                     Clock.schedule_once(lambda dt: cb(ok), 0)
             threading.Thread(target=_c, daemon=True).start()
-        def cast_media(self, url, mime_type, cb=None):
+        def cast_img(self, url, cb=None):
             if not self.mc:
                 return
             def _c():
                 try:
-                    self.mc.play_media(url, mime_type)
+                    self.mc.play_media(url, 'image/jpeg')
                     self.mc.block_until_active()
                     ok = True
-                except Exception as e:
-                    log(f"Cast media error ({mime_type}): {e}")
+                except:
                     ok = False
                 if cb:
                     Clock.schedule_once(lambda dt: cb(ok), 0)
             threading.Thread(target=_c, daemon=True).start()
-        def cast_img(self, url, cb=None):
-            url_without_params = url.split('?', 1)[0].lower()
-            file_extension = os.path.splitext(url_without_params)[1]
-            mime_type = {
-                '.jpg': 'image/jpeg',
-                '.jpeg': 'image/jpeg',
-                '.png': 'image/png',
-                '.webp': 'image/webp',
-            }.get(file_extension)
-            if not mime_type:
-                mime_type = 'image/jpeg'
-                log(f"Cast image fallback MIME for {url_without_params}")
-            self.cast_media(url, mime_type, cb=cb)
         def disconnect(self):
             try:
                 if self._br:
@@ -1974,6 +2057,83 @@ try:
 
     # ============================================================
     class CampaignForgeApp(App, ScenariosMixin):
+        _TAB_ORDER = ['img', 'lyd', 'tool', 'util']
+        _TAB_FADE_DURATION = 0.18
+
+        def _resolve_theme_backgrounds(self):
+            wood_path = None
+            if os.path.exists(WOOD_OVERRIDE):
+                wood_path = WOOD_OVERRIDE
+                log(f"Tre-bakgrunn: override {wood_path}")
+            elif os.path.exists(WOOD_BUNDLED):
+                wood_path = WOOD_BUNDLED
+                log(f"Tre-bakgrunn: bundlet {wood_path}")
+            else:
+                log("Tre-bakgrunn: ingen funnet")
+
+            bg_path = None
+            if os.path.exists(BG_IMAGE_OVERRIDE):
+                bg_path = BG_IMAGE_OVERRIDE
+                log(f"Emblem: override {bg_path}")
+            elif os.path.exists(BG_IMAGE_BUNDLED):
+                bg_path = BG_IMAGE_BUNDLED
+                log(f"Emblem: bundlet {bg_path}")
+            else:
+                log("Emblem: ingen funnet")
+            return wood_path, bg_path
+
+        def _add_theme_background_layers(self, parent, wood_path=None, bg_path=None,
+                                         overlay_alpha=0.35, base_color=None):
+            if base_color:
+                base = Widget(size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
+                with base.canvas:
+                    from kivy.graphics import Color as _C, Rectangle as _R
+                    _C(*base_color)
+                    base_rect = _R(pos=base.pos, size=base.size)
+                base.bind(pos=lambda w, v, r=base_rect: setattr(r, 'pos', w.pos),
+                          size=lambda w, v, r=base_rect: setattr(r, 'size', w.size))
+                parent.add_widget(base)
+
+            if wood_path:
+                try:
+                    wood_img = Image(
+                        source=wood_path,
+                        allow_stretch=True,
+                        keep_ratio=False,
+                        opacity=1.0,
+                        size_hint=(1, 1),
+                        pos_hint={'x': 0, 'y': 0},
+                    )
+                    parent.add_widget(wood_img)
+                    log("Tre-bakgrunn lastet OK")
+                except Exception as e:
+                    log(f"Tre-bakgrunn-feil: {e}")
+
+            if bg_path:
+                try:
+                    bg_img = Image(
+                        source=bg_path,
+                        allow_stretch=True,
+                        keep_ratio=True,
+                        opacity=0.85,
+                        size_hint=(1, 0.63),
+                        pos_hint={'x': 0, 'y': 0},
+                    )
+                    parent.add_widget(bg_img)
+                    log("Emblem lastet OK")
+                except Exception as e:
+                    log(f"Emblem-feil: {e}")
+
+            if overlay_alpha and (wood_path or bg_path):
+                dim = Widget(size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
+                with dim.canvas:
+                    from kivy.graphics import Color as _C, Rectangle as _R
+                    _C(0, 0, 0, overlay_alpha)
+                    dim_rect = _R(pos=dim.pos, size=dim.size)
+                dim.bind(pos=lambda w, v, r=dim_rect: setattr(r, 'pos', w.pos),
+                         size=lambda w, v, r=dim_rect: setattr(r, 'size', w.size))
+                parent.add_widget(dim)
+
         def build(self):
             log("=== BUILD (CampaignForge v0.1.0) ===")
             Window.clearcolor = BG
@@ -1981,6 +2141,10 @@ try:
             self.tracks = []
             self.ct = -1
             self.sel_img = None
+            self.preview_box = None
+            # Galleri starter kollapset så emblemet er synlig.
+            # Brukeren kan utvide via Galleri-knappen.
+            self._gallery_open = False
             self.auto_cast = True
             self.cur_folder = IMG_DIR
             self.player = APlayer() if USE_JNIUS else FPlayer()
@@ -1991,6 +2155,26 @@ try:
             self.chars = load_json(CHAR_FILE, [])
             self.scenarios = load_json(SCENARIO_FILE, [])
             self.library = load_json(LIBRARY_FILE, [])
+            # Last fiendedata fra bundlet enemies.json (i APP_DIR – ved
+            # siden av main.py i APK-en). Inneholder statblokker for alle
+            # 65 vanlige fiender med AC/HP/angrep/spells.
+            self._enemies_data = {}
+            try:
+                enemies_path = os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "enemies.json")
+                if os.path.exists(enemies_path):
+                    with open(enemies_path, 'r', encoding='utf-8') as f:
+                        raw = json.load(f)
+                    # Hopp over _meta-noekkelen
+                    self._enemies_data = {
+                        k: v for k, v in raw.items()
+                        if not k.startswith('_')}
+                    log(f"Loaded {len(self._enemies_data)} enemy statblocks")
+                else:
+                    log(f"enemies.json not found at {enemies_path}")
+            except Exception as e:
+                log(f"Failed to load enemies.json: {e}")
             self.edit_idx = None
             # Scenario-state
             self._scn_view = 'list'      # 'list' | 'scenes' | 'editor'
@@ -2002,6 +2186,7 @@ try:
 
             # FloatLayout som rot – lar oss legge splash oppå
             wrapper = FloatLayout()
+            self._wrapper = wrapper
 
             # === BAKGRUNNSLAG (bakerst først, fremst sist) ===
             # 1) dark-wood.png – heldekkende tekstur som dekker hele skjermen.
@@ -2009,93 +2194,41 @@ try:
             # 3) Mørk dim-overlay – demper kontrasten før UI tegnes.
             # 4) UI-paneler (oppå alt).
             # I FloatLayout tegnes barn i rekkefølgen de legges til.
-
-            # --- Lag 1: TREBAKGRUNN ---
-            wood_path = None
-            if os.path.exists(WOOD_OVERRIDE):
-                wood_path = WOOD_OVERRIDE
-                log(f"Tre-bakgrunn: override {wood_path}")
-            elif os.path.exists(WOOD_BUNDLED):
-                wood_path = WOOD_BUNDLED
-                log(f"Tre-bakgrunn: bundlet {wood_path}")
-
-            if wood_path:
-                try:
-                    wood_img = Image(
-                        source=wood_path,
-                        allow_stretch=True,
-                        keep_ratio=False,   # dekk hele skjermen
-                        opacity=1.0,
-                        size_hint=(1, 1),
-                        pos_hint={'x': 0, 'y': 0},
-                    )
-                    wrapper.add_widget(wood_img)
-                    log("Tre-bakgrunn lastet OK")
-                except Exception as e:
-                    log(f"Tre-bakgrunn-feil: {e}")
-            else:
-                log("Tre-bakgrunn: ingen funnet")
-
-            # --- Lag 2: D&D-EMBLEM ---
-            # Plasseres i nedre del av skjermen (size_hint y=0.63),
-            # sentrert vannrett, beholder bildeforhold.
-            bg_path = None
-            if os.path.exists(BG_IMAGE_OVERRIDE):
-                bg_path = BG_IMAGE_OVERRIDE
-                log(f"Emblem: override {bg_path}")
-            elif os.path.exists(BG_IMAGE_BUNDLED):
-                bg_path = BG_IMAGE_BUNDLED
-                log(f"Emblem: bundlet {bg_path}")
-
-            if bg_path:
-                try:
-                    bg_img = Image(
-                        source=bg_path,
-                        allow_stretch=True,
-                        keep_ratio=True,    # behold bildeforhold
-                        opacity=0.85,       # lys nok til å sees gjennom
-                                            # halvgjennomsiktige paneler
-                        size_hint=(1, 0.63),
-                        pos_hint={'x': 0, 'y': 0},
-                    )
-                    wrapper.add_widget(bg_img)
-                    log("Emblem lastet OK")
-                except Exception as e:
-                    log(f"Emblem-feil: {e}")
-
-            # --- Lag 3: MØRK DIM-OVERLAY ---
-            # Dempes lett for å sikre lesbarhet av UI-paneler.
-            if wood_path or bg_path:
-                dim = Widget(size_hint=(1, 1),
-                             pos_hint={'x': 0, 'y': 0})
-                with dim.canvas:
-                    from kivy.graphics import Color as _C, Rectangle as _R
-                    _C(0, 0, 0, 0.35)
-                    _bg_rect = _R(pos=dim.pos, size=dim.size)
-                dim.bind(pos=lambda w, v, r=_bg_rect:
-                              setattr(r, 'pos', w.pos),
-                        size=lambda w, v, r=_bg_rect:
-                              setattr(r, 'size', w.size))
-                wrapper.add_widget(dim)
+            wood_path, bg_path = self._resolve_theme_backgrounds()
+            self._add_theme_background_layers(wrapper, wood_path, bg_path,
+                                              overlay_alpha=MAIN_BG_OVERLAY_ALPHA)
 
             main = BoxLayout(orientation='vertical', spacing=0,
                              size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
-            main.add_widget(Widget(size_hint_y=None, height=dp(30)))
 
             # FANER
             tabs = RBox(size_hint_y=None, height=dp(52), spacing=dp(4),
                         padding=[dp(8), dp(4)], bg_color=BTN)
             self._tabs = {}
             # Faner med ASCII-safe ikon-prefiks for visuell variasjon
-            tab_defs = [
+            left_tab_defs = [
                 ('img',   'Bilder'),
                 ('lyd',   'Lyd'),
-                ('tool',  'Karakter'),
-                ('rules', 'Regler'),
-                ('cast',  'Cast'),
             ]
-            for key, txt in tab_defs:
+            right_tab_defs = [
+                ('tool',  'Karakter'),
+                ('util',  'Verktøy'),
+            ]
+            for key, txt in left_tab_defs:
                 active = key == 'img'
+                b = RTab(text=txt, group='tabs',
+                         state='down' if active else 'normal',
+                         bg_color=BTNH if active else BTN,
+                         color=GOLD if active else DIM,
+                         font_size=sp(FONT_SMALL))
+                b.bind(state=self._tab_color)
+                b.bind(on_release=lambda x, k=key: self._tab(k))
+                tabs.add_widget(b)
+                self._tabs[key] = b
+            # Behold et tomrom midt i topplinja for kamera-cutout.
+            tabs.add_widget(Widget(size_hint_x=None, width=dp(52)))
+            for key, txt in right_tab_defs:
+                active = False
                 b = RTab(text=txt, group='tabs',
                          state='down' if active else 'normal',
                          bg_color=BTNH if active else BTN,
@@ -2133,47 +2266,151 @@ try:
             wrapper.add_widget(main)
 
             # === SPLASH SCREEN ===
-            self.splash = RBox(bg_color=BG, radius=0,
-                               orientation='vertical',
-                               size_hint=(1, 1),
-                               pos_hint={'x': 0, 'y': 0})
-            # Sentrert innhold
-            self.splash.add_widget(Widget())  # fyll topp
+            self.splash = FloatLayout(size_hint=(1, 1),
+                                      pos_hint={'x': 0, 'y': 0})
+            self._add_theme_background_layers(
+                self.splash, wood_path, bg_path,
+                overlay_alpha=SPLASH_BG_OVERLAY_ALPHA, base_color=BG)
+            splash_text = BoxLayout(orientation='vertical',
+                                    spacing=dp(4),
+                                    size_hint=(1, None),
+                                    height=dp(170),
+                                    pos_hint={'center_x': 0.5, 'center_y': SPLASH_TEXT_CENTER_Y})
             t1 = Label(text="CAMPAIGN", font_size=sp(42), color=GOLD,
-                       bold=True, size_hint_y=None, height=dp(60),
-                       halign='center')
+                        bold=True, size_hint_y=None, height=dp(60),
+                        halign='center', **SPLASH_FONT_KW)
             t1.bind(size=t1.setter('text_size'))
-            self.splash.add_widget(t1)
+            splash_text.add_widget(t1)
             t2 = Label(text="FORGE", font_size=sp(42), color=GDIM,
-                       bold=True, size_hint_y=None, height=dp(60),
-                       halign='center')
+                        bold=True, size_hint_y=None, height=dp(60),
+                        halign='center', **SPLASH_FONT_KW)
             t2.bind(size=t2.setter('text_size'))
-            self.splash.add_widget(t2)
+            splash_text.add_widget(t2)
             sub = Label(text="Dungeon Master's Companion", font_size=sp(13),
                         color=DIM, size_hint_y=None, height=dp(30),
-                        halign='center')
+                        halign='center', **SPLASH_FONT_KW)
             sub.bind(size=sub.setter('text_size'))
-            self.splash.add_widget(sub)
-            self.splash.add_widget(Widget())  # fyll bunn
+            splash_text.add_widget(sub)
+            self.splash.add_widget(splash_text)
             wrapper.add_widget(self.splash)
+
+            self.help_btn = mkbtn(
+                "Hjelp", self._show_help, danger=False, small=True,
+                size_hint=(None, None), pos_hint={'x': 0.01})
+            self.help_btn.width = dp(72)
+            self.help_btn.height = dp(34)
+            self.help_btn.y = dp(27)
+            wrapper.add_widget(self.help_btn)
 
             self._tab('img')
             log("UI built OK")
             Clock.schedule_once(lambda dt: request_android_permissions(), 0.5)
             Clock.schedule_once(lambda dt: self._init(), 3)
             # Fade ut splash etter 2.5 sek
-            Clock.schedule_once(self._dismiss_splash, 2.5)
+            Clock.schedule_once(self._dismiss_splash, 3.5)
             return wrapper
 
         def _dismiss_splash(self, dt):
             if self.splash:
-                anim = Animation(opacity=0, duration=0.8)
+                anim = Animation(opacity=0, duration=1.3)
                 def _remove(*a):
                     if self.splash.parent:
                         self.splash.parent.remove_widget(self.splash)
                     self.splash = None
                 anim.bind(on_complete=_remove)
                 anim.start(self.splash)
+
+        def _show_help(self):
+            parent = getattr(self, '_wrapper', None) or self.root
+            if not parent:
+                log("Help overlay: parent not ready, cannot show help yet")
+                return
+
+            existing = getattr(self, '_help_overlay', None)
+            if existing and existing.parent:
+                return
+
+            from kivy.graphics import Color as _C, Rectangle as _R
+
+            overlay = FloatLayout(size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
+            with overlay.canvas.before:
+                _C(0, 0, 0, 0.82)
+                bg_rect = _R(pos=overlay.pos, size=overlay.size)
+            overlay.bind(pos=lambda w, v: setattr(bg_rect, 'pos', w.pos),
+                         size=lambda w, v: setattr(bg_rect, 'size', w.size))
+
+            card = RBox(
+                orientation='vertical',
+                size_hint=(0.94, 0.88),
+                pos_hint={'center_x': 0.5, 'center_y': 0.5},
+                padding=[dp(12), dp(12)],
+                spacing=dp(8),
+                bg_color=BG,
+                radius=dp(14))
+
+            card.add_widget(mklbl("Hjelp", color=GOLD, size=FONT_H1, bold=True, h=30))
+            card.add_widget(mksep(6))
+
+            scroll = ScrollView(size_hint=(1, 1))
+            body = GridLayout(cols=1, size_hint_y=None, spacing=dp(8), padding=[dp(4), 0])
+            body.bind(minimum_height=body.setter('height'))
+
+            sections = [
+                ("Kom i gang — første gangs oppsett",
+                 "1) Start appen og godta forespurte tillatelser.\n2) Ved første oppstart opprettes disse mappene automatisk:\n• /sdcard/Documents/CampaignForge/images/\n• /sdcard/Documents/CampaignForge/music/\n• /sdcard/Documents/CampaignForge/oneshots/\n• /sdcard/Documents/CampaignForge/maps/\n3) Kopier filer inn i mappene via USB eller filbehandler.\n4) Hvis du nettopp godtok tillatelser: lukk og start appen på nytt."),
+                ("Laste inn bilder",
+                 "Kopier bildefiler (.png, .jpg, .jpeg, .webp) til Dokumenter/CampaignForge/images/.\nLag gjerne undermapper for scenarioer, f.eks. images/Slow_Boat/.\nÅpne appen → Bilder-fanen → Galleri → trykk «Oppdater».\nTrykk på en mappe for å gå inn, og «Opp» for å gå tilbake.\nTrykk på et miniatyrbilde for å vise det i full størrelse i forhåndsvisningen."),
+                ("Laste inn musikk",
+                 "Kopier lydfiler (.mp3, .ogg, .wav, .flac) til Dokumenter/CampaignForge/music/.\nÅpne Lyd-fanen → Musikk-sub-fanen; spor vises automatisk.\nTrykk på et spor for å starte avspilling.\nBruk «<<» og «>>» i mini-spilleren nederst for å bytte spor uten å forlate skjermen."),
+                ("Laste inn one-shots (lydeffekter)",
+                 "Kopier lydeffekt-filer til Dokumenter/CampaignForge/oneshots/.\nÅpne Lyd-fanen → One-shot-sub-fanen.\nTrykk på en knapp for å trigge effekten umiddelbart (spilles oppå bakgrunnsmusikk)."),
+                ("Laste inn kart til Battlemap",
+                 "Kopier kartbilder til Dokumenter/CampaignForge/maps/.\nÅpne Verktøy → Battlemap → Meny → «Velg bakgrunn».\nStøttede formater: .png, .jpg, .jpeg, .webp."),
+                ("Navigasjon i appen",
+                 "Øverst har du fire faner: Bilder, Lyd, Karakter, Verktøy.\nTrykk på en fane for å bytte visning.\nHver hovedfane har egne sub-faner (f.eks. Lyd: Musikk / Ambient / One-shot / Scenarier).\nMini-spilleren nederst er alltid synlig, uansett hvilken fane som er aktiv.\nHjelp-knappen nederst til venstre er alltid tilgjengelig.\n«<<» og «>>» i mini-spilleren bytter spor, og «Play»/«Pause» styrer avspilling."),
+                ("Bilder-fanen i detalj",
+                 "Sammenfoldet galleri-linje viser «<» (forrige bilde), «Galleri» (åpne/lukke) og «>» (neste bilde).\nNår Auto-Cast er på, vil blaing med «<» og «>» automatisk sende bildet til TV.\nAC:PA = Auto-Cast PÅ (bilder sendes automatisk).\nAC:AV = Auto-Cast AV.\nÅpne Galleri, gå inn i undermappe med mappeknapper, og trykk «x» for å lukke igjen."),
+                ("Lyd-fanen i detalj",
+                 "Musikk: lokal avspilling fra music/-mappen.\nAmbient: strømmer stemningslyd fra internett; bruk volumslider for nivå uavhengig av musikk.\nOne-shot: enkelt-lydeffekter som spilles umiddelbart oppå annen lyd.\nScenarier: ferdige ambient-pakker; trykk et scenario for å laste alle spor samtidig."),
+                ("Karakter-fanen i detalj",
+                 "Karakterer sub-fane: opprett/vis/rediger komplette D&D 5e 2024-ark (evner, ferdigheter, spell slots, utstyr, mynter m.m.). Trykk «+ Ny» for å opprette, trykk en karakter for å vise, og «Rediger» for å endre.\nInitiativ sub-fane: bygg kamprunde-orden. Legg til PC/NPC fra karakterliste eller velg blant 65 vanlige fiender. Rull manuelt eller trykk «Auto-rull» for d20+DEX. Trykk «Fullfor» for sortering. Trykk øverste kort for å gå til neste tur. Trykk «Ny runde» for å nullstille."),
+                ("Verktøy-fanen i detalj",
+                 "Battlemap: tegn/flytt tokens, mal tåke (fog-of-war), mål avstander og cast til Chromecast.\nRegler: full D&D 5e 2024 hurtigreferanse (terninger, conditions, spells, monstre m.m.).\nCast: søk etter og koble til Chromecast-enheter på lokalt nettverk."),
+                ("Battlemap — praktisk bruk",
+                 "1) Legg til deltakere i Karakter → Initiativ.\n2) Gå til Verktøy → Battlemap → Meny → «+ Fra initiativ» for å plassere tokens.\n3) Trykk Meny → «Velg bakgrunn» for å laste kartbilde.\n4) Trykk Meny → «Dekk alt» for å dekke kartet med tåke.\n5) Bytt til Tåke-modus og dra for å avdekke områder.\n6) Bruk Cast til TV for å vise kartet til spillerne.\n7) I Flytt-modus: trykk token for å velge, trykk så destinasjonsrute for å flytte.\n8) Trykk «Neste» for å gå videre i initiativrekkefølgen."),
+                ("Praktisk eksempel — en hel kamp-session",
+                 "Start med bakgrunnslyd: Lyd → Musikk + Lyd → Ambient.\nBytt til Karakter → Initiativ, legg inn alle deltakere og rull initiativ.\nBytt til Verktøy → Battlemap: last kart, plasser tokens med «+ Fra initiativ», cast til TV.\nUnder kamp: bruk «Neste» i Battlemap for turrekkefølge, og «+1»/«-1»/«-5» HP i stat-panelet.\nMellom møter: gå tilbake til Bilder for å vise nytt sted (auto-castes ved aktiv AC).\nTrigge en one-shot i Lyd → One-shot for dramatisk effekt uten å stoppe musikken."),
+                ("Chromecast-oppsett",
+                 "Åpne Verktøy → Cast → «Søk etter enheter».\nVelg enhet i nedtrekkslisten og trykk «Koble til».\nNår tilkoblet vil Auto-Cast (Bilder) og cast-knapper i Battlemap sende innhold til TV.\nEnhet og app må være på samme Wi-Fi-nettverk."),
+                ("Filstruktur — oversikt",
+                 "/sdcard/Documents/CampaignForge/\n  images/              ← bilder til Bilder-fanen\n  music/               ← musikk til Musikk-sub-fanen\n  oneshots/            ← lydeffekter til One-shot\n  maps/                ← bakgrunner til Battlemap\n  characters.json      ← lagrede karakterer/NPC-er\n  battlemap.json       ← lagret battlemap-oppsett\n  battlemap_current.png ← aktivt generert kart for casting\n  crash.log            ← feillogg ved problemer"),
+            ]
+
+            for title, text in sections:
+                body.add_widget(mklbl(title, color=GOLD, size=FONT_H2, bold=True, h=24))
+                body.add_widget(mklbl(text, color=TXT, size=FONT_BODY, wrap=True))
+                body.add_widget(mksep(8))
+
+            scroll.add_widget(body)
+            card.add_widget(scroll)
+
+            close_row = BoxLayout(size_hint_y=None, height=dp(42), spacing=dp(8))
+            close_row.add_widget(Widget())
+            close_row.add_widget(mkbtn("Lukk", self._close_help, danger=False,
+                                       small=True, size_hint=(None, None),
+                                       width=dp(88), height=dp(34)))
+            close_row.add_widget(Widget())
+            card.add_widget(close_row)
+
+            overlay.add_widget(card)
+            self._help_overlay = overlay
+            parent.add_widget(overlay)
+
+        def _close_help(self):
+            overlay = getattr(self, '_help_overlay', None)
+            if overlay and overlay.parent:
+                overlay.parent.remove_widget(overlay)
+            self._help_overlay = None
 
         def _tab_color(self, btn, state):
             if state == 'down':
@@ -2190,47 +2427,296 @@ try:
             self._load_tracks()
             self.status.text = f"IP: {MediaServer.ip()}  |  Cast: {'Ja' if CAST_AVAILABLE else 'Nei'}"
 
-        def _tab(self, k):
+        @staticmethod
+        def _order_direction(old_key, new_key, order):
+            """Return tab movement direction: -1 (left), 1 (right), 0 (none/unknown)."""
+            if old_key not in order or new_key not in order:
+                return 0
+            old_idx = order.index(old_key)
+            new_idx = order.index(new_key)
+            if new_idx > old_idx:
+                return 1
+            if new_idx < old_idx:
+                return -1
+            return 0
+
+        def _slide_tab(self, new_widget, direction):
+            """Render tab content with a safe fade transition when direction is non-zero."""
+            if direction == 0:
+                self.content.clear_widgets()
+                self.content.add_widget(new_widget)
+                return
             self.content.clear_widgets()
+            new_widget.opacity = 0
+            self.content.add_widget(new_widget)
+            Animation(opacity=1, duration=self._TAB_FADE_DURATION).start(new_widget)
+
+        def _tab(self, k):
             builders = {
                 'img': self._mk_img, 'lyd': self._mk_lyd,
                 'tool': self._mk_tool,
-                'rules': self._mk_rules, 'cast': self._mk_cast,
+                'util': self._mk_util,
             }
             if k in builders:
-                self.content.add_widget(builders[k]())
+                if getattr(self, '_cur_tab', None) == k and self.content.children:
+                    return
+                direction = self._order_direction(getattr(self, '_cur_tab', None), k, self._TAB_ORDER)
+                self._cur_tab = k
+                self._slide_tab(builders[k](), direction)
 
         # ---------- BILDER ----------
+        def _gallery_collapsed_height(self):
+            return dp(54)
+
+        def _gallery_collapsed_content(self):
+            body = BoxLayout(orientation='vertical', spacing=0)
+            row = BoxLayout(size_hint_y=None, height=dp(42), spacing=dp(6))
+
+            prev_b = mkbtn(
+                "<", self._prev_img,
+                small=True, size_hint_x=None)
+            prev_b.width = dp(46)
+            row.add_widget(prev_b)
+
+            gallery_btn = mkbtn(
+                "Galleri", self._toggle_gallery,
+                accent=True, small=True)
+            row.add_widget(gallery_btn)
+
+            next_b = mkbtn(
+                ">", self._next_img,
+                small=True, size_hint_x=None)
+            next_b.width = dp(46)
+            row.add_widget(next_b)
+
+            body.add_widget(row)
+            # Fyller resten av panelet slik at tre-boksen kan vokse nedover
+            # uten at knappene strekkes under animasjonen.
+            body.add_widget(Widget(size_hint_y=1.0))
+            return body
+
+        def _apply_gallery_collapsed_shell(self, gallery_wrap):
+            gallery_wrap.clear_widgets()
+            gallery_wrap.orientation = 'vertical'
+            gallery_wrap.spacing = 0
+            gallery_wrap.padding = [dp(8), dp(6), dp(8), dp(6)]
+            gallery_wrap.tex_offset_x = 0.0
+            gallery_wrap.tint_color = [1.0, 0.78, 0.45, 0.14]
+            gallery_wrap.add_widget(self._gallery_collapsed_content())
+
+        def _apply_gallery_open_shell(self, gallery_wrap):
+            gallery_wrap.clear_widgets()
+            gallery_wrap.orientation = 'vertical'
+            gallery_wrap.spacing = dp(4)
+            gallery_wrap.padding = [dp(6), dp(6), dp(6), dp(6)]
+            gallery_wrap.tex_offset_x = 0.0
+            gallery_wrap.tint_color = [1.0, 0.78, 0.45, 0.14]
+
+            gh = BoxLayout(size_hint_y=None, height=dp(40), spacing=dp(4))
+            gh.add_widget(mkbtn(
+                "Opp", self.folder_up, small=True,
+                size_hint_x=None, width=dp(54)))
+            if self.path_lbl.parent:
+                self.path_lbl.parent.remove_widget(self.path_lbl)
+            gh.add_widget(self.path_lbl)
+            if self.ac_btn.parent:
+                self.ac_btn.parent.remove_widget(self.ac_btn)
+            gh.add_widget(self.ac_btn)
+            gh.add_widget(mkbtn(
+                "Oppdater", self._load_imgs, small=True,
+                size_hint_x=None, width=dp(80)))
+            gh.add_widget(mkbtn(
+                "x", self._toggle_gallery,
+                danger=True, small=True,
+                size_hint_x=None, width=dp(40)))
+            gallery_wrap.add_widget(gh)
+
+            scroll = ScrollView()
+            if self.img_grid.parent:
+                self.img_grid.parent.remove_widget(self.img_grid)
+            scroll.add_widget(self.img_grid)
+            gallery_wrap.add_widget(scroll)
+
+        def _gallery_open_target_height(self):
+            fa = getattr(self, '_float_area', None)
+            if fa and fa.height > dp(100):
+                return max(fa.height - dp(4), dp(80))
+            # Fallback before float_area has been laid out
+            _preview_h = dp(240)
+            _spacing   = dp(6) * 2        # two spacings in the outer BoxLayout
+            return max(self.content.height - _preview_h - _spacing - dp(4), dp(80))
+
         def _mk_img(self):
             p = BoxLayout(orientation='vertical', spacing=dp(6))
-            # Svart bakgrunn bak preview-bildet
-            preview_box = RBox(size_hint_y=0.4, bg_color=BLK, radius=dp(12))
+            preview_box = PreviewFrame(
+                size_hint_y=None, height=dp(240),
+                padding=dp(10),
+                has_content=bool(self.sel_img))
             self.preview = Image(allow_stretch=True, keep_ratio=True,
                                  color=[1, 1, 1, 0] if not self.sel_img else [1, 1, 1, 1])
+            self.preview_box = preview_box
             if self.sel_img:
                 self.preview.source = self.sel_img
             preview_box.add_widget(self.preview)
             p.add_widget(preview_box)
-            p.add_widget(Label(text="CAMPAIGN FORGE", font_size=sp(18), color=GDIM,
-                               bold=True, size_hint_y=None, height=dp(28)))
-            self.img_lbl = Label(text="", font_size=sp(12), color=DIM,
-                                 size_hint_y=None, height=dp(20))
-            p.add_widget(self.img_lbl)
-            nav = BoxLayout(size_hint_y=None, height=dp(40), spacing=dp(6), padding=[dp(6), 0])
-            self.path_lbl = Label(text="", font_size=sp(10), color=DIM, size_hint_x=0.35)
-            nav.add_widget(self.path_lbl)
-            nav.add_widget(mkbtn("Opp", self.folder_up, small=True, size_hint_x=0.2))
-            self.ac_btn = mkbtn("AC:PA", self._toggle_ac, accent=True, small=True, size_hint_x=0.25)
-            nav.add_widget(self.ac_btn)
-            nav.add_widget(mkbtn("Oppdater", self._load_imgs, small=True, size_hint_x=0.2))
-            p.add_widget(nav)
-            scroll = ScrollView(size_hint_y=0.4)
-            self.img_grid = GridLayout(cols=3, spacing=dp(6), padding=dp(6), size_hint_y=None)
+            self._img_root = p
+
+            # Shared header widgets (need to exist even when gallery is collapsed)
+            self.path_lbl = Label(text="", font_size=sp(10), color=DIM,
+                                  size_hint_x=0.30, halign='left', valign='middle')
+            self.path_lbl.bind(size=lambda w, v: setattr(w, 'text_size', v))
+            self.ac_btn = mkbtn(
+                "AC:PA" if self.auto_cast else "AC:AV",
+                self._toggle_ac, accent=True, small=True,
+                size_hint_x=None)
+            self.ac_btn.width = dp(72)
+
+            # ----------------------------------------------------------------
+            # FloatLayout: text is anchored to the background; gallery floats
+            # on top and slides open/shut without displacing anything below it.
+            # ----------------------------------------------------------------
+            float_area = FloatLayout(size_hint=(1, 1))
+            self._float_area = float_area
+
+            # Title + image label – always at a fixed position at the bottom
+            title_lbl = Label(
+                text="CAMPAIGN FORGE", font_size=sp(18), color=GDIM,
+                bold=True, size_hint=(1, None), height=dp(28),
+                halign='center', **SPLASH_FONT_KW)
+            title_lbl.bind(size=title_lbl.setter('text_size'))
+            self.img_lbl = Label(
+                text="", font_size=sp(12), color=DIM,
+                size_hint=(1, None), height=dp(20),
+                halign='center')
+            self.img_lbl.bind(size=self.img_lbl.setter('text_size'))
+
+            text_box = BoxLayout(
+                orientation='vertical', spacing=dp(4),
+                size_hint=(1, None), height=dp(52),
+                pos_hint={'x': 0, 'y': 0})
+            text_box.add_widget(title_lbl)
+            text_box.add_widget(self.img_lbl)
+            float_area.add_widget(text_box)   # added first → drawn behind gallery
+
+            # Gallery grid (always created; filled by _load_imgs)
+            self.img_grid = GridLayout(
+                cols=3, spacing=dp(6), padding=dp(6), size_hint_y=None)
             self.img_grid.bind(minimum_height=self.img_grid.setter('height'))
-            scroll.add_widget(self.img_grid)
-            p.add_widget(scroll)
+
+            wood_src = (WOOD_OVERRIDE if os.path.exists(WOOD_OVERRIDE)
+                        else WOOD_BUNDLED if os.path.exists(WOOD_BUNDLED)
+                        else "")
+
+            if self._gallery_open:
+                gallery_wrap = WoodPanel(
+                    orientation='vertical', spacing=dp(4),
+                    size_hint=(1, None),
+                    pos_hint={'x': 0, 'top': 1},
+                    height=self._gallery_open_target_height(),
+                    padding=[dp(6), dp(6), dp(6), dp(6)],
+                    wood_source=wood_src,
+                    tex_offset_x=0.0,
+                    tint_color=[1.0, 0.78, 0.45, 0.14])
+                self._apply_gallery_open_shell(gallery_wrap)
+            else:
+                gallery_wrap = WoodPanel(
+                    orientation='vertical', spacing=0,
+                    size_hint=(1, None),
+                    pos_hint={'x': 0, 'top': 1},
+                    height=self._gallery_collapsed_height(),
+                    padding=[dp(8), dp(6), dp(8), dp(6)],
+                    wood_source=wood_src,
+                    tex_offset_x=0.0,
+                    tint_color=[1.0, 0.78, 0.45, 0.14])
+                self._apply_gallery_collapsed_shell(gallery_wrap)
+
+            float_area.add_widget(gallery_wrap)   # added second → drawn on top of text
+            self._gallery_wrap = gallery_wrap
+            p.add_widget(float_area)
+
             self._load_imgs()
             return p
+
+        def _toggle_gallery(self, *a):
+            """Open/close the gallery by animating gallery_wrap height only.
+            Title and status labels are anchored behind the gallery in a
+            FloatLayout, so they never move during the animation."""
+            if getattr(self, '_gallery_animating', False):
+                return
+            self._gallery_animating = True
+
+            gw = getattr(self, '_gallery_wrap', None)
+            fa = getattr(self, '_float_area', None)
+            if not gw or not fa:
+                self._gallery_open = not self._gallery_open
+                self._tab('img')
+                self._gallery_animating = False
+                return
+
+            Animation.cancel_all(gw, 'height')
+
+            if self._gallery_open:
+                # ── CLOSE: shrink down to the collapsed bar ──────────────────
+                def _close_done(*_):
+                    self._gallery_open = False
+                    self._apply_gallery_collapsed_shell(gw)
+                    self._gallery_animating = False
+
+                _close_anim = Animation(
+                    height=self._gallery_collapsed_height(),
+                    duration=0.22, transition='out_quad')
+                _close_anim.bind(on_complete=_close_done)
+                _close_anim.start(gw)
+
+            else:
+                # ── OPEN: populate content, then expand to available height ──
+                self._apply_gallery_open_shell(gw)
+                self._load_imgs()
+                target_h = self._gallery_open_target_height()
+
+                def _open_done(*_):
+                    self._gallery_open = True
+                    self._gallery_animating = False
+
+                _open_anim = Animation(height=target_h, duration=0.22, transition='out_quad')
+                _open_anim.bind(on_complete=_open_done)
+                _open_anim.start(gw)
+
+        def _gallery_image_paths(self):
+            """Returnerer sortert liste av bildestier i naavaerende mappe."""
+            f = self.cur_folder
+            try:
+                if not os.path.exists(f):
+                    return []
+                items = sorted(os.listdir(f))
+                return [os.path.join(f, x) for x in items
+                        if x.lower().endswith(IMG_EXT)]
+            except Exception:
+                return []
+
+        def _prev_img(self, *a):
+            """Bla til forrige bilde i mappen (uten aa aapne galleriet)."""
+            paths = self._gallery_image_paths()
+            if not paths:
+                return
+            if self.sel_img and self.sel_img in paths:
+                idx = paths.index(self.sel_img)
+                idx = (idx - 1) % len(paths)
+            else:
+                idx = len(paths) - 1
+            self._sel_img(paths[idx])
+
+        def _next_img(self, *a):
+            """Bla til neste bilde i mappen (uten aa aapne galleriet)."""
+            paths = self._gallery_image_paths()
+            if not paths:
+                return
+            if self.sel_img and self.sel_img in paths:
+                idx = paths.index(self.sel_img)
+                idx = (idx + 1) % len(paths)
+            else:
+                idx = 0
+            self._sel_img(paths[idx])
 
         def _load_imgs(self):
             if not hasattr(self, 'img_grid'):
@@ -2295,6 +2781,8 @@ try:
 
         def _sel_img(self, path):
             self.sel_img = path
+            if self.preview_box:
+                self.preview_box.has_content = True
             self.img_lbl.text = os.path.basename(path)
             self.img_lbl.color = GOLD
             Animation.cancel_all(self.preview, 'opacity')
@@ -2303,6 +2791,8 @@ try:
                 self.preview.source = path
                 Animation(opacity=1, duration=0.4).start(self.preview)
                 if self.auto_cast and self.cast.mc:
+                    if hasattr(self, '_bm_cast_live'):
+                        self._bm_cast_live = False
                     self.img_lbl.text = "Caster..."
                     self.cast.cast_img(self.server.url(path),
                                        cb=lambda ok: setattr(self.img_lbl, 'text',
@@ -2658,6 +3148,8 @@ try:
 
         def _dc(self):
             self.cast.disconnect()
+            if hasattr(self, '_bm_cast_live'):
+                self._bm_cast_live = False
             self.cast_lbl.text = "Frakoblet"
 
         # ---------- KARAKTERER ----------
@@ -2667,6 +3159,8 @@ try:
             # Standard: vis karakter-lista
             if not hasattr(self, '_tool_sub'):
                 self._tool_sub = 'chars'
+            elif self._tool_sub not in ('chars', 'init'):
+                self._tool_sub = 'chars'
 
             p = BoxLayout(orientation='vertical', spacing=dp(6))
 
@@ -2674,32 +3168,30 @@ try:
             sub_bar = RBox(size_hint_y=None, height=dp(42),
                            spacing=dp(4), padding=[dp(6), dp(4)],
                            bg_color=BTN, radius=dp(10))
-            b_chars = RToggle(
-                text='Karakterer', group='tool_sub',
-                state='down' if self._tool_sub == 'chars' else 'normal',
-                bg_color=BTNH if self._tool_sub == 'chars' else BTN,
-                color=GOLD if self._tool_sub == 'chars' else DIM,
-                font_size=sp(11), bold=True)
-            b_chars.bind(on_release=lambda b: self._tool_switch('chars'))
-            sub_bar.add_widget(b_chars)
 
-            b_init = RToggle(
-                text='Initiativ', group='tool_sub',
-                state='down' if self._tool_sub == 'init' else 'normal',
-                bg_color=BTNH if self._tool_sub == 'init' else BTN,
-                color=GOLD if self._tool_sub == 'init' else DIM,
-                font_size=sp(11), bold=True)
-            b_init.bind(on_release=lambda b: self._tool_switch('init'))
-            sub_bar.add_widget(b_init)
+            def _mk_tool_sub(key, label):
+                act = self._tool_sub == key
+                b = RTab(
+                    text=label, group='tool_sub',
+                    state='down' if act else 'normal',
+                    bg_color=BTNH if act else BTN,
+                    color=GOLD if act else DIM,
+                    font_size=sp(11), bold=True)
+                # State-binding: oppdater bg_color/color når aktiv-status
+                # endres (KV-uttrykk kan ikke skrive tilbake til property)
+                def _on_state(btn, st):
+                    if st == 'down':
+                        btn.bg_color = BTNH
+                        btn.color = GOLD
+                    else:
+                        btn.bg_color = BTN
+                        btn.color = DIM
+                b.bind(state=_on_state)
+                b.bind(on_release=lambda btn, k=key: self._tool_switch(k))
+                return b
 
-            b_map = RToggle(
-                text='Kart', group='tool_sub',
-                state='down' if self._tool_sub == 'map' else 'normal',
-                bg_color=BTNH if self._tool_sub == 'map' else BTN,
-                color=GOLD if self._tool_sub == 'map' else DIM,
-                font_size=sp(11), bold=True)
-            b_map.bind(on_release=lambda b: self._tool_switch('map'))
-            sub_bar.add_widget(b_map)
+            sub_bar.add_widget(_mk_tool_sub('chars', 'Karakterer'))
+            sub_bar.add_widget(_mk_tool_sub('init', 'Initiativ'))
             p.add_widget(sub_bar)
 
             # Handlings-rad (kun for karakter-lista)
@@ -2738,11 +3230,80 @@ try:
                     mklbl("Initiativ-tracker", color=GOLD,
                           size=14, bold=True))
                 self._mk_init_tracker()
-            else:  # map
-                self._tool_action_bar.add_widget(
+
+        def _mk_util(self):
+            """Verktoey-fane med sub-tabs: battlemap, regler og cast."""
+            if not hasattr(self, '_util_sub'):
+                self._util_sub = 'map'
+            elif self._util_sub not in ('map', 'rules', 'cast'):
+                self._util_sub = 'map'
+
+            p = BoxLayout(orientation='vertical', spacing=dp(6))
+
+            sub_bar = RBox(size_hint_y=None, height=dp(42),
+                           spacing=dp(4), padding=[dp(6), dp(4)],
+                           bg_color=BTN, radius=dp(10))
+
+            def _mk_util_sub(key, label):
+                act = self._util_sub == key
+                b = RTab(
+                    text=label, group='util_sub',
+                    state='down' if act else 'normal',
+                    bg_color=BTNH if act else BTN,
+                    color=GOLD if act else DIM,
+                    font_size=sp(11), bold=True)
+
+                def _on_state(btn, st):
+                    if st == 'down':
+                        btn.bg_color = BTNH
+                        btn.color = GOLD
+                    else:
+                        btn.bg_color = BTN
+                        btn.color = DIM
+                b.bind(state=_on_state)
+                b.bind(on_release=lambda btn, k=key: self._util_switch(k))
+                return b
+
+            sub_bar.add_widget(_mk_util_sub('map', 'Battlemap'))
+            sub_bar.add_widget(_mk_util_sub('rules', 'Regler'))
+            sub_bar.add_widget(_mk_util_sub('cast', 'Cast'))
+            p.add_widget(sub_bar)
+
+            self._util_action_bar = BoxLayout(
+                size_hint_y=None, height=dp(42),
+                spacing=dp(6), padding=[dp(6), 0])
+            p.add_widget(self._util_action_bar)
+
+            self.tool_area = BoxLayout()
+            p.add_widget(self.tool_area)
+
+            self._util_render_sub()
+            return p
+
+        def _util_switch(self, which):
+            """Bytt mellom sub-fanene i Verktoey."""
+            self._util_sub = which
+            self._util_render_sub()
+
+        def _util_render_sub(self):
+            """Rendre riktig Verktoey-sub-visning."""
+            self._util_action_bar.clear_widgets()
+            self.tool_area.clear_widgets()
+            if self._util_sub == 'map':
+                self._util_action_bar.add_widget(
                     mklbl("Battlemap", color=GOLD,
                           size=14, bold=True))
                 self._mk_battle_map()
+            elif self._util_sub == 'rules':
+                self._util_action_bar.add_widget(
+                    mklbl("Regler", color=GOLD,
+                          size=14, bold=True))
+                self.tool_area.add_widget(self._mk_rules())
+            else:
+                self._util_action_bar.add_widget(
+                    mklbl("Cast", color=GOLD,
+                          size=14, bold=True))
+                self.tool_area.add_widget(self._mk_cast())
 
         # ---------- D&D 5E KARAKTERER ----------
         @staticmethod
@@ -3303,15 +3864,13 @@ try:
                 t = RToggle(
                     text='X' if state else '',
                     state='down' if state else 'normal',
-                    color=GOLD if state else DIM,
-                    bg_color=BTNH if state else INPUT,
+                    active_bg_color=BTNH,
                     inactive_bg_color=INPUT,
+                    active_text_color=GOLD,
+                    inactive_text_color=DIM,
                     font_size=sp(12), bold=True)
                 def _upd(inst, val):
-                    on = (val == 'down')
-                    inst.text = 'X' if on else ''
-                    inst.color = GOLD if on else DIM
-                    inst.bg_color = BTNH if on else INPUT
+                    inst.text = 'X' if val == 'down' else ''
                 t.bind(state=_upd)
                 if width is not None:
                     t.size_hint_x = None
@@ -4419,18 +4978,44 @@ try:
             if hasattr(self, '_bm_init_done'):
                 return
             self._bm_init_done = True
+            # Sikre at _init_list finnes – battlemap leser den i
+            # _battle_next_turn og _battle_sync_from_init. Uten denne
+            # garantien krasjer 'Neste' og '+ Fra initiativ' hvis
+            # brukeren aldri har åpnet Karakter-fanen.
+            self._init_tracker_init()
             # Last lagret tilstand hvis finnes
             saved = load_json(BATTLE_FILE, {})
             self._bm_bg = saved.get('bg', None)          # sti til bakgrunn
+            self._bm_bg_label = saved.get('bg_label')
+            self._bm_bg_brightness = float(saved.get('bg_brightness', 1.0))
             self._bm_grid_cols = saved.get('cols', 20)
             self._bm_show_grid = saved.get('show_grid', True)
             self._bm_tokens = saved.get('tokens', [])
             self._bm_fog = saved.get('fog', [])          # liste av [col,row]
+            # Auto-synlighet rundt PC-tokens. 0 = av, 3 = standard
+            # (3 ruters Chebyshev-radius). Justerbar i meny.
+            self._bm_pc_vis_radius = int(saved.get('pc_vis_radius', 3))
             self._bm_mode = 'move'                       # 'move','fog','measure'
             self._bm_sel_token = None                    # idx i _bm_tokens
             self._bm_measure_start = None                # [col,row]
             self._bm_last_info = ""
             self._bm_cast_counter = 0
+            self._bm_cast_live = False
+            self._bm_fog_paint_action = None   # 'add' eller 'remove' under en malingsgest
+            self._bm_fog_action_pref = None    # foretrukket taake-aksjon
+            self._bm_fog_painted = set()       # (col,row)-tupler allerede behandlet denne gesten
+            self._bm_fog_last_col = None
+            self._bm_fog_last_row = None
+            self._bm_render_rev = 0
+            self._bm_display_png = BATTLE_PNG
+            if (PIL_OK and self._bm_bg and self._bm_bg != BATTLE_BG_PNG
+                    and os.path.exists(self._bm_bg)):
+                self._battle_store_bg_copy(self._bm_bg, quiet=True)
+            if not self._bm_bg_label:
+                if self._bm_bg and self._bm_bg != BATTLE_BG_PNG:
+                    self._bm_bg_label = os.path.basename(self._bm_bg)
+                elif self._bm_bg:
+                    self._bm_bg_label = "Lagret bakgrunn"
 
         def _battle_cell_size(self):
             """Beregn px/rute basert paa kolonner og canvas-bredde."""
@@ -4440,25 +5025,50 @@ try:
             """Antall rader som faar plass."""
             return CANVAS_H // self._battle_cell_size()
 
-        def _battle_render_size(self):
-            """Faktisk render-stoerrelse for aktivt rutenett."""
-            cell = self._battle_cell_size()
-            return self._bm_grid_cols * cell, self._battle_grid_rows() * cell
-
         def _battle_save(self):
             """Lagre battlemap-tilstand til JSON."""
             save_json(BATTLE_FILE, {
                 'bg': self._bm_bg,
+                'bg_label': self._bm_bg_label,
+                'bg_brightness': self._bm_bg_brightness,
                 'cols': self._bm_grid_cols,
                 'show_grid': self._bm_show_grid,
                 'tokens': self._bm_tokens,
                 'fog': self._bm_fog,
+                'pc_vis_radius': self._bm_pc_vis_radius,
             })
+
+        def _battle_store_bg_copy(self, source_path, quiet=False):
+            """Lagre valgt bakgrunn som app-eid PNG-kopi."""
+            if not source_path:
+                return False
+            try:
+                with PILImage.open(source_path) as bg_src:
+                    bg_img = PILImageOps.exif_transpose(bg_src).convert('RGB')
+                    if bg_img.size != (CANVAS_W, CANVAS_H):
+                        bg_img = bg_img.resize(
+                            (CANVAS_W, CANVAS_H),
+                            resample=PIL_LANCZOS)
+                    bg_img.save(BATTLE_BG_PNG, 'PNG')
+                self._bm_bg = BATTLE_BG_PNG
+                self._bm_bg_label = os.path.basename(source_path)
+                return True
+            except Exception as e:
+                log(f"Battlemap bg copy error: {e}")
+                if not quiet:
+                    self._battle_update_info("Kunne ikke lese valgt bakgrunn.")
+                return False
 
         def _mk_battle_map(self):
             """Bygg Kart-sub-fanen."""
+            log("=== _mk_battle_map kalt ===")
             self._battle_state_init()
             self.tool_area.clear_widgets()
+            log(f"  _bm_init_done={hasattr(self, '_bm_init_done')}, "
+                f"_bm_bg={self._bm_bg!r}, "
+                f"tokens={len(self._bm_tokens)}, "
+                f"fog={len(self._bm_fog)}, "
+                f"mode={self._bm_mode}")
 
             if not PIL_OK:
                 self.tool_area.add_widget(mklbl(
@@ -4473,6 +5083,13 @@ try:
             # MODUS-RAD
             mode_row = BoxLayout(size_hint_y=None, height=dp(40),
                                  spacing=dp(4))
+            def _on_mode_state(btn, st):
+                if st == 'down':
+                    btn.bg_color = BTNH
+                    btn.color = GOLD
+                else:
+                    btn.bg_color = BTN
+                    btn.color = DIM
             for m_key, m_txt in [('move','Flytt'),('fog','Taake'),
                                  ('measure','Maal')]:
                 active = (self._bm_mode == m_key)
@@ -4481,6 +5098,7 @@ try:
                             bg_color=BTNH if active else BTN,
                             color=GOLD if active else DIM,
                             font_size=sp(11), bold=True)
+                b.bind(state=_on_mode_state)
                 b.bind(on_release=lambda x, k=m_key:
                        self._battle_mode_switch(k))
                 mode_row.add_widget(b)
@@ -4491,19 +5109,77 @@ try:
             mode_row.add_widget(menu_btn)
             p.add_widget(mode_row)
 
+            # TAAKE-AKSJON (alltid synlig)
+            fog_row = BoxLayout(size_hint_y=None, height=dp(30),
+                                spacing=dp(4))
+
+            def _on_fog_action_state(btn, st, pref):
+                if st == 'down':
+                    btn.bg_color = BTNH
+                    btn.color = GOLD
+                    self._bm_fog_action_pref = pref
+                else:
+                    btn.bg_color = BTN
+                    btn.color = DIM
+                    if self._bm_fog_action_pref == pref:
+                        self._bm_fog_action_pref = None
+
+            for pref, txt in [('add', '+ Taake'), ('remove', '- Taake')]:
+                active = (self._bm_fog_action_pref == pref)
+                b = RToggle(text=txt, group='bm_fog_action',
+                            state='down' if active else 'normal',
+                            bg_color=BTNH if active else BTN,
+                            color=GOLD if active else DIM,
+                            font_size=sp(10), bold=True)
+                b.bind(state=lambda btn, st, p=pref:
+                       _on_fog_action_state(btn, st, p))
+                fog_row.add_widget(b)
+            p.add_widget(fog_row)
+
             # KARTBILDE (generer og vis)
             self._battle_render()
 
-            map_box = RBox(bg_color=BLK, radius=dp(8))
+            # Lås kartboksen til 16:9 så vi ikke får svart letterbox.
+            # CANVAS er 1280x720 (16:9), saa hoeyden binder vi til
+            # bredden * 720/1280 = bredden * 0.5625.
+            map_box = RBox(bg_color=BLK, radius=dp(8),
+                           size_hint_y=None)
+
+            def _bind_map_h(w, val):
+                w.height = val * (CANVAS_H / CANVAS_W)
+
+            map_box.bind(width=_bind_map_h)
             self._bm_img = _BMImage(
-                source=BATTLE_PNG,
+                source=getattr(self, '_bm_display_png', BATTLE_PNG),
                 allow_stretch=True,
                 keep_ratio=True,
                 nocache=True,  # force reload ved endring
-                canvas_size_cb=self._battle_render_size,
-                touch_cb=self._battle_on_map_touch)
+                touch_cb=self._battle_on_map_touch,
+                move_cb=self._battle_on_map_move,
+                touch_up_cb=self._battle_on_map_touch_up)
             map_box.add_widget(self._bm_img)
             p.add_widget(map_box)
+
+            # STAT-PANEL: viser HP/AC/Speed/spell-slots for den hvis tur
+            # det er na, med +/- knapper for HP og spell-slots.
+            # Pakket i WoodPanel for visuell vekt og konsistens med
+            # resten av appen (dark-wood.png-tekstur og gull-kant).
+            # Bruker override-bilde fra Documents/CampaignForge/ hvis det
+            # finnes, ellers den bundlede.
+            wood_src = (WOOD_OVERRIDE if os.path.exists(WOOD_OVERRIDE)
+                        else WOOD_BUNDLED if os.path.exists(WOOD_BUNDLED)
+                        else "")
+            stat_wrap = WoodPanel(
+                orientation='vertical', spacing=dp(4),
+                padding=[dp(10), dp(8), dp(10), dp(8)],
+                size_hint_y=1.0,
+                wood_source=wood_src)
+            self._bm_stat_box = BoxLayout(
+                orientation='vertical', spacing=dp(2),
+                size_hint_y=1.0)
+            stat_wrap.add_widget(self._bm_stat_box)
+            self._battle_build_stat_panel()
+            p.add_widget(stat_wrap)
 
             # INFO + NESTE-rad
             bot = BoxLayout(size_hint_y=None, height=dp(40),
@@ -4547,14 +5223,464 @@ try:
             if hasattr(self, '_bm_info_lbl') and self._bm_info_lbl:
                 self._bm_info_lbl.text = txt
 
+        # ---------- STAT-PANEL FOR DEN MED TUREN ----------
+        def _battle_find_char_by_name(self, name):
+            """Slaa opp PC i self.chars via navn (case-insensitiv)."""
+            if not name:
+                return None
+            target = name.strip().lower()
+            for ch in self.chars:
+                if ch.get('name', '').strip().lower() == target:
+                    return ch
+            return None
+
+        def _battle_current_actor(self):
+            """Hent init-entry + evt. matching karakter for den med turen.
+
+            Returnerer (entry, char) der char er None for fiender og
+            for PC-er som ikke finnes i karakter-lista (f.eks. fjernet)."""
+            if not self._init_list:
+                return None, None
+            entry = self._init_list[0]
+            ch = None
+            if entry.get('type') == 'PC':
+                ch = self._battle_find_char_by_name(entry.get('name', ''))
+            return entry, ch
+
+        def _battle_build_stat_panel(self):
+            """Bygg stat-panel for den med turen.
+
+            Layout:
+              Header: navn (stor, farget) | type-badge | HP-knapper
+              Row 1:  HP-tekst, AC, Speed, evt. CR
+              Section "ANGREP": liste av angrep med to-hit + skade
+              Section "TREKK": passive evner (kun fiender)
+              Section "MAGI": spell-slots (PC) eller spells-liste (fiende)
+            """
+            if not hasattr(self, '_bm_stat_box') or self._bm_stat_box is None:
+                return
+            box = self._bm_stat_box
+            box.clear_widgets()
+
+            entry, ch = self._battle_current_actor()
+            if entry is None:
+                box.add_widget(mklbl(
+                    "Ingen i initiativ-lista. Legg til deltakere "
+                    "i Karakterer-fanen, eller i battlemap-meny.",
+                    color=DIM, size=11, h=20))
+                return
+
+            name = entry.get('name', '?')
+            tp = entry.get('type', 'F')
+            type_color = (GOLD if tp == 'PC'
+                          else (TXT if tp == 'NPC' else RED))
+
+            # Slaa opp fiendedata fra bundlet enemies.json (kun for
+            # fiender og NPC-er som ikke er i karakter-lista)
+            enemy_data = None
+            if ch is None:
+                enemy_data = self._enemies_data.get(name)
+                # Proev ogsaa case-insensitiv match
+                if enemy_data is None and self._enemies_data:
+                    nm_low = name.strip().lower()
+                    for k, v in self._enemies_data.items():
+                        if k.lower() == nm_low:
+                            enemy_data = v
+                            break
+
+            # ============================================================
+            # HEADER: navn + type-badge + HP-justering paa hoeyre side
+            # ============================================================
+            header = BoxLayout(size_hint_y=None, height=dp(38),
+                               spacing=dp(4))
+            # Navn (stort)
+            name_lbl = Label(
+                text=f"[b]{name}[/b]",
+                markup=True, font_size=sp(16), color=type_color,
+                halign='left', valign='middle', size_hint_x=0.50)
+            name_lbl.bind(size=lambda w, v: setattr(w, 'text_size', v))
+            header.add_widget(name_lbl)
+            # HP-justeringsknapper - kompakte
+            for delta, lbl, danger in [(-5, "-5", True),
+                                       (-1, "-1", True),
+                                       (+1, "+1", False),
+                                       (+5, "+5", False)]:
+                btn = mkbtn(
+                    lbl,
+                    lambda d=delta: self._battle_adjust_hp(d),
+                    small=True, danger=danger,
+                    size_hint_x=None)
+                btn.width = dp(40)
+                header.add_widget(btn)
+            box.add_widget(header)
+
+            # ============================================================
+            # STATS-RAD: HP, AC, Speed, CR
+            # ============================================================
+            stats_row = BoxLayout(size_hint_y=None, height=dp(22),
+                                  spacing=dp(8))
+            # HP-tekst
+            if ch:
+                hp_cur = ch.get('hp_current', 0)
+                hp_max = ch.get('hp_max', 0)
+                hp_tmp = ch.get('hp_temp', 0)
+                tmp_txt = f" (+{hp_tmp})" if hp_tmp else ""
+                hp_str = f"HP {hp_cur}/{hp_max}{tmp_txt}"
+            else:
+                hp_str = f"HP {entry.get('hp', '?/?')}"
+            stats_row.add_widget(Label(
+                text=f"[b]{hp_str}[/b]", markup=True,
+                font_size=sp(12), color=TXT,
+                halign='left', valign='middle',
+                size_hint_x=0.40))
+
+            # AC, Speed, CR – henter fra ch ELLER fra enemy_data
+            if ch:
+                ac = ch.get('armor_class', 10)
+                spd = ch.get('speed', 30)
+                stats_row.add_widget(mklbl(f"AC {ac}", color=DIM, size=11))
+                stats_row.add_widget(mklbl(f"Spd {spd}", color=DIM, size=11))
+            elif enemy_data:
+                ac = enemy_data.get('ac', '?')
+                spd = enemy_data.get('speed', '?')
+                cr = enemy_data.get('cr', '')
+                # AC – fast bredde
+                ac_lbl = Label(
+                    text=f"AC {ac}", font_size=sp(11), color=DIM,
+                    size_hint_x=None, width=dp(50),
+                    halign='left', valign='middle')
+                ac_lbl.bind(size=lambda w, v: setattr(w, 'text_size', v))
+                stats_row.add_widget(ac_lbl)
+                # Speed kan vaere lang – la den ta plass
+                spd_lbl = Label(
+                    text=f"Spd {spd}", font_size=sp(10), color=DIM,
+                    halign='left', valign='middle')
+                spd_lbl.bind(size=lambda w, v: setattr(w, 'text_size', v))
+                stats_row.add_widget(spd_lbl)
+                if cr:
+                    cr_lbl = Label(
+                        text=f"CR {cr}", font_size=sp(11), color=GOLD,
+                        bold=True, size_hint_x=None, width=dp(60),
+                        halign='right', valign='middle')
+                    cr_lbl.bind(size=lambda w, v:
+                                setattr(w, 'text_size', v))
+                    stats_row.add_widget(cr_lbl)
+            else:
+                # Frittstaaende entry uten karakter eller fiendedata
+                dex_mod = entry.get('dex_mod', 0)
+                sgn = "+" if dex_mod >= 0 else ""
+                stats_row.add_widget(mklbl(
+                    f"DEX {sgn}{dex_mod}", color=DIM, size=11))
+            box.add_widget(stats_row)
+
+            # ============================================================
+            # ABILITY SCORES (kun fra enemy_data – PC har egen visning
+            # i Karakter-fanen)
+            # ============================================================
+            if enemy_data and 'stats' in enemy_data:
+                ab_row = BoxLayout(size_hint_y=None, height=dp(20),
+                                   spacing=dp(2))
+                stats = enemy_data['stats']
+                for ab in ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']:
+                    score = stats.get(ab, 10)
+                    mod = (score - 10) // 2
+                    sgn = "+" if mod >= 0 else ""
+                    ab_lbl = Label(
+                        text=f"[b]{ab}[/b]\n{score} ({sgn}{mod})",
+                        markup=True, font_size=sp(9),
+                        color=TXT, halign='center', valign='middle')
+                    ab_lbl.bind(size=lambda w, v:
+                                setattr(w, 'text_size', v))
+                    ab_row.add_widget(ab_lbl)
+                box.add_widget(ab_row)
+
+            # Lite mellomrom
+            box.add_widget(Widget(size_hint_y=None, height=dp(2)))
+
+            # ============================================================
+            # SCROLLBART INNHOLD (angrep, traits, magi)
+            # Hvis det er mye data, blir scroll-able. Stat-panelet er
+            # uansett begrenset i hoeyde.
+            # ============================================================
+            scroll_content = BoxLayout(orientation='vertical',
+                                       size_hint_y=None, spacing=dp(2))
+            scroll_content.bind(
+                minimum_height=scroll_content.setter('height'))
+
+            # ANGREP (fra enemy_data)
+            if enemy_data and enemy_data.get('actions'):
+                scroll_content.add_widget(mklbl(
+                    "ANGREP", color=GOLD, size=10, bold=True, h=16))
+                for act in enemy_data['actions']:
+                    scroll_content.add_widget(self._make_action_row(act))
+
+            # PASSIVE EVNER (traits)
+            if enemy_data and enemy_data.get('traits'):
+                scroll_content.add_widget(Widget(
+                    size_hint_y=None, height=dp(2)))
+                scroll_content.add_widget(mklbl(
+                    "TREKK", color=GOLD, size=10, bold=True, h=16))
+                for tr in enemy_data['traits']:
+                    tlbl = Label(
+                        text=f"• {tr}", font_size=sp(10), color=DIM,
+                        halign='left', valign='top',
+                        size_hint_y=None, text_size=(None, None))
+                    tlbl.bind(width=lambda w, v:
+                              setattr(w, 'text_size', (v, None)))
+                    tlbl.bind(texture_size=lambda w, v:
+                              setattr(w, 'height', v[1] + dp(2)))
+                    scroll_content.add_widget(tlbl)
+
+            # SAVES + SKILLS-rad (komprimert – kun fiender)
+            if enemy_data:
+                extras = []
+                if enemy_data.get('saves'):
+                    extras.append(f"Saves: {enemy_data['saves']}")
+                if enemy_data.get('skills'):
+                    extras.append(f"Skills: {enemy_data['skills']}")
+                if enemy_data.get('senses'):
+                    extras.append(f"Senses: {enemy_data['senses']}")
+                if extras:
+                    scroll_content.add_widget(Widget(
+                        size_hint_y=None, height=dp(2)))
+                    for e in extras:
+                        elbl = Label(
+                            text=e, font_size=sp(9), color=DIM,
+                            halign='left', valign='top',
+                            size_hint_y=None)
+                        elbl.bind(width=lambda w, v:
+                                  setattr(w, 'text_size', (v, None)))
+                        elbl.bind(texture_size=lambda w, v:
+                                  setattr(w, 'height', v[1] + dp(2)))
+                        scroll_content.add_widget(elbl)
+
+            # MAGI – PC: spell-slots med +/-; fiende: spells-liste
+            if ch:
+                slots = ch.get('spell_slots', {})
+                used_levels = sorted(
+                    [int(lvl) for lvl, s in slots.items()
+                     if s.get('total', 0) > 0])
+                if used_levels:
+                    scroll_content.add_widget(Widget(
+                        size_hint_y=None, height=dp(4)))
+                    scroll_content.add_widget(mklbl(
+                        "SPELL SLOTS", color=GOLD, size=10,
+                        bold=True, h=16))
+                    sl_row = BoxLayout(
+                        size_hint_y=None, height=dp(38), spacing=dp(3))
+                    for lvl in used_levels:
+                        s = slots.get(str(lvl), {})
+                        tot = s.get('total', 0)
+                        exp = s.get('expended', 0)
+                        rem = max(0, tot - exp)
+                        cell_box = BoxLayout(
+                            orientation='vertical', spacing=dp(0),
+                            size_hint_x=None)
+                        cell_box.width = dp(58)
+                        cell_box.add_widget(Label(
+                            text=f"L{lvl}: {rem}/{tot}",
+                            font_size=sp(10),
+                            color=TXT if rem else DIM,
+                            size_hint_y=None, height=dp(14)))
+                        bb = BoxLayout(
+                            size_hint_y=None, height=dp(22),
+                            spacing=dp(2))
+                        bb.add_widget(mkbtn(
+                            "-",
+                            lambda L=lvl: self._battle_adjust_slot(L, -1),
+                            small=True, danger=True))
+                        bb.add_widget(mkbtn(
+                            "+",
+                            lambda L=lvl: self._battle_adjust_slot(L, +1),
+                            small=True))
+                        cell_box.add_widget(bb)
+                        sl_row.add_widget(cell_box)
+                    sl_row.add_widget(Widget())
+                    scroll_content.add_widget(sl_row)
+            elif enemy_data and enemy_data.get('spells'):
+                scroll_content.add_widget(Widget(
+                    size_hint_y=None, height=dp(4)))
+                scroll_content.add_widget(mklbl(
+                    "MAGI", color=GOLD, size=10, bold=True, h=16))
+                sp_data = enemy_data['spells']
+                # Header: ability + DC + attack
+                head_parts = []
+                if sp_data.get('ability'):
+                    head_parts.append(sp_data['ability'])
+                if sp_data.get('save_dc'):
+                    head_parts.append(f"DC {sp_data['save_dc']}")
+                if sp_data.get('attack'):
+                    head_parts.append(f"Attack {sp_data['attack']}")
+                if head_parts:
+                    scroll_content.add_widget(mklbl(
+                        " | ".join(head_parts), color=DIM, size=10, h=14))
+                # Hver spell-niva-noekkel (ikke ability/save_dc/attack)
+                for k, v in sp_data.items():
+                    if k in ('ability', 'save_dc', 'attack'):
+                        continue
+                    if isinstance(v, list):
+                        spell_str = f"[b]{k}:[/b] {', '.join(v)}"
+                    else:
+                        spell_str = f"[b]{k}:[/b] {v}"
+                    slbl = Label(
+                        text=spell_str, markup=True,
+                        font_size=sp(10), color=TXT,
+                        halign='left', valign='top',
+                        size_hint_y=None)
+                    slbl.bind(width=lambda w, val:
+                              setattr(w, 'text_size', (val, None)))
+                    slbl.bind(texture_size=lambda w, val:
+                              setattr(w, 'height', val[1] + dp(2)))
+                    scroll_content.add_widget(slbl)
+
+            # Pakk innholdet i ScrollView
+            sv = ScrollView(size_hint=(1, 1), bar_width=dp(3))
+            sv.add_widget(scroll_content)
+            box.add_widget(sv)
+
+        def _make_action_row(self, act):
+            """Bygg én linje for et angrep/handling.
+
+            Format: [Navn]  th-bonus  damage-tekst
+            """
+            line = Label(
+                text=(f"[b]{act.get('name','?')}[/b] "
+                      f"{act.get('th','')} • "
+                      f"{act.get('dmg','')}"
+                      + (f" ({act.get('reach','')})"
+                         if act.get('reach') else "")
+                      + (f" ({act.get('range','')})"
+                         if act.get('range') else "")),
+                markup=True, font_size=sp(10), color=TXT,
+                halign='left', valign='top', size_hint_y=None)
+            line.bind(width=lambda w, v:
+                      setattr(w, 'text_size', (v, None)))
+            line.bind(texture_size=lambda w, v:
+                      setattr(w, 'height', v[1] + dp(2)))
+            return line
+
+        def _battle_adjust_hp(self, delta):
+            """Trekk fra eller legg til HP for den med turen.
+
+            Skriver til karakter-fila for PC-er. For frittstaaende init-
+            entries oppdateres bare entry-en (ikke karakter-fila)."""
+            entry, ch = self._battle_current_actor()
+            if entry is None:
+                return
+            if ch:
+                cur = int(ch.get('hp_current', 0))
+                mx = int(ch.get('hp_max', 0))
+                new_val = max(0, min(mx if mx > 0 else 999, cur + delta))
+                ch['hp_current'] = new_val
+                # Hold init-entry sitt hp-felt synkronisert
+                entry['hp'] = f"{new_val}/{mx}"
+                save_json(CHAR_FILE, self.chars)
+            else:
+                # Frittstaaende entry: parse "cur/max" og endre cur
+                hp_str = entry.get('hp', '0/0')
+                try:
+                    cur_s, max_s = hp_str.split('/', 1)
+                    cur = int(cur_s)
+                    mx = int(max_s)
+                except (ValueError, AttributeError):
+                    cur, mx = 0, 0
+                new_val = max(0, min(mx if mx > 0 else 999, cur + delta))
+                entry['hp'] = f"{new_val}/{mx}"
+            self._battle_build_stat_panel()
+            self._battle_update_info(
+                f"{entry.get('name','?')}: HP {entry.get('hp','?')}")
+
+        def _battle_adjust_slot(self, level, delta):
+            """Endre antall brukte spell-slots paa et nivaa.
+
+            delta=+1 betyr 'bruk en slot' (expended++).
+            delta=-1 betyr 'gjenopprett en slot' (expended--)."""
+            entry, ch = self._battle_current_actor()
+            if ch is None:
+                return
+            slots = ch.setdefault('spell_slots', {})
+            s = slots.setdefault(str(level), {'total': 0, 'expended': 0})
+            tot = int(s.get('total', 0))
+            exp = int(s.get('expended', 0))
+            new_exp = max(0, min(tot, exp + delta))
+            s['expended'] = new_exp
+            save_json(CHAR_FILE, self.chars)
+            self._battle_build_stat_panel()
+            rem = max(0, tot - new_exp)
+            self._battle_update_info(
+                f"{entry.get('name','?')}: L{level} {rem}/{tot}")
+
         def _battle_refresh_img(self):
             """Rerender + force reload av Kivy-bildet."""
             self._battle_render()
             if hasattr(self, '_bm_img') and self._bm_img:
+                src = getattr(self, '_bm_display_png', BATTLE_PNG)
+                if self._bm_img.source != src:
+                    self._bm_img.source = src
                 self._bm_img.reload()
+            self._battle_sync_cast_if_live()
+
+        def _battle_refresh_img_no_cast(self):
+            """Rerender + reload Kivy-bildet UTEN aa sende til TV.
+            Brukes under taake-maling saa DM ser endringene live,
+            men spillerne ser ingenting foer DM trykker 'Oppdater cast'."""
+            self._battle_render()
+            if hasattr(self, '_bm_img') and self._bm_img:
+                src = getattr(self, '_bm_display_png', BATTLE_PNG)
+                if self._bm_img.source != src:
+                    self._bm_img.source = src
+                self._bm_img.reload()
+            # _battle_sync_cast_if_live() kalles IKKE her
+
+        def _battle_sync_cast_if_live(self):
+            """Oppdaterer TV automatisk hvis battlemap allerede er castet."""
+            if not getattr(self, '_bm_cast_live', False):
+                return
+            if not CAST_AVAILABLE or not getattr(self.cast, 'mc', None):
+                self._bm_cast_live = False
+                return
+            self._battle_cast_current()
+
+        def _battle_cast_current(self, success_msg=None, error_msg=None):
+            """Send gjeldende battlemap-PNG til TV."""
+            self._bm_cast_counter += 1
+            # Verifiser at PNG-fila faktisk eksisterer på disk
+            if not os.path.exists(BATTLE_PNG):
+                log(f"Cast: PNG mangler paa disk: {BATTLE_PNG}")
+                self._bm_last_info = "PNG ikke lagret enda."
+                if error_msg:
+                    self._battle_update_info(error_msg)
+                return
+            url = self.server.url(BATTLE_PNG)
+            url = f"{url}?t={self._bm_cast_counter}"
+            log(f"Cast battlemap: URL={url}, PNG_size="
+                f"{os.path.getsize(BATTLE_PNG)} bytes")
+            log(f"Cast mc state: mc={self.cast.mc is not None}, "
+                f"cc={self.cast.cc is not None}")
+
+            def _c():
+                try:
+                    log("Cast: kaller play_media...")
+                    self.cast.mc.play_media(url, 'image/png')
+                    self.cast.mc.block_until_active()
+                    log("Cast: play_media OK")
+                    if success_msg:
+                        Clock.schedule_once(
+                            lambda dt, msg=success_msg:
+                                self._battle_update_info(msg), 0)
+                except Exception as e:
+                    log(f"Cast battlemap error: {e}")
+                    self._bm_cast_live = False
+                    if error_msg:
+                        Clock.schedule_once(
+                            lambda dt, msg=error_msg:
+                                self._battle_update_info(msg), 0)
+
+            threading.Thread(target=_c, daemon=True).start()
 
         def _battle_mode_switch(self, mode):
             """Bytt mellom flytt / taake / maal."""
+            log(f"_battle_mode_switch -> {mode}")
             self._bm_mode = mode
             self._bm_sel_token = None
             self._bm_measure_start = None
@@ -4563,6 +5689,68 @@ try:
 
         def _battle_on_map_touch(self, cx, cy):
             """Trykk paa kartet (canvas-piksler). Konverter til grid."""
+            log(f"_battle_on_map_touch: canvas=({cx:.0f},{cy:.0f}), "
+                f"mode={self._bm_mode}")
+            cell = self._battle_cell_size()
+            cols = self._bm_grid_cols
+            rows = self._battle_grid_rows()
+            col = int(cx // cell)
+            row = int(cy // cell)
+            log(f"  -> grid=({col},{row}), cell={cell}px, "
+                f"grid={cols}x{rows}")
+            if not (0 <= col < cols and 0 <= row < rows):
+                log("  -> utenfor grid, ignorerer")
+                return
+
+            if self._bm_mode == 'move':
+                self._battle_handle_move_tap(col, row)
+            elif self._bm_mode == 'fog':
+                # Start ny malingsgest – bestem retning fra foerste rutes tilstand
+                self._bm_fog_painted = {(col, row)}
+                self._bm_fog_last_col = col
+                self._bm_fog_last_row = row
+                cell_ref = [col, row]
+                action = self._bm_fog_action_pref
+                if action is None:
+                    action = 'remove' if cell_ref in self._bm_fog else 'add'
+                self._bm_fog_paint_action = action
+                if action == 'remove' and cell_ref in self._bm_fog:
+                    self._bm_fog.remove(cell_ref)
+                elif action == 'add' and cell_ref not in self._bm_fog:
+                    self._bm_fog.append(cell_ref)
+                self._battle_save()
+                self._battle_refresh_img_no_cast()
+            else:
+                self._battle_handle_measure_tap(col, row)
+
+        def _battle_interpolate_cells(self, c0, r0, c1, r1):
+            """Bresenham – returnerer alle grid-celler mellom to punkter."""
+            cells = []
+            dc = abs(c1 - c0)
+            dr = abs(r1 - r0)
+            sc = 1 if c0 < c1 else -1
+            sr = 1 if r0 < r1 else -1
+            err = dc - dr
+            c, r = c0, r0
+            while True:
+                cells.append((c, r))
+                if c == c1 and r == r1:
+                    break
+                e2 = 2 * err
+                if e2 > -dr:
+                    err -= dr
+                    c += sc
+                if e2 < dc:
+                    err += dc
+                    r += sr
+            return cells
+
+        def _battle_on_map_move(self, cx, cy):
+            """Behandle drag-bevegelse paa kartet. Kun aktiv i fog-modus."""
+            if self._bm_mode != 'fog':
+                return
+            if self._bm_fog_paint_action is None:
+                return
             cell = self._battle_cell_size()
             cols = self._bm_grid_cols
             rows = self._battle_grid_rows()
@@ -4570,13 +5758,37 @@ try:
             row = int(cy // cell)
             if not (0 <= col < cols and 0 <= row < rows):
                 return
+            last_col = (self._bm_fog_last_col
+                        if self._bm_fog_last_col is not None else col)
+            last_row = (self._bm_fog_last_row
+                        if self._bm_fog_last_row is not None else row)
+            changed = False
+            for c, r in self._battle_interpolate_cells(last_col, last_row, col, row):
+                if not (0 <= c < cols and 0 <= r < rows):
+                    continue
+                key = (c, r)
+                if key in self._bm_fog_painted:
+                    continue  # allerede behandlet i denne gesten
+                self._bm_fog_painted.add(key)
+                cell_ref = [c, r]
+                if self._bm_fog_paint_action == 'add' and cell_ref not in self._bm_fog:
+                    self._bm_fog.append(cell_ref)
+                    changed = True
+                elif self._bm_fog_paint_action == 'remove' and cell_ref in self._bm_fog:
+                    self._bm_fog.remove(cell_ref)
+                    changed = True
+            self._bm_fog_last_col = col
+            self._bm_fog_last_row = row
+            if changed:
+                self._battle_save()
+                self._battle_refresh_img_no_cast()
 
-            if self._bm_mode == 'move':
-                self._battle_handle_move_tap(col, row)
-            elif self._bm_mode == 'fog':
-                self._battle_toggle_fog(col, row)
-            else:
-                self._battle_handle_measure_tap(col, row)
+        def _battle_on_map_touch_up(self):
+            """Avslutt malingsgest – nullstill tilstand."""
+            self._bm_fog_paint_action = None
+            self._bm_fog_painted = set()
+            self._bm_fog_last_col = None
+            self._bm_fog_last_row = None
 
         def _battle_handle_move_tap(self, col, row):
             """Move-modus: valg av token eller flytting."""
@@ -4653,6 +5865,8 @@ try:
             self._init_list.append(top)
             self._bm_sel_token = None
             self._battle_refresh_img()
+            # Oppdater stat-panelet for den nye aktoeren
+            self._battle_build_stat_panel()
             # Vis hvem sin tur det er naa
             new_top = self._init_list[0]
             self._battle_update_info(
@@ -4669,46 +5883,74 @@ try:
                 return (217, 89, 64)        # roed
 
         def _battle_render(self):
-            """Komponer PNG av kartet med PIL."""
+            """Komponer to PNG-er av kartet med PIL:
+
+            BATTLE_PNG (cast til TV):
+                Taake er HELT SVART og ugjennomsiktig, slik at spillerne
+                ikke ser hva som ligger under.
+
+            _bm_display_png (vises i appen):
+                Taake er semi-transparent saa DM ser kartet under.
+                Lagres til DATA_DIR (privat skrivbar mappe), med
+                revisjons-suffix for at Kivy skal reloade bildet.
+            """
             if not PIL_OK:
                 return
             try:
                 cell = self._battle_cell_size()
                 cols = self._bm_grid_cols
                 rows = self._battle_grid_rows()
-                w, h = self._battle_render_size()
+                grid_w = cols * cell
+                grid_h = rows * cell
 
                 # Base: bakgrunn eller svart
-                if self._bm_bg and os.path.exists(self._bm_bg):
+                stale_bg = self._bm_bg and not os.path.exists(self._bm_bg)
+                if stale_bg:
+                    log(f"Battlemap bg missing, clearing stale path: {self._bm_bg}")
+                    self._bm_bg = None
+                    self._bm_bg_label = None
+                if self._bm_bg:
                     try:
-                        bg = PILImage.open(self._bm_bg).convert('RGB')
-                        bg = bg.resize((w, h))
-                        img = bg
+                        with PILImage.open(self._bm_bg) as bg_src:
+                            bg = bg_src.convert('RGB')
+                            if bg.size != (grid_w, grid_h):
+                                bg = bg.resize(
+                                    (grid_w, grid_h),
+                                    resample=PIL_LANCZOS)
+                            bg.load()
+                            base_img = bg
                     except Exception as e:
                         log(f"Battlemap bg load error: {e}")
-                        img = PILImage.new('RGB', (w, h), (20, 30, 25))
+                        base_img = PILImage.new(
+                            'RGB', (grid_w, grid_h), (45, 55, 50))
                 else:
-                    img = PILImage.new('RGB', (w, h), (20, 30, 25))
+                    base_img = PILImage.new(
+                        'RGB', (grid_w, grid_h), (45, 55, 50))
 
-                draw = PILDraw.Draw(img, 'RGBA')
+                # Bruk lysstyrke-justering hvis satt
+                brightness = self._bm_bg_brightness
+                if brightness != 1.0:
+                    base_img = PILImageEnhance.Brightness(
+                        base_img).enhance(brightness)
+
+                # ============================================================
+                # FELLES TEGNING (grid + maal-linje + tokens)
+                # Tegnes paa base_img én gang. Etterpaa lager vi to kopier
+                # som faar hver sin variant av taake.
+                # ============================================================
+                draw = PILDraw.Draw(base_img, 'RGBA')
 
                 # GRID
                 if self._bm_show_grid:
                     grid_col = (255, 217, 115, 100)   # dempet gull
                     for c in range(cols + 1):
                         x = c * cell
-                        draw.line([(x, 0), (x, h)], fill=grid_col, width=1)
+                        draw.line([(x, 0), (x, grid_h)],
+                                  fill=grid_col, width=1)
                     for r in range(rows + 1):
                         y = r * cell
-                        draw.line([(0, y), (w, y)], fill=grid_col, width=1)
-
-                # TAAKE (semi-transparent moerk)
-                fog_col = (10, 10, 15, 210)
-                for fc in self._bm_fog:
-                    fx, fy = fc[0] * cell, fc[1] * cell
-                    draw.rectangle(
-                        [(fx, fy), (fx + cell, fy + cell)],
-                        fill=fog_col)
+                        draw.line([(0, y), (grid_w, y)],
+                                  fill=grid_col, width=1)
 
                 # MAAL-LINJE
                 if (self._bm_mode == 'measure'
@@ -4733,7 +5975,6 @@ try:
                     tw = cell * sz
                     color = self._battle_color_for_type(
                         t.get('type', 'F'))
-                    # Sirkel
                     pad = max(2, cell // 10)
                     draw.ellipse(
                         [(px + pad, py + pad),
@@ -4741,13 +5982,11 @@ try:
                         fill=color + (230,),
                         outline=(0, 0, 0, 255),
                         width=2)
-                    # Seleksjon-ring
                     if i == self._bm_sel_token:
                         draw.ellipse(
                             [(px + 1, py + 1),
                              (px + tw - 1, py + tw - 1)],
                             outline=(255, 217, 115, 255), width=4)
-                    # Navn (initialer)
                     nm = t.get('name', '?')
                     initials = ''.join(
                         [w[0] for w in nm.split()[:2] if w])[:2].upper()
@@ -4756,14 +5995,96 @@ try:
                             font = PILFont.load_default()
                             tx = px + tw // 2
                             ty = py + tw // 2
-                            # Anslaa tekstst enkelt
                             draw.text((tx - 6, ty - 6), initials,
                                       fill=(0, 0, 0, 255), font=font)
                         except Exception:
                             pass
 
-                # Lagre
-                img.save(BATTLE_PNG, 'PNG')
+                # ============================================================
+                # AUTO-SYNLIGHET RUNDT PC-TOKENS
+                # Beregn et sett av "synlige" ruter rundt hver PC-token
+                # (Chebyshev-distanse <= radius). Fog som overlapper disse
+                # rutene skjules i begge versjoner — ellers ville svart fog
+                # paa TV gjort det umulig for spillerne aa se sine egne
+                # karakterer.
+                # ============================================================
+                vis_radius = self._bm_pc_vis_radius
+                visible = set()
+                if vis_radius > 0:
+                    for t in self._bm_tokens:
+                        if t.get('type') != 'PC':
+                            continue
+                        tc = t.get('col', 0)
+                        tr = t.get('row', 0)
+                        sz = t.get('size', 1)
+                        # Sentralrute(r): for stoerre tokens, dekk alle
+                        # ruter token okkuperer
+                        for dc in range(sz):
+                            for dr in range(sz):
+                                bc = tc + dc
+                                br = tr + dr
+                                # Ruter innenfor vis_radius (Chebyshev)
+                                for ec in range(bc - vis_radius,
+                                                bc + vis_radius + 1):
+                                    for er in range(br - vis_radius,
+                                                    br + vis_radius + 1):
+                                        if (0 <= ec < cols
+                                                and 0 <= er < rows):
+                                            visible.add((ec, er))
+
+                # Filtrer fog: ekskluder ruter som er "synlige" rundt PC-er
+                effective_fog = [
+                    fc for fc in self._bm_fog
+                    if (fc[0], fc[1]) not in visible
+                ]
+
+                # ============================================================
+                # CAST-VERSJON (BATTLE_PNG): UGJENNOMSIKTIG SVART TAAKE
+                # Spillerne skal ikke se hva som ligger under taaken.
+                # ============================================================
+                cast_img = base_img.copy()
+                if effective_fog:
+                    cast_draw = PILDraw.Draw(cast_img, 'RGBA')
+                    # Alpha 255 = helt ugjennomsiktig svart
+                    for fc in effective_fog:
+                        fx, fy = fc[0] * cell, fc[1] * cell
+                        cast_draw.rectangle(
+                            [(fx, fy), (fx + cell, fy + cell)],
+                            fill=(0, 0, 0, 255))
+                cast_img.save(BATTLE_PNG, 'PNG')
+
+                # ============================================================
+                # APP-VERSJON (_bm_display_png): SEMI-TRANSPARENT TAAKE
+                # DM ser kartet gjennom taaken for aa kunne planlegge.
+                # ============================================================
+                if effective_fog:
+                    app_draw = PILDraw.Draw(base_img, 'RGBA')
+                    # Alpha 150 = ca 60% gjennomsiktig (som foer)
+                    for fc in effective_fog:
+                        fx, fy = fc[0] * cell, fc[1] * cell
+                        app_draw.rectangle(
+                            [(fx, fy), (fx + cell, fy + cell)],
+                            fill=(0, 0, 0, 150))
+
+                # Lagre app-versjon med revisjons-suffix til DATA_DIR.
+                # Bruker DATA_DIR (privat skrivbar mappe) i stedet for
+                # BASE_DIR – sistnevnte er ikke skrivbar paa Android 13+.
+                old_display = getattr(self, '_bm_display_png', None)
+                self._bm_render_rev += 1
+                display_path = os.path.join(
+                    DATA_DIR,
+                    f"battlemap_current_ui_{self._bm_render_rev}.png")
+                base_img.save(display_path, 'PNG')
+                self._bm_display_png = display_path
+                if stale_bg:
+                    self._battle_save()
+                if old_display and old_display not in (BATTLE_PNG, display_path):
+                    try:
+                        os.remove(old_display)
+                    except FileNotFoundError:
+                        pass
+                    except Exception as e:
+                        log(f"Battlemap cleanup error: {e}")
             except Exception as e:
                 log(f"Battlemap render error: {e}")
                 log(traceback.format_exc())
@@ -4801,10 +6122,30 @@ try:
                 danger=True, small=True, size_hint_x=0.4))
             g.add_widget(bg_row)
 
-            cur_bg = (os.path.basename(self._bm_bg)
-                      if self._bm_bg else "(ingen)")
+            cur_bg = self._bm_bg_label or "(ingen)"
             g.add_widget(mklbl(f"Naa: {cur_bg}", color=DIM,
                                size=10, h=18))
+
+            # LYSSTYRKE (bakgrunn)
+            bright_val = self._bm_bg_brightness
+            bright_pct = int(round(bright_val * 100))
+            bright_lbl = mklbl(
+                f"Lysstyrke: {bright_pct}%", color=DIM, size=10, h=18)
+            g.add_widget(bright_lbl)
+            bright_row = BoxLayout(size_hint_y=None, height=dp(32),
+                                   padding=[dp(4), 0])
+            bright_sl = Slider(min=0.1, max=2.0, value=bright_val,
+                               size_hint_x=1.0)
+
+            def _on_brightness(slider, value):
+                self._bm_bg_brightness = round(value, 2)
+                bright_lbl.text = f"Lysstyrke: {int(round(value * 100))}%"
+                self._battle_save()
+                self._battle_refresh_img()
+
+            bright_sl.bind(value=_on_brightness)
+            bright_row.add_widget(bright_sl)
+            g.add_widget(bright_row)
 
             # RUTENETT
             g.add_widget(mklbl("RUTENETT", color=GDIM,
@@ -4847,6 +6188,30 @@ try:
                 danger=True, small=True, size_hint_x=0.5))
             g.add_widget(fog_row)
 
+            cast_fog_row = BoxLayout(size_hint_y=None, height=dp(42),
+                                     spacing=dp(6))
+            cast_fog_row.add_widget(mkbtn(
+                "Oppdater cast 📺", self._battle_cast_fog_update,
+                small=True, size_hint_x=1.0))
+            g.add_widget(cast_fog_row)
+
+            # SYNLIGHET RUNDT PC-er
+            vis_r = self._bm_pc_vis_radius
+            vis_lbl_txt = (f"PC-syn: {vis_r} ruter"
+                           if vis_r > 0 else "PC-syn: AV")
+            g.add_widget(mklbl(vis_lbl_txt, color=DIM, size=11, h=20))
+            vis_row = BoxLayout(size_hint_y=None, height=dp(42),
+                                spacing=dp(4))
+            for n in [0, 2, 3, 4, 6]:
+                lbl = "Av" if n == 0 else str(n)
+                btn = mkbtn(
+                    lbl,
+                    lambda x=n: self._battle_set_pc_vis(x),
+                    accent=(n == vis_r),
+                    small=True)
+                vis_row.add_widget(btn)
+            g.add_widget(vis_row)
+
             # TOKENS
             g.add_widget(mklbl("TOKENS", color=GDIM,
                                size=10, bold=True, h=20))
@@ -4882,24 +6247,27 @@ try:
         def _battle_toggle_grid(self):
             self._bm_show_grid = not self._bm_show_grid
             self._battle_save()
+            self._battle_refresh_img()
             self._battle_show_menu()   # rerender meny-tekst
             # og selve kartet neste gang
 
         def _battle_set_cols(self, n):
-            """Endre antall kolonner. Kast alle tokens utenfor."""
+            """Endre antall kolonner. Klem tokens innenfor det nye grid-et
+            i stedet for å slette dem (mindre frustrerende ved feiltrykk)."""
             self._bm_grid_cols = n
             cols = n
             rows = self._battle_grid_rows()
-            # Fjern tokens som havner utenfor
-            self._bm_tokens = [
-                t for t in self._bm_tokens
-                if (0 <= t.get('col', 0) < cols
-                    and 0 <= t.get('row', 0) < rows)]
-            # Fjern fog utenfor
+            # Klem tokens inn i grid (behold dem)
+            for t in self._bm_tokens:
+                t['col'] = max(0, min(cols - 1, t.get('col', 0)))
+                t['row'] = max(0, min(rows - 1, t.get('row', 0)))
+            # Fjern fog utenfor (ufarlig å miste ved dimensjonsendring)
             self._bm_fog = [
                 c for c in self._bm_fog
                 if 0 <= c[0] < cols and 0 <= c[1] < rows]
+            self._bm_sel_token = None
             self._battle_save()
+            self._battle_refresh_img()
             self._battle_show_menu()
 
         def _battle_fill_fog(self):
@@ -4910,22 +6278,48 @@ try:
                             for c in range(cols)
                             for r in range(rows)]
             self._battle_save()
+            self._battle_refresh_img()
             self._battle_show_menu()
 
         def _battle_clear_fog(self):
             self._bm_fog = []
             self._battle_save()
+            self._battle_refresh_img()
+            self._battle_show_menu()
+
+        def _battle_cast_fog_update(self):
+            """Send gjeldende taake-tilstand til TV manuelt.
+            Kalles av 'Oppdater cast'-knappen i menyen."""
+            self._battle_render()          # soerg for at BATTLE_PNG er oppdatert
+            self._battle_sync_cast_if_live()
+            self._battle_update_info("Cast oppdatert med ny taake.")
+            self._battle_show_menu()
+
+        def _battle_set_pc_vis(self, radius):
+            """Sett synligheten rundt PC-tokens (Chebyshev-radius)."""
+            self._bm_pc_vis_radius = max(0, int(radius))
+            self._battle_save()
+            self._battle_refresh_img()
             self._battle_show_menu()
 
         def _battle_clear_tokens(self):
             self._bm_tokens = []
             self._bm_sel_token = None
             self._battle_save()
+            self._battle_refresh_img()
             self._battle_show_menu()
 
         def _battle_clear_bg(self):
             self._bm_bg = None
+            self._bm_bg_label = None
+            try:
+                os.remove(BATTLE_BG_PNG)
+            except FileNotFoundError:
+                pass
+            except Exception as e:
+                log(f"Battlemap bg cleanup error: {e}")
             self._battle_save()
+            self._battle_refresh_img()
             self._battle_show_menu()
 
         def _battle_sync_from_init(self):
@@ -4968,25 +6362,32 @@ try:
             self._bm_tokens = new_tokens
             self._bm_sel_token = None
             self._battle_save()
+            self._battle_refresh_img()
             self._mk_battle_map()
 
         def _battle_cast(self):
-            """Cast gjeldende PNG til TV (cache-bust med query-streng)."""
+            """Cast gjeldende PNG til TV (cache-bust med query-streng).
+            Returnerer til kart-UI etter cast så info-label er synlig
+            for brukeren (i menyen er info-label ikke i widget-treet)."""
+            log("=== _battle_cast kalt ===")
+            log(f"  CAST_AVAILABLE={CAST_AVAILABLE}, "
+                f"cast.mc={self.cast.mc is not None}, "
+                f"cast.cc={self.cast.cc is not None}")
             if not CAST_AVAILABLE or not self.cast.mc:
-                self._battle_update_info(
-                    "Ingen Cast-enhet tilkoblet. "
-                    "Gaa til Cast-fanen.")
+                self._bm_cast_live = False
+                self._bm_last_info = ("Ingen Cast-enhet tilkoblet. "
+                                      "Gaa til Cast-fanen.")
+                self._mk_battle_map()
                 return
-            # Sikre at PNG er oppdatert
+            # Sikre at PNG er oppdatert paa disk FOR vi bygger om UI
             self._battle_render()
-            self._bm_cast_counter += 1
-            url = self.server.url(BATTLE_PNG)
-            url = f"{url}?t={self._bm_cast_counter}"
-            self.cast.cast_media(
-                url,
-                'image/png',
-                cb=lambda ok: self._battle_update_info(
-                    "Sendt til TV." if ok else "Cast feilet."))
+            self._bm_cast_live = True
+            # Tilbake til kartet, slik at info-label er synlig naar
+            # cast-callback kommer tilbake.
+            self._mk_battle_map()
+            self._battle_cast_current(
+                success_msg="Sendt til TV.",
+                error_msg="Cast feilet.")
 
         def _battle_pick_bg(self):
             """Vis bildevalg fra MAPS_DIR."""
@@ -5041,8 +6442,11 @@ try:
             self.tool_area.add_widget(p)
 
         def _battle_set_bg(self, path):
-            self._bm_bg = path
+            if not self._battle_store_bg_copy(path):
+                self._battle_show_menu()
+                return
             self._battle_save()
+            self._battle_refresh_img()
             self._battle_show_menu()
 
 

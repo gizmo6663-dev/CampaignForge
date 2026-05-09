@@ -2,10 +2,10 @@
 
 **Dungeon Master's Companion — en Kivy-basert Android-app for D&D 5e**
 
-Campaign Forge er en tabletop-RPG-companion bygd for Dungeons & Dragons 5e (2024-reglene). Appen samler alt en DM trenger under spilløkta: bildebibliotek, stemningslyder, karakterark, initiativ-tracker og battlemap — alt i et varmt, pergament-inspirert grensesnitt. Telefonen kan caste bilder og kart til en TV via Chromecast slik at spillerne ser det du vil de skal se.
+Campaign Forge er en tabletop-RPG-companion bygd for Dungeons & Dragons 5e (2024-reglene). Appen samler alt en DM trenger under spilløkta: bildebibliotek, stemningslyder, one-shot-lydeffekter, fullstendig scenario-bygger, karakterark, initiativ-tracker og battlemap med Chromecast-støtte.
 
 Tema: **Emerald Grove** — mosegrønt, pergament og varmt gull.
-Versjon: **0.1** · Språk: Norsk · System: D&D 5e (2024)
+Versjon: **0.1.0** · Språk: Norsk · System: D&D 5e (2024)
 
 ---
 
@@ -25,7 +25,7 @@ Versjon: **0.1** · Språk: Norsk · System: D&D 5e (2024)
 
 ## Funksjoner
 
-Appen er delt i fem hovedfaner. Karakter-fanen har sub-faner for å holde komplekse funksjoner organisert:
+Appen er delt i fire hovedfaner. Karakter- og Verktøy-fanene har sub-faner for å holde komplekse funksjoner organisert. Lyd-fanen har nå fire sub-faner:
 
 ### 🖼️ Bilder
 - Galleri med mappenavigering for å organisere bilder per kampanje eller sesjon
@@ -34,7 +34,7 @@ Appen er delt i fem hovedfaner. Karakter-fanen har sub-faner for å holde komple
 - Gjenkjenner `.png`, `.jpg`, `.jpeg`, `.webp`
 
 ### 🔊 Lyd
-Kombinert fane med sub-fanene **Musikk** og **Ambient**:
+Kombinert fane med sub-fanene **Musikk**, **Ambient**, **One-shot** og **Scenarier**:
 
 **Musikk** — lokal avspilling
 - Leser `.mp3`, `.ogg`, `.wav`, `.flac` fra `music/`-mappen
@@ -47,6 +47,23 @@ Kombinert fane med sub-fanene **Musikk** og **Ambient**:
 - Separat volumkontroll fra musikken, så du kan mikse kro-snakk under en oppdragsintroduksjon
 - Ingen opplasting nødvendig — lenkene peker rett på public-domain-spor
 
+**One-shot** — lydeffekter
+- Leser lydeffekter fra `oneshots/`-mappen (`.mp3`, `.ogg`, `.wav`, `.flac`, `.m4a`, `.aac`)
+- Tapp en fil for å fyre den av — overlappende avspilling støttes
+- Separat volumkontroll; "Stopp alle"-knapp for å avbryte klinger
+- Typisk bruk: sverdklang, tordenbrak, dørsmell, trollformel
+
+**Scenarier** — scenario-bygger og live-spiller
+- Bygg scenarioer med Vogler-dramaturgiens 12 stadier som utgangspunkt
+- Hvert scenario inneholder scener; hver scene har **loop-lag** (parallelle lydkilder) og **one-shot-knapper**
+- Hvert loop-lag kan peke på musikk, ambient eller en lokal fil — alt loopes automatisk
+- **Performance-modus**: skjuler redigeringsknapper og gjør play/stopp-knappene større for rask bruk under spill
+- **Master-volum** per scenario justerer alle aktive lag i sanntid
+- **Scene-overgang med fade-out**: lyder fades ut over 2 sekunder i stedet for å kuttes brått
+- **Lag-bibliotek**: lagre og gjenbruk ferdigkonfigurerte lag på tvers av scenarioer
+- Scene-rekkefølge kan endres med pil-knapper; scener kan dupliseres
+- Lagres i privat app-lagring (`scenarios.json` og `library.json`)
+
 ### 🎭 Karakter
 Sub-faner for karakterarbeid og kamp-støtte:
 
@@ -56,7 +73,7 @@ Sub-faner for karakterarbeid og kamp-støtte:
 - Ferdigheter med proficiency-toggles
 - HP, AC, initiativ-bonus, conditions, spell slots og trollformler
 - PC og NPC skilles visuelt med ulik fargekoding
-- Lagres i `characters.json` på enheten
+- Lagres i privat app-lagring (`characters.json`)
 
 **Initiativ** — kamp-tracker
 - Legg til PCer/NPCer fra karakter-lista, eller ad hoc-fiender
@@ -64,21 +81,26 @@ Sub-faner for karakterarbeid og kamp-støtte:
 - Bla gjennom runder og turer med aktiv-deltaker-indikator
 - HP-oppdatering direkte fra trackeren
 
-**Kart** — battlemap-komposisjon
+### 🧰 Verktøy
+Samlet verktøyfane med sub-fanene **Battlemap**, **Regler** og **Cast**:
+
+**Battlemap** — battlemap-komposisjon
 - Komponér battlemap fra bakgrunnsbilde + token-overlegg
 - 16:9 canvas (1280×720) optimalisert for TV-casting
 - 5 ft per rute (D&D 5e-standard)
+- Fog of war kan dekke hele kartet og avdekkes rute for rute
 - Bruker Pillow (PIL) for bildebehandling — deaktiveres gracefully hvis PIL ikke er tilgjengelig
-- Lagrer konfigurasjon i `battlemap.json` og genererer `battlemap_current.png`
+- Lagrer konfigurasjon i privat app-lagring og genererer `battlemap_current.png`
 
-### 📖 Regler
+**Regler**
 - Sammenleggbar mappestruktur med D&D 5e-referanser
 - Overlay-visning for regel-innhold — ingen nettilgang nødvendig
 - Raskt oppslag midt i spilløkta
 
-### 📺 Cast
+**Cast**
 - Oppdager Chromecast-enheter på lokalnett via mDNS
 - Caster bilder og battlemaps direkte til TV
+- Castet battlemap oppdateres fortløpende når kartet endres
 - Lokal HTTP-server (port 8089) serverer media til Chromecast
 - Auto-cast: bilder caster automatisk når de vises hvis en enhet er tilkoblet
 
@@ -88,23 +110,23 @@ Sub-faner for karakterarbeid og kamp-støtte:
 
 <table>
   <tr>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260423_205629_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260423_205629_CampaignForge.jpg" width="600" /></details></td>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184401_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184401_CampaignForge.jpg" width="600" /></details></td>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184408_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184408_CampaignForge.jpg" width="600" /></details></td>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184414_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184414_CampaignForge.jpg" width="600" /></details></td>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184501_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184501_CampaignForge.jpg" width="600" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260423_205629_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260423_205629_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184401_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184401_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184408_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184408_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184414_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184414_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184501_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184501_CampaignForge.jpg" /></details></td>
   </tr>
   <tr>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184506_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184506_CampaignForge.jpg" width="600" /></details></td>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184510_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184510_CampaignForge.jpg" width="600" /></details></td>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184517_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184517_CampaignForge.jpg" width="600" /></details></td>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184526_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184526_CampaignForge.jpg" width="600" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184506_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184506_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184510_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184510_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184517_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184517_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_184526_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_184526_CampaignForge.jpg" /></details></td>
   </tr>
   <tr>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_190423_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_190423_CampaignForge.jpg" width="600" /></details></td>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_190432_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_190432_CampaignForge.jpg" width="600" /></details></td>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_190435_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_190435_CampaignForge.jpg" width="600" /></details></td>
-    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_190440_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_190440_CampaignForge.jpg" width="600" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_190423_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_190423_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_190432_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_190432_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_190435_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_190435_CampaignForge.jpg" /></details></td>
+    <td align="center"><details><summary><img src="Screenshots/Screenshot_20260422_190440_CampaignForge.jpg" width="200" /></summary><img src="Screenshots/Screenshot_20260422_190440_CampaignForge.jpg" /></details></td>
   </tr>
 </table>
 
@@ -128,23 +150,32 @@ Ved første oppstart oppretter appen denne mappestrukturen automatisk:
 Dokumenter/CampaignForge/
 ├── images/          ← bildebibliotek (undermapper støttes)
 ├── music/           ← lokale musikkspor
-├── maps/            ← bakgrunnsbilder for battlemaps
-├── characters.json  ← opprettes når du lager første karakter
-└── battlemap.json   ← opprettes når du bygger første kart
+├── oneshots/        ← korte lydeffekter for one-shot og scenarier
+└── maps/            ← bakgrunnsbilder for battlemaps
 ```
+
+JSON-data (karakterer, scenarioer, battlemap-konfig) lagres i appens **private lagring** og ikke i `/sdcard/Documents`. Disse filene migreres automatisk fra eldre installasjoner.
 
 ---
 
 ## Mappestruktur på enheten
 
-Alle brukerdata ligger i `/sdcard/Documents/CampaignForge/`:
+**Brukerinnhold** (legg filer hit):
 
 | Sti | Innhold |
 |---|---|
-| `images/` | Bildegalleri (undermapper støttes) |
-| `music/` | Lokale musikkspor |
-| `maps/` | Bakgrunnsbilder for battlemaps |
+| `/sdcard/Documents/CampaignForge/images/` | Bildegalleri (undermapper støttes) |
+| `/sdcard/Documents/CampaignForge/music/` | Lokale musikkspor |
+| `/sdcard/Documents/CampaignForge/oneshots/` | Lydeffekter for one-shot og scenario-lag |
+| `/sdcard/Documents/CampaignForge/maps/` | Bakgrunnsbilder for battlemaps |
+
+**App-data** (privat lagring — ikke synlig i filbehandler):
+
+| Fil | Innhold |
+|---|---|
 | `characters.json` | Karakterer og NPCer |
+| `scenarios.json` | Scenarioer med scener og lag |
+| `library.json` | Gjenbrukbart lag-bibliotek |
 | `battlemap.json` | Aktiv battlemap-konfigurasjon |
 | `battlemap_current.png` | Generert kompositt for casting |
 | `crash.log` | Feillogg for debugging |
@@ -176,12 +207,15 @@ buildozer -v android debug
 
 ### Kjerne-klasser
 
-- **`CampaignForgeApp`** — hovedklasse, bygger UI, håndterer faner og state
+- **`CampaignForgeApp`** — hovedklasse, bygger UI, håndterer faner og state; arver `ScenariosMixin`
+- **`ScenariosMixin`** (`scenarios.py`) — alt scenario-relatert UI og logikk; mixin på `CampaignForgeApp`
 - **`MediaServer`** — lokal HTTP-server for å serve media til Chromecast
 - **`CastMgr`** — innpakning rundt `pychromecast` for enhetsoppdagelse og kontroll
 - **`APlayer`** — Android MediaPlayer-wrapper (via `pyjnius`) for musikk
 - **`SPlayer`** — streaming-spiller for ambient-lyder
 - **`FPlayer`** — fallback-spiller for desktop/testing
+- **`LayerPlayer`** (`audio_layers.py`) — looper én lydkilde (lokal fil eller URL) med eget volum; brukes av scenario-lag
+- **`OneShotPlayer`** (`audio_layers.py`) — fyrer av korte SFX med automatisk opprydding; støtter overlappende avspilling og fade-out
 - **`RBox`**, **`RBtn`**, **`RToggle`**, **`FramedBox`** — tilpassede widgets med bakgrunn og hjørneradius
 
 ### Designregler
@@ -190,12 +224,13 @@ buildozer -v android debug
 - **`markup=True`** er påkrevd på alle labels som bruker `[color]` eller lignende tags.
 - **Mini-player er persistent** — den lever utenfor fane-content-området slik at musikken ikke forsvinner når du bytter fane.
 - **Sub-fane-state huskes** via `hasattr`-sjekker — du kommer tilbake til samme sub-fane du forlot.
+- **JSON-data lagres i privat app-lagring** (`ANDROID_PRIVATE`) — unngår avhengighet av eksternt lagringstillatelse for skriving.
 
 ### Avhengigheter
 
 | Pakke | Rolle |
 |---|---|
-| `kivy` 2.3.0 | UI-rammeverk |
+| `kivy` | UI-rammeverk |
 | `pyjnius` | Android MediaPlayer-binding |
 | `pychromecast` | Chromecast-oppdagelse og kontroll |
 | `zeroconf`, `ifaddr` | mDNS for Chromecast |
@@ -210,28 +245,30 @@ buildozer -v android debug
 Viktige linjer i `buildozer.spec`:
 
 ```ini
-requirements = python3,kivy==2.3.0,pillow,android,pyjnius,pychromecast,zeroconf,ifaddr,protobuf,cython<3.0
+requirements = python3,kivy,pillow,android,pychromecast,zeroconf,ifaddr,protobuf
 
-android.api = 34
+android.api = 35
 android.minapi = 21
 android.ndk = 25b
+android.archs = arm64-v8a
 android.enable_androidx = True
+android.private_storage = True
 
-p4a.branch = v2024.01.21
+p4a.bootstrap = sdl2
 ```
 
 **Pinning-notater:**
 - `buildozer==1.5.0` — nyere versjoner har inkompatible argumenter med stabil p4a
-- `cython==0.29.36` — Cython 3.x bryter med eldre Kivy-versjoner
-- `p4a.branch = v2024.01.21` — tag-format med `v`-prefiks og ledende nuller er obligatorisk
+- `cython==0.29.36` — Cython 3.x bryter med eldre Kivy-versjoner (brukes ved lokal bygging)
 - `android.enable_androidx = True` — uten denne prøver Gradle å hente fra jcenter.bintray.com (403)
+- `android.private_storage = True` — app-data skrives til privat lagring, ikke `/sdcard`
 
 ---
 
 ## Feilsøking
 
 ### Appen krasjer ved oppstart
-Sjekk `/sdcard/Documents/CampaignForge/crash.log`. De vanligste årsakene er manglende tillatelser eller korrupt `characters.json`.
+Koble til `adb logcat` eller finn `crash.log` i appens private lagring. De vanligste årsakene er manglende tillatelser eller korrupt JSON-fil.
 
 ### Musikk spilles ikke
 - Bekreft at filene ligger i `music/` og har støttet format (`.mp3`, `.ogg`, `.wav`, `.flac`)
@@ -239,7 +276,16 @@ Sjekk `/sdcard/Documents/CampaignForge/crash.log`. De vanligste årsakene er man
 
 ### Ambient-lyder laster ikke
 - Ambient-lyder strømmes fra Internet Archive — krever nettilgang
-- Hvis en spesifikk URL er død, oppdater `AMBIENT_SOUNDS`-lista i `main.py`
+- Hvis en spesifikk URL er død, oppdater `AMBIENT_SOUNDS`-lista i `cf_common.py`
+
+### One-shot-lyder vises ikke
+- Legg lydfilene i `oneshots/`-mappen under `Documents/CampaignForge/`
+- Støttede formater: `.mp3`, `.ogg`, `.wav`, `.flac`, `.m4a`, `.aac`
+
+### Scenarier-lyd spilles ikke
+- Loop-lag må konfigureres med kilde (Musikk, Ambient eller Egne) via Endre-knappen
+- Lokale lyder for lag hentes fra `music/`- eller `oneshots/`-mappen
+- Ambient-lag krever nettilgang
 
 ### Battlemap-fanen fungerer ikke
 - Battlemap krever Pillow — sjekk at `pillow` står i `requirements` i `buildozer.spec`
@@ -264,12 +310,10 @@ Mulige fremtidige funksjoner:
 
 - [ ] Terningkast-verktøy (D&D-terningsett: d4, d6, d8, d10, d12, d20, d100)
 - [ ] Nedtellingstimer for sesjonspauser eller rundetidsbegrensning
-- [ ] Lydeffekter (one-shot): døråpning, monster-brøl, magi-spell
 - [ ] Sesjonsnotater med timestamps
 - [ ] Eksport/import av karakterer
 - [ ] Custom ambient-URL-liste redigerbar i appen
 - [ ] Flere regel-referanser i Regler-fanen
-- [ ] Scenario-tracker for pre-skrevne eventyr (inspirert av søster-appen Eldritch Portal)
 
 ---
 
