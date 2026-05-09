@@ -719,11 +719,20 @@ class RToggle(ToggleButton):
     bg_tex_normal = ObjectProperty(None, allownone=True)
     bg_tex_active = ObjectProperty(None, allownone=True)
 
+    @staticmethod
+    def _as_color_list(value):
+        if value is None or isinstance(value, (str, bytes)):
+            return None
+        try:
+            return list(value)
+        except TypeError:
+            return None
+
     def __init__(self, **kw):
         self._style_ready = False
-        self._initial_state = kw.get('state', 'normal')
-        self._initial_bg_color = list(kw['bg_color']) if 'bg_color' in kw else None
-        self._initial_text_color = list(kw['color']) if 'color' in kw else None
+        self._initial_state = 'down' if kw.get('state') == 'down' else 'normal'
+        self._initial_bg_color = self._as_color_list(kw.get('bg_color')) if 'bg_color' in kw else None
+        self._initial_text_color = self._as_color_list(kw.get('color')) if 'color' in kw else None
         self._has_active_bg_color = 'active_bg_color' in kw
         self._has_inactive_bg_color = 'inactive_bg_color' in kw
         self._has_active_text_color = 'active_text_color' in kw
@@ -748,12 +757,12 @@ class RToggle(ToggleButton):
         if self._initial_bg_color is not None:
             if self._initial_state == 'down' and not self._has_active_bg_color:
                 self.active_bg_color = self._initial_bg_color
-            elif self._initial_state != 'down' and not self._has_inactive_bg_color:
+            elif self._initial_state == 'normal' and not self._has_inactive_bg_color:
                 self.inactive_bg_color = self._initial_bg_color
         if self._initial_text_color is not None:
             if self._initial_state == 'down' and not self._has_active_text_color:
                 self.active_text_color = self._initial_text_color
-            elif self._initial_state != 'down' and not self._has_inactive_text_color:
+            elif self._initial_state == 'normal' and not self._has_inactive_text_color:
                 self.inactive_text_color = self._initial_text_color
         self._style_ready = True
         self._sync_state_style()
