@@ -730,7 +730,7 @@ class RToggle(ToggleButton):
 
     def __init__(self, **kw):
         self._style_ready = False
-        self._initial_state = 'down' if kw.get('state') == 'down' else 'normal'
+        self._initial_state = kw.get('state', 'normal')
         self._initial_bg_color = self._as_color_list(kw.get('bg_color')) if 'bg_color' in kw else None
         self._initial_text_color = self._as_color_list(kw.get('color')) if 'color' in kw else None
         self._has_active_bg_color = 'active_bg_color' in kw
