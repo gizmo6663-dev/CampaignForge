@@ -576,11 +576,11 @@ Builder.load_string('''
         # ved kantene. Ingen synlige klippekanter uansett hvor stor
         # pulse-verdien er. Animeres fra _start_pulse() i Python.
         Color:
-            rgba: 1, 1, 1, 0.55 * self.pulse
+            rgba: 1, 1, 1, 0.80 * self.pulse
         Rectangle:
             texture: self.pulse_glow_tex
-            pos: self.x - dp(7), self.y - dp(7)
-            size: self.width + dp(14), self.height + dp(14)
+            pos: self.x - dp(10), self.y - dp(10)
+            size: self.width + dp(20), self.height + dp(20)
         # Skygge under fanen med gradient-tekstur (samme tekstur som RBtn).
         # Mer alpha + større offset når aktiv for å gi følelse av at fanen
         # løftes opp fra tab-baren.
