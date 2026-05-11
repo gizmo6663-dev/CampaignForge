@@ -25,6 +25,7 @@ from kivy.metrics import dp, sp
 from kivy.properties import ListProperty, NumericProperty, BooleanProperty, ObjectProperty, StringProperty
 from kivy.lang import Builder
 from kivy.clock import Clock
+from kivy.animation import Animation
 from kivy.graphics.texture import Texture
 
 # === STIER ===
@@ -302,6 +303,70 @@ def get_drop_shadow_tex():
     return _GRADIENT_CACHE[key]
 
 
+def make_pulse_glow_tex(rgb, size=128, inset_ratio=0.42):
+    """Generer en 2D glow-tekstur for puls-effekten på aktive faner.
+
+    Distansefelt-basert "blurret avrundet rektangel":
+    - Et indre kjerne-rektangel (inset_ratio fra kantene) har alpha=1.0
+    - Utenfor kjernen faller alpha kontinuerlig av med cosine-falloff
+      til nøyaktig 0 ved teksturens kant.
+
+    Cosine gir mykere fall enn lineær eller gaussian — vi treffer
+    nøyaktig alpha=0 ved kantene, slik at det IKKE er en synlig
+    "klipping" der teksturen ender, uansett hvor stor pulsen er.
+    Samme prinsipp som gold_glow-stripen, men i 2D.
+    """
+    import math
+    size = max(16, int(size))
+    tex = Texture.create(size=(size, size), colorfmt='rgba')
+    tex.mag_filter = 'linear'
+    tex.min_filter = 'linear'
+    buf = bytearray()
+    r255 = int(max(0, min(255, round(rgb[0] * 255))))
+    g255 = int(max(0, min(255, round(rgb[1] * 255))))
+    b255 = int(max(0, min(255, round(rgb[2] * 255))))
+
+    inset = int(size * inset_ratio * 0.5)
+    rect_min = inset
+    rect_max = size - inset
+    max_dist = float(inset) if inset > 0 else 1.0
+
+    for y in range(size):
+        for x in range(size):
+            # Distanse fra (x, y) til kjernerektangelet
+            dx = max(rect_min - x, x - rect_max, 0)
+            dy = max(rect_min - y, y - rect_max, 0)
+            if dx == 0 and dy == 0:
+                a = 1.0
+            else:
+                d = math.sqrt(dx * dx + dy * dy)
+                if d >= max_dist:
+                    a = 0.0
+                else:
+                    # Cosine-falloff: 1.0 ved d=0, 0.0 ved d=max_dist
+                    a = 0.5 * (1.0 + math.cos(math.pi * d / max_dist))
+            buf.extend((
+                r255, g255, b255,
+                int(max(0, min(255, round(a * 255)))),
+            ))
+    tex.blit_buffer(bytes(buf), colorfmt='rgba', bufferfmt='ubyte')
+    tex.wrap = 'clamp_to_edge'
+    return tex
+
+
+def get_pulse_glow_tex():
+    """Hent (eller lag) cached 2D-glow-tekstur for puls-effekten."""
+    key = 'pulse_glow'
+    if key not in _GRADIENT_CACHE:
+        # Samme gylne tone som glow-stripen — visuell sammenheng.
+        _GRADIENT_CACHE[key] = make_pulse_glow_tex(
+            (GOLD[0], GOLD[1], GOLD[2]),
+            size=128,
+            inset_ratio=0.42,
+        )
+    return _GRADIENT_CACHE[key]
+
+
 # === FILTYPER ===
 IMG_EXT = ('.png', '.jpg', '.jpeg', '.webp')
 SND_EXT = ('.mp3', '.ogg', '.wav', '.flac', '.m4a', '.aac')
@@ -504,6 +569,18 @@ Builder.load_string('''
     background_color: 0, 0, 0, 0
     bold: True
     canvas.before:
+        # === PULS-GLOW ===
+        # Tegnes FØRST så den havner bak alle andre lag.
+        # Én Rectangle som bruker en blurret avrundet-rektangel-tekstur
+        # med cosine-falloff fra full alpha i kjernen til nøyaktig 0
+        # ved kantene. Ingen synlige klippekanter uansett hvor stor
+        # pulse-verdien er. Animeres fra _start_pulse() i Python.
+        Color:
+            rgba: 1, 1, 1, 0.55 * self.pulse
+        Rectangle:
+            texture: self.pulse_glow_tex
+            pos: self.x - dp(7), self.y - dp(7)
+            size: self.width + dp(14), self.height + dp(14)
         # Skygge under fanen med gradient-tekstur (samme tekstur som RBtn).
         # Mer alpha + større offset når aktiv for å gi følelse av at fanen
         # løftes opp fra tab-baren.
@@ -775,13 +852,18 @@ class RToggle(ToggleButton):
 class RTab(ToggleButton):
     """Toggle-knapp for fane-bar – ekte gradient på bakgrunn og aktiv-stripe.
 
-    Bruker fire teksturer (alle cached globalt):
+    Bruker fem teksturer (alle cached globalt):
     - bg_tex_inactive: vertikal grønn gradient for inaktiv tilstand
     - bg_tex_active: lysere vertikal grønn gradient når aktiv
     - shadow_tex: vertikal mørk gradient for skygge under fanen
     - glow_tex: horisontal cosinus-glød for gull-stripa i bunnen
+    - pulse_glow_tex: 2D-cosinus-glød som puster når fanen er aktiv
 
     Dette gir ekte glatte gradienter uten synlige trinn.
+
+    Puls-effekt: når state == 'down', animeres `pulse` (0..1) sakte
+    opp og ned med sinus-easing. KV-en blender pulse_glow_tex bak
+    fanen med denne verdien — gir et mykt pust-glow.
     """
     bg_color          = ListProperty(BTN)         # ikke brukt for fyll, men
                                                   # bevart for kompatibilitet
@@ -795,6 +877,9 @@ class RTab(ToggleButton):
     bg_tex_active     = ObjectProperty(None, allownone=True)
     bg_tex_inactive   = ObjectProperty(None, allownone=True)
     shadow_tex        = ObjectProperty(None, allownone=True)
+    pulse_glow_tex    = ObjectProperty(None, allownone=True)
+    # Puls-amplitude (0..1) — drevet av Animation når state == 'down'.
+    pulse             = NumericProperty(0.0)
 
     def __init__(self, **kw):
         super().__init__(**kw)
@@ -803,6 +888,35 @@ class RTab(ToggleButton):
         self.bg_tex_active = get_tab_active_bg_tex()
         self.bg_tex_inactive = get_tab_inactive_bg_tex()
         self.shadow_tex = get_drop_shadow_tex()
+        self.pulse_glow_tex = get_pulse_glow_tex()
+        self._pulse_anim = None
+        self.bind(state=self._on_state_pulse)
+        # Hvis vi opprettes i down-state, start pulsing umiddelbart
+        if self.state == 'down':
+            Clock.schedule_once(lambda *_: self._start_pulse(), 0)
+
+    def _on_state_pulse(self, *_a):
+        if self.state == 'down':
+            self._start_pulse()
+        else:
+            self._stop_pulse()
+
+    def _start_pulse(self):
+        if self._pulse_anim is not None:
+            return
+        # Sakte pust: 3.5s opp + 3.5s ned (7s total syklus).
+        # Sinus-easing for myk akselerasjon i begge ender.
+        up = Animation(pulse=1.0, duration=3.5, t='in_out_sine')
+        down = Animation(pulse=0.0, duration=3.5, t='in_out_sine')
+        self._pulse_anim = up + down
+        self._pulse_anim.repeat = True
+        self._pulse_anim.start(self)
+
+    def _stop_pulse(self):
+        if self._pulse_anim is not None:
+            self._pulse_anim.cancel(self)
+            self._pulse_anim = None
+        self.pulse = 0.0
 
 class RBox(BoxLayout):
     bg_color = ListProperty(BG2)
