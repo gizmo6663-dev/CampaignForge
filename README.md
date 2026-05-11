@@ -42,8 +42,8 @@ Kombinert fane med sub-fanene **Musikk**, **Ambient**, **One-shot** og **Scenari
 - Bruker Android MediaPlayer via `pyjnius` for stabil bakgrunnsavspilling
 
 **Ambient** — stemningslyder strømmet fra Internet Archive
-- Syv kategorier tilpasset D&D-sjangeren: Natur · Kro og by · Dungeon og hule · Leir og bål · Skog og villmark · Kamp · Horror
-- Omtrent 35 kuraterte spor dekker alt fra en fredelig taverna til en tordenstorm over slagmarken
+- Tre kategorier tilpasset D&D-sjangeren: Natur · Steder · Stemning
+- 13 kuraterte spor dekker alt fra en fredelig taverna til en tordenstorm over slagmarken
 - Separat volumkontroll fra musikken, så du kan mikse kro-snakk under en oppdragsintroduksjon
 - Ingen opplasting nødvendig — lenkene peker rett på public-domain-spor
 
@@ -77,9 +77,9 @@ Sub-faner for karakterarbeid og kamp-støtte:
 
 **Initiativ** — kamp-tracker
 - Legg til PCer/NPCer fra karakter-lista, eller ad hoc-fiender
-- Skriv inn initiativ-kast, sorter automatisk
+- Skriv inn initiativ-kast, eller bruk «Auto-rull» (d20 + DEX-mod), sorter automatisk
 - Bla gjennom runder og turer med aktiv-deltaker-indikator
-- HP-oppdatering direkte fra trackeren
+- HP vises per deltaker; HP-justering (+1 / -1 / -5) er tilgjengelig i Battlemap-fanen sitt stat-panel for den som har turen
 
 ### 🧰 Verktøy
 Samlet verktøyfane med sub-fanene **Battlemap**, **Regler** og **Cast**:
